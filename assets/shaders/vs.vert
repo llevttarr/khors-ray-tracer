@@ -1,5 +1,5 @@
 #version 430 core
-out vec2 res;
+out vec2 vUV;
 
 void main() {
     vec2 pos;
@@ -7,12 +7,12 @@ void main() {
         pos = vec2(-1.0, -1.0);
     }
     if (gl_VertexID == 1){
-        pos = vec2( 3.0, -1.0);
+        pos = vec2(3.0, -1.0);
     }
     if (gl_VertexID == 2){
-        pos = vec2(-1.0,  3.0);
+        pos = vec2(-1.0, 3.0);
     }
 
     gl_Position = vec4(pos, 0.0, 1.0);
-    res = 0.5*pos+0.5;
+    vUV = 0.5*pos+0.5;
 }

@@ -31,10 +31,11 @@ namespace glsl_util{
     GLuint create_shader(GLenum t,const std::string& s);
     GLuint link_shaders(GLuint vert, GLuint frag);
     GLuint link_comp(GLuint comp);
-    inline void set_uint(GLuint program,unsigned i,const std::string& name,GLSLUniformCache& c);
-    inline void set_float(GLuint program,float i,const std::string& name,GLSLUniformCache& c);
-    inline void set_mat3(GLuint program,const Mat3<float>& m,const std::string& name,GLSLUniformCache& c,bool transpose);
-    inline void set_mat4(GLuint program,const Mat4<float>& m,const std::string& name,GLSLUniformCache& c,bool transpose);
-    inline void set_vec3(GLuint program,const Vec3<float>& v,const std::string& name,GLSLUniformCache& c);
-    inline void set_vec4(GLuint program,const Vec4<float>& v,const std::string& name,GLSLUniformCache& c);
+    void set_int(GLuint program,int i,const std::string& name,GLSLUniformCache& c);
+    void set_uint(GLuint program,unsigned i,const std::string& name,GLSLUniformCache& c);
+    void set_float(GLuint program,float i,const std::string& name,GLSLUniformCache& c);
+    void set_mat3(GLuint program,const Mat3<float>& m,const std::string& name,GLSLUniformCache& c,bool transpose);
+    void set_mat4(GLuint program,const Mat4<float>& m,const std::string& name,GLSLUniformCache& c,bool transpose);
+    void set_vec3(GLuint program,const Vec3<float>& v,const std::string& name,GLSLUniformCache& c);
+    void set_vec4(GLuint program,const Vec4<float>& v,const std::string& name,GLSLUniformCache& c);
 }

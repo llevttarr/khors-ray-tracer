@@ -20,10 +20,11 @@ public:
     Scene();
     ~Scene();
     RenderScene to_render_scene() const;
-    void add_mesh(Mesh m);
-    void add_object(Object o);
+    uint32_t add_mesh(Mesh m);
+    uint32_t add_object(Object o);
 private:
     std::vector<Mesh> mesh_v;
     std::vector<Object> obj_v;
+    void test_scene_init();
 };
 #endif // SCENE_H

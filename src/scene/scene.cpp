@@ -25,15 +25,32 @@ RenderScene Scene::to_render_scene() const{
 }
 
 Scene::Scene(){
-
+    test_scene_init();
 }
 
 Scene::~Scene(){
 
 }
-void Scene::add_mesh(Mesh m){
+uint32_t Scene::add_mesh(Mesh m){
     mesh_v.push_back(std::move(m));
+    return (uint32_t)(mesh_v.size()-1);
 }
-void Scene::add_object(Object o){
+uint32_t Scene::add_object(Object o){
     obj_v.push_back(std::move(o));
+    return (uint32_t)(obj_v.size()-1);
+}
+void Scene::test_scene_init(){
+    Mesh sphereMesh=obj_util::create_sphere(3,4);
+
+    uint32_t sphere_id = add_mesh(std::move(sphereMesh));
+    Mat4<float> t0{};
+    t0 = t0.translate(2.0,2.0,2.0);
+    uint32_t obj0 = add_object(Object{sphere_id,t0});
+    Mat4<float> t1{};
+    t1 = t1.translate(-2.0,-2.0,-2.0);
+    uint32_t obj1 = add_object(Object{sphere_id,t1});
+    Mat4<float> t2{};
+    t2 = t2.translate(2.0,2.0,-2.0);
+    uint32_t obj2 = add_object(Object{sphere_id,t2});
+    
 }

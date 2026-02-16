@@ -18,6 +18,7 @@ public:
 
     GLuint id() const{return progr; }
     void use();
+    void set_int(const std::string& name, int v){ glsl_util::set_int(progr, v, name, cache); }
     void set_uint(const std::string& name, unsigned v){ glsl_util::set_uint(progr, v, name, cache); }
     void set_float(const std::string& name, float v){ glsl_util::set_float(progr, v, name, cache); }
     void set_vec3(const std::string& name, const Vec3<float>& v){ glsl_util::set_vec3(progr, v, name, cache);}

@@ -4,11 +4,12 @@ Renderer::Renderer(int width, int height)
 
   : w(width), h(height),
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
-    comp_shader("assets/cs.comp")
+    comp_shader("assets/shaders/cs.comp")
 {
     glGenBuffers(1, &tri_ssbo);
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
+    glBindTexture(GL_TEXTURE_2D, cbuff);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -20,6 +21,7 @@ Renderer::Renderer(int width, int height)
 }
 Renderer::~Renderer() {
     glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1,&tri_ssbo);
 }
 void Renderer::update_scene(RenderScene& render_scene){
     tric=(uint32_t)render_scene.tri_v.size();
@@ -51,7 +53,7 @@ void Renderer::run(){
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cbuff);
 
-    shader.set_uint("tex",0);
+    shader.set_int("tex",0);
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);

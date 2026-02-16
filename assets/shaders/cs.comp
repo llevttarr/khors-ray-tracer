@@ -1,5 +1,19 @@
 #version 430 core
+layout(local_size_x = 16,local_size_y = 16) in;
+
+layout(rgba32f,binding = 0) uniform image2D outImage;
+
+uniform uint width;
+uniform uint height;
+uniform uint tric;
 
 void main() {
+    uvec2 gid = gl_GlobalInvocationID.xy;
 
+    if (gid.x >= width||gid.y >= height){
+        return;
+    }
+    float t = float(tric);
+    float b = clamp(t/1000.0,0.0, 1.0);
+    imageStore(outImage, ivec2(gid), vec4(b, b, b, 1.0));
 }
