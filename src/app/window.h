@@ -22,5 +22,6 @@ private:
     GLFWwindow* glfw_window;
     int width;
     int height;
+    void size_callback(); // TODO
 };
 #endif //WINDOW_H
