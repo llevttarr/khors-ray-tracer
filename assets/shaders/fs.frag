@@ -1,6 +1,8 @@
 #version 430 core
-in vec3 color;
-out vec4 fragment;
-void main(){
-    fragment = vec4(color, 1.0);
+in vec2 res;
+out vec4 FragColor;
+uniform sampler2D uTex;
+
+void main() {
+    FragColor = texture(uTex, vUV);
 }

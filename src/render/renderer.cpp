@@ -35,7 +35,10 @@ void Renderer::run(){
     comp_shader.use();
 
     glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    
+
+    comp_shader.set_uint("width",w);
+    comp_shader.set_uint("height",h);
+    comp_shader.set_uint("tric",tric);
 
     const int dx=(w+15)/16;
     const int dy=(h+15)/16;
@@ -47,7 +50,8 @@ void Renderer::run(){
     shader.use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cbuff);
-    glUniform1i(glGetUniformLocation(shader.id(), "uTex"), 0);
+
+    shader.set_uint("tex",0);
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -59,5 +63,8 @@ void Renderer::resize(int nw, int nh){
 
     glBindTexture(GL_TEXTURE_2D, cbuff);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, nw,nh,0, GL_RGBA, GL_FLOAT, nullptr);
+
+    comp_shader.set_uint("width",nw);
+    comp_shader.set_uint("height",nh);
     glBindTexture(GL_TEXTURE_2D, 0);
 }

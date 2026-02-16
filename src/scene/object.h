@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <numbers>
 #include "../core/math/mat4.h"
 #include "../core/math/vec3.h"
 struct Mesh{
@@ -14,6 +15,6 @@ struct Object{
     Mat4<float> transform{};
 };
 namespace obj_util{
-    Object create_sphere(uint16_t radius);
+    Mesh create_sphere(uint16_t radius,uint16_t detail_lvl);
 };
 #endif //OBJECT_H

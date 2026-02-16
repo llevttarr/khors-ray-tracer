@@ -1,7 +1,18 @@
 #version 430 core
-layout(location = 0) in vec3 vPos;
-out vec3 color;
-void main(){
-    gl_Position = vec4(vPos, 1.0);
-    color = vec3(1.0,1.0,1.0);
+out vec2 res;
+
+void main() {
+    vec2 pos;
+    if (gl_VertexID == 0){
+        pos = vec2(-1.0, -1.0);
+    }
+    if (gl_VertexID == 1){
+        pos = vec2( 3.0, -1.0);
+    }
+    if (gl_VertexID == 2){
+        pos = vec2(-1.0,  3.0);
+    }
+
+    gl_Position = vec4(pos, 0.0, 1.0);
+    res = 0.5*pos+0.5;
 }
