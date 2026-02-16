@@ -2,9 +2,6 @@
 #include <cmath>
 #include <array>
 
-class Vec3;
-class Vec4;
-
 template<typename T>
 class Mat4 {
 public:
@@ -36,6 +33,22 @@ public:
             }
         }
         return res;
+    }
+    Mat4 translate(T x,T y,T z){
+        Mat4 res{};
+        res.at(0,3)=x;
+        res.at(1,3)=y;
+        res.at(2,3)=z;
+
+        return matmul(this&,res&);
+    }
+    Mat4 scale(T x,T y,T z){
+        Mat4 res{};
+        res.at(0,0)=x;
+        res.at(1,1)=y;
+        res.at(2,2)=z;
+
+        return matmul(this&,res&);
     }
 private:
     std::array<T,16> dat{};

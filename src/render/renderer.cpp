@@ -6,7 +6,7 @@ Renderer::Renderer(int width, int height)
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
     comp_shader("assets/cs.comp")
 {
-    glGenBuffers(1, &triSSBO);
+    glGenBuffers(1, &tri_ssbo);
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
 
@@ -24,9 +24,9 @@ Renderer::~Renderer() {
 void Renderer::update_scene(RenderScene& render_scene){
     tric=(uint32_t)render_scene.tri_v.size();
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, triSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, tri_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.tri_v.size()*sizeof(RenderTri),render_scene.tri_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, triSSBO);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tri_ssbo);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -35,6 +35,7 @@ void Renderer::run(){
     comp_shader.use();
 
     glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    
 
     const int dx=(w+15)/16;
     const int dy=(h+15)/16;
@@ -46,6 +47,7 @@ void Renderer::run(){
     shader.use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cbuff);
+    glUniform1i(glGetUniformLocation(shader.id(), "uTex"), 0);
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);

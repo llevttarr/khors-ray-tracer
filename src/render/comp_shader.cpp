@@ -6,6 +6,7 @@ ComputeShader::ComputeShader(const std::string& filename){
     
     GLuint comp_s=glsl_util::create_shader(GL_COMPUTE_SHADER,comp);
     progr=glsl_util::link_comp(comp_s);
+    cache.set_program(progr);
 
     glDeleteShader(comp_s);
 }

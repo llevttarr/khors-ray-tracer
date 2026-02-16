@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include "mat4.h"
 
 template<typename T>
 class Vec4 {
@@ -47,5 +48,13 @@ public:
     }
     static constexpr T dot(const Vec4& a,const Vec4& b) {
         return a.x*b.x+ a.y*b.y+a.z*b.z+a.w*b.w;
+    }
+    static constexpr Vec4 matvec_mul(const Mat4& a, const Vec4& b){
+        Vec4 res{};
+        res.x=a.at(0,0)*b.x + a.at(0,1)*b.y+ a.at(0,2)*b.z+a.at(0,3)*b.w;
+        res.x=a.at(1,0)*b.x + a.at(1,1)*b.y+ a.at(1,2)*b.z+a.at(1,3)*b.w;
+        res.x=a.at(2,0)*b.x + a.at(2,1)*b.y+ a.at(2,2)*b.z+a.at(2,3)*b.w;
+        res.x=a.at(3,0)*b.x + a.at(3,1)*b.y+ a.at(3,2)*b.z+a.at(3,3)*b.w;
+        return res;
     }
 };

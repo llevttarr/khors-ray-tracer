@@ -13,5 +13,7 @@ struct Object{
     uint32_t mesh_id;
     Mat4<float> transform{};
 };
-
+namespace obj_util{
+    Object create_sphere(uint16_t radius);
+};
 #endif //OBJECT_H

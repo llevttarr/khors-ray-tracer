@@ -2,6 +2,22 @@
 #include <fstream>
 #include <sstream>
 #include "glsl_util.h"
+void GLSLUniformCache::set_program(GLuint program) {
+    progr = program;
+    loc_map.clear();
+}
+GLint GLSLUniformCache::get_location(const std::string& name) {
+        if (progr==0){
+            throw GLSLUtilException("no progr");
+        }
+        auto it = loc_map.find(name);
+        if (it != loc_map.end()){
+            return it->second;
+        }
+        GLint l = glGetUniformLocation(progr, name.c_str());
+        loc_map.emplace(name, l);
+        return l;
+    }
 
 namespace glsl_util{
 
@@ -48,5 +64,56 @@ namespace glsl_util{
             throw GLSLUtilException("could not link comp shader");
         }
         return program;
+    }
+    inline void set_uint(GLuint program,unsigned i,const std::string& name,GLSLUniformCache& c){
+        GLint loc = c.get_location(name);
+        if(loc==0){
+            return;
+        }
+        glProgramUniform1ui(program, loc,i);
+    }
+    inline void set_float(GLuint program,float i,const std::string& name,GLSLUniformCache& c){
+        GLint loc = c.get_location(name);
+        if(loc==0){
+            return;
+        }
+        glProgramUniform1f(program, loc,i);
+    }
+    inline void set_mat3(GLuint program,const Mat3<float>& m,const std::string& name,GLSLUniformCache& c,bool transpose){
+        GLint loc = c.get_location(name);
+        if(loc==0){
+            return;
+        }
+        if (transpose){
+            glProgramUniformMatrix3fv(program,loc,1, GL_TRUE, m.data());
+            return;
+        }
+        glProgramUniformMatrix3fv(program,loc,1, GL_FALSE, m.data());
+    }
+    inline void set_mat4(GLuint program,const Mat4<float>& m,const std::string& name,GLSLUniformCache& c,bool transpose){
+        GLint loc = c.get_location(name);
+        if(loc==0){
+            return;
+        }
+        if (transpose){
+            glProgramUniformMatrix4fv(program,loc,1, GL_TRUE, m.data());
+            return;
+        }
+        glProgramUniformMatrix4fv(program,loc,1, GL_FALSE, m.data());
+
+    }
+    inline void set_vec3(GLuint program,const Vec3<float>& v,const std::string& name,GLSLUniformCache& c){
+        GLint loc = c.get_location(name);
+        if(loc==0){
+            return;
+        }
+        glProgramUniform3f(program, loc, v.x, v.y, v.z);
+    }
+    inline void set_vec4(GLuint program,const Vec4<float>& v,const std::string& name,GLSLUniformCache& c){
+        GLint loc = c.get_location(name);
+        if(loc==0){
+            return;
+        }
+        glProgramUniform4f(program, loc, v.x, v.y, v.z, v.w);
     }
 }

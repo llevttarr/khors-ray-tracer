@@ -9,6 +9,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path){
     GLuint frag_s=glsl_util::create_shader(GL_FRAGMENT_SHADER,frag);
     progr=glsl_util::link_shaders(vert_s,frag_s);
 
+    cache.set_program(progr);
     glDeleteShader(vert_s);
     glDeleteShader(frag_s);
 }

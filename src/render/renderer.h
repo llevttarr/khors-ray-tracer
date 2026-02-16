@@ -21,8 +21,8 @@ private:
 
     GLuint vao = 0;
     GLuint cbuff = 0;
-    GLuint triSSBO = 0;
-    GLuint bvhSSBO = 0;
+    GLuint tri_ssbo = 0;
+    GLuint bvh_ssbo = 0;
     uint32_t tric = 0;
     uint32_t framec=0;
     // GLuint vbo = 0;
