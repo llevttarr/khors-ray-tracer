@@ -7,6 +7,12 @@ uniform uint width;
 uniform uint height;
 uniform uint tric;
 
+uniform vec3 camPos;
+uniform vec3 camForward;
+uniform vec3 camRight;
+uniform vec3 camUp;
+uniform float camFov;
+
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;
 

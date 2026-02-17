@@ -1,5 +1,6 @@
 #include "scene.h"
-
+#include <random>
+#include <chrono> 
 RenderScene Scene::to_render_scene() const{
     RenderScene res;
     res.tri_v.reserve(10000);
@@ -43,14 +44,34 @@ void Scene::test_scene_init(){
     Mesh sphereMesh=obj_util::create_sphere(3,4);
 
     uint32_t sphere_id = add_mesh(std::move(sphereMesh));
-    Mat4<float> t0{};
-    t0 = t0.translate(2.0,2.0,2.0);
-    uint32_t obj0 = add_object(Object{sphere_id,t0});
-    Mat4<float> t1{};
-    t1 = t1.translate(-2.0,-2.0,-2.0);
-    uint32_t obj1 = add_object(Object{sphere_id,t1});
-    Mat4<float> t2{};
-    t2 = t2.translate(2.0,2.0,-2.0);
-    uint32_t obj2 = add_object(Object{sphere_id,t2});
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::mt19937 engine(seed);
+    std::uniform_real_distribution<float> dist(-30.0, 30.0);
+
+    std::vector<uint32_t> objs{};
+    objs.reserve(11);
+    Mat4<float> identity{};
+    Mat4<float> temp{};
+    float r0;
+    float r1;
+    float r2;
+    uint32_t obj;
+    for (size_t i=0;i<10;++i){
+        r0=dist(engine);
+        r1=dist(engine);
+        r2=dist(engine);
+        temp=identity.translate(r0,r1,r2);
+        obj=add_object(Object{sphere_id,temp});
+    }
+
+    // Mat4<float> t0{};
+    // t0 = t0.translate(10.0,2.0,10.0);
+    // uint32_t obj0 = add_object(Object{sphere_id,t0});
+    // Mat4<float> t1{};
+    // t1 = t1.translate(-10.0,-2.0,-2.0);
+    // uint32_t obj1 = add_object(Object{sphere_id,t1});
+    // Mat4<float> t2{};
+    // t2 = t2.translate(2.0,2.0,-2.0);
+    // uint32_t obj2 = add_object(Object{sphere_id,t2});
     
 }

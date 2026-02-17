@@ -1,8 +1,8 @@
 #include "renderer.h"
 #include <glad/gl.h> 
-Renderer::Renderer(int width, int height)
+Renderer::Renderer(int width, int height,EulerCamera& cam)
 
-  : w(width), h(height),
+  : w(width), h(height),camera(cam),
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
     comp_shader("assets/shaders/cs.comp")
 {
@@ -42,6 +42,12 @@ void Renderer::run(){
     comp_shader.set_uint("height",h);
     comp_shader.set_uint("tric",tric);
 
+    comp_shader.set_vec3("camPos",camera.get_pos());
+    comp_shader.set_vec3("camForward",camera.get_forward());
+    comp_shader.set_vec3("camRight",camera.get_right());
+    comp_shader.set_vec3("camUp",camera.get_up());
+    comp_shader.set_float("camFov",camera.get_fov());
+    
     const int dx=(w+15)/16;
     const int dy=(h+15)/16;
     glDispatchCompute(dx, dy, 1);

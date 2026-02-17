@@ -5,10 +5,11 @@
 #include "shader.h"
 #include "comp_shader.h"
 #include "../scene/scene.h"
+#include "../scene/camera.h"
 
 class Renderer {
 public:
-    explicit Renderer(int width, int height);
+    explicit Renderer(int width, int height,EulerCamera& camera);
     ~Renderer();
     void run();
     void resize(int nw, int nh);
@@ -18,6 +19,7 @@ private:
     int h;
     Shader shader;
     ComputeShader comp_shader;
+    EulerCamera& camera;
 
     GLuint vao = 0;
     GLuint cbuff = 0;
