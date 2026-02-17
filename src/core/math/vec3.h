@@ -57,9 +57,10 @@ public:
         if (mag<=0.0){
             return a;
         }
-        a.x/=mag;
-        a.y/=mag;
-        a.z/=mag;
-        return a;
+        return Vec3(
+            a.x/mag,
+            a.y/mag,
+            a.z/mag
+        );
     }
 };
