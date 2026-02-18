@@ -25,6 +25,8 @@ Window::Window(int w, int h, const std::string& title)
         throw std::runtime_error("glad init fail");
     }
     glfwSwapInterval(1);
+
+    
 }
 
 Window::~Window() {
