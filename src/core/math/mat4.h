@@ -11,8 +11,8 @@ public:
         }
     };
     static constexpr Mat4 zero_mat(){
-        std::array<T,16> zer{};
-        Mat4 res(&zer);
+        Mat4 res;
+        res.dat.fill(T{0});
         return res;
     }
     constexpr explicit Mat4(const std::array<T,16>& arr) : dat(arr) {}
@@ -22,7 +22,7 @@ public:
     constexpr T& at(int i, int j) { return dat[i*4 + j]; }
     constexpr T  at(int i, int j) const { return dat[i*4+ j]; }
     static constexpr Mat4 matmul(const Mat4& a, const Mat4& b){
-        Mat4 res{};
+        Mat4 res=zero_mat();
         for(int i=0;i<4;++i){
             for(int j=0;j<4;++j){
                 T tmp= T{};

@@ -52,9 +52,9 @@ public:
     static constexpr Vec4 matvec_mul(const Mat4<T>& a, const Vec4& b){
         Vec4 res{};
         res.x=a.at(0,0)*b.x + a.at(0,1)*b.y+ a.at(0,2)*b.z+a.at(0,3)*b.w;
-        res.x=a.at(1,0)*b.x + a.at(1,1)*b.y+ a.at(1,2)*b.z+a.at(1,3)*b.w;
-        res.x=a.at(2,0)*b.x + a.at(2,1)*b.y+ a.at(2,2)*b.z+a.at(2,3)*b.w;
-        res.x=a.at(3,0)*b.x + a.at(3,1)*b.y+ a.at(3,2)*b.z+a.at(3,3)*b.w;
+        res.y=a.at(1,0)*b.x + a.at(1,1)*b.y+ a.at(1,2)*b.z+a.at(1,3)*b.w;
+        res.z=a.at(2,0)*b.x + a.at(2,1)*b.y+ a.at(2,2)*b.z+a.at(2,3)*b.w;
+        res.w=a.at(3,0)*b.x + a.at(3,1)*b.y+ a.at(3,2)*b.z+a.at(3,3)*b.w;
         return res;
     }
 };

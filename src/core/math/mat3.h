@@ -11,8 +11,8 @@ public:
         }
     };
     static constexpr Mat3 zero_mat(){
-        std::array<T,9> zer{};
-        Mat3 res(&zer);
+        Mat3 res;
+        res.dat.fill(T{0});
         return res;
     }
     constexpr explicit Mat3(const std::array<T,9>& arr) : dat(arr) {}
@@ -22,7 +22,7 @@ public:
     constexpr T& at(int i, int j) { return dat[i*3 + j]; }
     constexpr T  at(int i, int j) const { return dat[i*3+ j]; }
     static constexpr Mat3 matmul(const Mat3& a, const Mat3& b){
-        Mat3 res{};
+        Mat3 res=zero_mat();
         for(int i=0;i<3;++i){
             for(int j=0;j<3;++j){
                 T tmp= T{};
