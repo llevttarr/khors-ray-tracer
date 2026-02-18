@@ -3,7 +3,37 @@
 
 #include <glad/gl.h> 
 
-Window::Window(int w, int h, const std::string& title)
+void Window::size_callback(GLFWwindow* w,double x,double y){
+    auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
+    if(!state){
+        throw std::runtime_error("size fail");
+    }
+    //TODO
+}
+void Window::mouse_callback(GLFWwindow* w,double x,double y){
+    auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
+    if(!state){
+        throw std::runtime_error("mouse fail");
+    }
+    if(state->first_mouse){
+        state->last_x=x;
+        state->last_y=y;
+        state->first_mouse=false;
+        return;
+    }
+    double dx=x-state->last_x;
+    double dy=state->last_y-y;
+    double sensitivity=0.01f;
+    dx*=sensitivity;
+    dy*=sensitivity;
+    state->last_x=x;
+    state->last_y=y;
+    auto camera=state->camera;
+    camera->set_yaw(camera->get_yaw()+dx);
+    camera->set_pitch(camera->get_pitch()+dy);
+    camera->upd_dir();
+}
+Window::Window(int w, int h, const std::string& title,ProgramState& p)
     : width(w), height(h),glfw_window(nullptr)
 {
     if (!glfwInit()){
@@ -25,7 +55,8 @@ Window::Window(int w, int h, const std::string& title)
         throw std::runtime_error("glad init fail");
     }
     glfwSwapInterval(1);
-
+    glfwSetWindowUserPointer(glfw_window, &p);
+    glfwSetCursorPosCallback(glfw_window,mouse_callback);
     
 }
 

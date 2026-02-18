@@ -8,11 +8,12 @@ EulerCamera::EulerCamera(int wi, int hi){
 
 void EulerCamera::set_yaw(float y){
     yaw=y;
-    if(yaw>360){
-        yaw=360-yaw;
+    const float lim=6.28318f;
+    if(yaw>lim){
+        yaw-=lim;
     }
-    if(yaw<-360){
-        yaw=yaw+360;
+    if(yaw<-lim){
+        yaw+=lim;
     }
 }
 void EulerCamera::set_pitch(float p){

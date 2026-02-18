@@ -1,6 +1,7 @@
 #include "scene.h"
 #include <random>
 #include <chrono> 
+#include <iostream>
 RenderScene Scene::to_render_scene() const{
     RenderScene res;
     res.tri_v.reserve(10000);
@@ -16,12 +17,11 @@ RenderScene Scene::to_render_scene() const{
             Vec3<float> p1=mesh.pos[i1];
             Vec3<float> p2=mesh.pos[i2];
             Vec4<float> v0=Vec4<float>::matvec_mul(t,Vec4<float>(p0.x,p0.y,p0.z,1.0));
-            Vec4<float> v1=Vec4<float>::matvec_mul(t,Vec4<float>(p0.x,p0.y,p0.z,1.0));
-            Vec4<float> v2=Vec4<float>::matvec_mul(t,Vec4<float>(p0.x,p0.y,p0.z,1.0));
+            Vec4<float> v1=Vec4<float>::matvec_mul(t,Vec4<float>(p1.x,p1.y,p1.z,1.0));
+            Vec4<float> v2=Vec4<float>::matvec_mul(t,Vec4<float>(p2.x,p2.y,p2.z,1.0));
             res.tri_v.push_back(RenderTri{v0,v1,v2});
         }
     }
-    
     return res;
 }
 
@@ -46,7 +46,7 @@ void Scene::test_scene_init(){
     uint32_t sphere_id = add_mesh(std::move(sphereMesh));
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 engine(seed);
-    std::uniform_real_distribution<float> dist(-30.0, 30.0);
+    std::uniform_real_distribution<float> dist(-10.0, 10.0);
 
     std::vector<uint32_t> objs{};
     objs.reserve(11);
@@ -58,7 +58,7 @@ void Scene::test_scene_init(){
     uint32_t obj;
     for (size_t i=0;i<10;++i){
         r0=dist(engine);
-        r1=dist(engine);
+        r1=1.0;
         r2=dist(engine);
         temp=identity.translate(r0,r1,r2);
         obj=add_object(Object{sphere_id,temp});

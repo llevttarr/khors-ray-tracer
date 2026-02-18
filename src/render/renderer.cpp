@@ -1,5 +1,7 @@
 #include "renderer.h"
-#include <glad/gl.h> 
+#include <glad/gl.h>
+#include <iostream>
+#include <string>
 Renderer::Renderer(int width, int height,EulerCamera& cam)
 
   : w(width), h(height),camera(cam),
@@ -22,6 +24,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
 Renderer::~Renderer() {
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1,&tri_ssbo);
+    glDeleteTextures(1,&cbuff);
 }
 void Renderer::update_scene(RenderScene& render_scene){
     tric=(uint32_t)render_scene.tri_v.size();
@@ -31,6 +34,7 @@ void Renderer::update_scene(RenderScene& render_scene){
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tri_ssbo);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 
 }
 void Renderer::run(){
@@ -47,7 +51,9 @@ void Renderer::run(){
     comp_shader.set_vec3("camRight",camera.get_right());
     comp_shader.set_vec3("camUp",camera.get_up());
     comp_shader.set_float("camFov",camera.get_fov());
-    
+    std::string y=std::to_string(camera.get_yaw());
+    std::string p=std::to_string(camera.get_pitch());
+    std::cout<<"yaw: "+y+"; pitch: "+p<<std::endl;
     const int dx=(w+15)/16;
     const int dy=(h+15)/16;
     glDispatchCompute(dx, dy, 1);

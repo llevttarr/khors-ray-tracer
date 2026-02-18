@@ -24,10 +24,10 @@ namespace obj_util{
 
         for (size_t i=0;i<st;++i){
             for(size_t j=0;j<sl;++j){
-                uint16_t i0=i*(sl+1)+j;
-                uint16_t i1=(i+1)*(sl+1)+j;
-                uint16_t i2=(i+1)*(sl+1)+(j+1);
-                uint16_t i3=i*(sl+1)+(j+1);
+                uint32_t i0=i*(sl+1)+j;
+                uint32_t i1=(i+1)*(sl+1)+j;
+                uint32_t i2=(i+1)*(sl+1)+(j+1);
+                uint32_t i3=i*(sl+1)+(j+1);
 
                 res.ind.push_back(i0);
                 res.ind.push_back(i1);
