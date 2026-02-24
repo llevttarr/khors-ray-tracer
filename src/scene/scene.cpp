@@ -24,7 +24,10 @@ RenderScene Scene::to_render_scene() const{
     }
     res.sphr_v=sphere_v;
 
-    // spheres are already included in sphr_v
+    res.bvh_v.reserve(9999);
+
+    Vec4<float> r{1.0,0.5,1.0,1.0};
+    res.mat_v.push_back(Mat{r});
     return res;
 }
 
@@ -53,7 +56,7 @@ void Scene::test_scene_init(){
     uint32_t tri_sphere_id = add_mesh(std::move(tri_sphere_mesh));
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 engine(seed);
-    std::uniform_real_distribution<float> dist(-10.0, 10.0);
+    std::uniform_real_distribution<float> dist(-60.0, 10.0);
 
     std::vector<uint32_t> objs{};
     objs.reserve(11);
@@ -63,22 +66,26 @@ void Scene::test_scene_init(){
     float r1;
     float r2;
     uint32_t obj;
-    for (size_t i=0;i<2;++i){
-        r0=dist(engine);
-        r1=1.0;
-        r2=dist(engine);
-        temp=identity.translate(r0,r1,r2);
-        obj=add_object(Object{tri_sphere_id,temp});
+    Sphr sp;
+    sphere_v.reserve(100);
+    for (size_t i=0;i<32;++i){
+        sp=Sphr{};
+        sp.cx=dist(engine);
+        sp.cy=0.0;
+        sp.cz=dist(engine);
+        sp.r=2.0;
+        sp.matid=1;
+        add_sphere(sp);
+
+        // r0=dist(engine);
+        // r1=1.0;
+        // r2=dist(engine);
+        // temp=identity.translate(r0,r1,r2);
+        // obj=add_object(Object{tri_sphere_id,temp});
+
+
     }
 
-    sphere_v.reserve(100);
-    Sphr i=Sphr{};
-    i.cx=-25.0;
-    i.cy=1.0;
-    i.cz=-25.0;
-    i.r=2.0;
-    i.matid=1;
-    add_sphere(i);
 
     // Mat4<float> t0{};
     // t0 = t0.translate(10.0,2.0,10.0);
@@ -90,4 +97,7 @@ void Scene::test_scene_init(){
     // t2 = t2.translate(2.0,2.0,-2.0);
     // uint32_t obj2 = add_object(Object{sphere_id,t2});
     
+}
+void Scene::generate_bvh(){
+
 }

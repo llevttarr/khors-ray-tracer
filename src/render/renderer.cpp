@@ -11,6 +11,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glGenBuffers(1, &tri_ssbo);
     glGenBuffers(1, &sphr_ssbo);
     glGenBuffers(1, &bvh_ssbo);
+    glGenBuffers(1, &mat_ssbo);
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
     glBindTexture(GL_TEXTURE_2D, cbuff);
@@ -28,11 +29,14 @@ Renderer::~Renderer() {
     glDeleteBuffers(1,&tri_ssbo);
     glDeleteBuffers(1,&sphr_ssbo);
     glDeleteBuffers(1,&bvh_ssbo);
+    glDeleteBuffers(1,&mat_ssbo);
     glDeleteTextures(1,&cbuff);
 }
 void Renderer::update_scene(RenderScene& render_scene){
     tric=(uint32_t)render_scene.tri_v.size();
     spherec=(uint32_t)render_scene.sphr_v.size();
+    bvhc=(uint32_t)render_scene.bvh_v.size();
+    matc=(uint32_t)render_scene.mat_v.size();
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, tri_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.tri_v.size()*sizeof(RenderTri),render_scene.tri_v.data(),GL_STATIC_DRAW);
@@ -51,6 +55,11 @@ void Renderer::update_scene(RenderScene& render_scene){
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, bvh_ssbo);
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mat_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.mat_v.size()*sizeof(Mat),render_scene.mat_v.data(),GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, mat_ssbo);
+    
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
 }
@@ -63,6 +72,8 @@ void Renderer::run(){
     comp_shader.set_uint("height",h);
     comp_shader.set_uint("tric",tric);
     comp_shader.set_uint("spherec",spherec);
+    comp_shader.set_uint("bvhc",bvhc);
+    comp_shader.set_uint("matc",matc);
 
     comp_shader.set_vec3("camPos",camera.get_pos());
     comp_shader.set_vec3("camForward",camera.get_forward());

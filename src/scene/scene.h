@@ -14,6 +14,9 @@ struct BVH{
     Vec4<float> min;
     Vec4<float> max;
 };
+struct Mat{
+    Vec4<float> rgba;
+};
 struct Sphr{
     float cx;
     float cy;
@@ -26,6 +29,7 @@ struct RenderScene{
     std::vector<RenderTri> tri_v;
     std::vector<BVH> bvh_v;
     std::vector<Sphr> sphr_v;
+    std::vector<Mat> mat_v;
 };
 class Scene{
 public:

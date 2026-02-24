@@ -7,6 +7,8 @@ uniform uint width;
 uniform uint height;
 uniform uint tric;
 uniform uint spherec;
+uniform uint bvhc;
+uniform uint matc;
 
 uniform vec3 camPos;
 uniform vec3 camForward;
@@ -32,8 +34,17 @@ struct Sphr {
     uint matId;
     uint pad0, pad1, pad2;
 };
+struct BVH{
+
+};
 layout(std430,binding=2) readonly buffer SphrBuf {
     Sphr spheres[];
+};
+layout(std430,binding=3) readonly buffer BVHBuf {
+    BVH bvh_v[];
+};
+layout(std430,binding=4) readonly buffer MatBuf {
+    Mat mats[];
 };
 bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     float epsilon=0.000001;
@@ -65,9 +76,15 @@ bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     }
     return false;
 }
-// bool intersectsAABB(vec3 rayOrigin,vec3 rayVector,vec3 a,vec3 b,float tMax){
-
-// }
+bool intersectsAABB(vec3 rayOrigin,vec3 rayVector,vec3 minv,vec3 maxv,float tMax){
+    vec3 t0=(minv-rayOrigin)*rayVector;
+    vec3 t1=(maxv-rayOrigin)*rayVector;
+    vec3 tmin=min(t0,t1);
+    vec3 tmax=max(t0,t1);
+    float lo = max(max(tmin.x,tmin.y),max(tmin.z,0.0));
+    float hi = min(min(tmax.x,tmax.y),min(tmax.z,tMax));
+    return hi >= lo;
+}
 bool intersectsSphere(vec3 rayOrigin,vec3 rayVector,Sphr sphere,out float res){
     float epsilon=0.000001;
     vec3 cv=sphere.c_r.xyz;
@@ -159,7 +176,7 @@ void main() {
     vec3 rayOrigin=camPos;
     vec3 rayVector;
     vec3 color;
-    vec3 lightSource=vec3(0.8,0.8,0.8);
+    vec3 lightSource=vec3(-1.0,1.0,-1.0);
     vec2 uv=vec2((gid.x+0.5)/float(width),(gid.y+0.5)/float(height));
     vec2 ndc=2.0*uv-1.0;
     ndc.x*=aspect;
@@ -176,7 +193,10 @@ void main() {
         if(d<0.0){
             d=0.0;
         }
-        color=vec3(1.0,0.8,0.4)*d+vec3(0.05,0.05,0.05);
+        uint mati= hit.matId;
+        Mat resMat= mats[mati-1];
+        vec4 resMatRGBA=resMat.rgba;
+        color=resMatRGBA.rgb*d+vec3(0.05,0.05,0.05);
     }
     imageStore(outImage, ivec2(gid), vec4(color, 1.0));
 }
