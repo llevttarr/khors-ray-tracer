@@ -6,6 +6,7 @@ layout(rgba32f,binding = 0) uniform image2D outImage;
 uniform uint width;
 uniform uint height;
 uniform uint tric;
+uniform uint spherec;
 
 uniform vec3 camPos;
 uniform vec3 camForward;
@@ -13,13 +14,26 @@ uniform vec3 camRight;
 uniform vec3 camUp;
 uniform float camFov;
 
+struct Mat{
+    vec4 rgba;
+};
 struct Tri{
     vec4 v0;
     vec4 v1;
     vec4 v2;
+    uint matId;
+    uint pad0,pad1,pad2;
 };
 layout(std430,binding=1) readonly buffer TriBuf {
     Tri tris[];
+};
+struct Sphr {
+    vec4 c_r;
+    uint matId;
+    uint pad0, pad1, pad2;
+};
+layout(std430,binding=2) readonly buffer SphrBuf {
+    Sphr spheres[];
 };
 bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     float epsilon=0.000001;
@@ -51,10 +65,44 @@ bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     }
     return false;
 }
+// bool intersectsAABB(vec3 rayOrigin,vec3 rayVector,vec3 a,vec3 b,float tMax){
+
+// }
+bool intersectsSphere(vec3 rayOrigin,vec3 rayVector,Sphr sphere,out float res){
+    float epsilon=0.000001;
+    vec3 cv=sphere.c_r.xyz;
+    float r=sphere.c_r.w;
+    vec3 L=cv-rayOrigin;
+    float tca=dot(L,rayVector);
+    if(tca<-epsilon){
+        return false;
+    }
+    float sc=dot(L,L);
+    float d2=sc-tca*tca;
+    if(d2>r*r){
+        return false;
+    }
+    float thc=sqrt(r*r-d2);
+    float t0=tca-thc;
+    float t1=tca+thc;
+    float t;
+    if (t0>epsilon){
+        t=t0;
+    }else if (t1>epsilon){
+        t=t1;
+    }else{
+        t=-1.0;
+    }
+    if (t<-epsilon){
+        return false;
+    }
+    res=t;
+    return true;
+}
 struct RayHit{
     bool isValid;
     float t;
-    uint triId;
+    uint matId;
     vec3 n;
 };
 RayHit trace(vec3 rayOrigin,vec3 rayVector){
@@ -71,12 +119,30 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
                 continue;
             }
             res.t=t;
-            res.triId=i;
+            res.matId=tri.matId;
 
             vec3 v0=tri.v0.xyz;
             vec3 v1=tri.v1.xyz;
             vec3 v2=tri.v2.xyz;
             res.n=normalize(cross(v1-v0,v2-v0));
+        }
+    }
+    for (uint i=0;i<spherec;++i){
+        Sphr sp=spheres[i];
+        float t;
+        if (intersectsSphere(rayOrigin,rayVector,sp,t)){
+            if (!res.isValid){
+                res.isValid=true;
+            }
+            else if (res.t<t){
+                continue;
+            }
+            res.t=t;
+            res.matId=sp.matId;
+
+            vec3 cr=sp.c_r.xyz;
+            vec3 p = rayOrigin+t*rayVector;
+            res.n = normalize(p-cr);
         }
     }
     return res;

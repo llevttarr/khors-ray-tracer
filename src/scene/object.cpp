@@ -1,7 +1,7 @@
 #include <cmath>
 #include "object.h"
 namespace obj_util{
-    Mesh create_sphere(float radius,uint16_t detail_lvl){
+    Mesh create_sphere_tri(float radius,uint16_t detail_lvl){
         Mesh res{};
         double pi=std::numbers::pi;
 

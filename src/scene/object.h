@@ -15,6 +15,6 @@ struct Object{
     Mat4<float> transform{};
 };
 namespace obj_util{
-    Mesh create_sphere(float radius,uint16_t detail_lvl);
+    Mesh create_sphere_tri(float radius,uint16_t detail_lvl);
 };
 #endif //OBJECT_H
