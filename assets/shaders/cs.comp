@@ -35,8 +35,18 @@ struct Sphr {
     uint pad0, pad1, pad2;
 };
 struct BVH{
-
+    vec4 mindat;
+    vec4 maxdat;
 };
+uint makePrimDat(uint type,uint id) { return (type<<28)|(id&0x0FFFFFFFu); }
+uint primType(uint dat){ return ref >> 28;} /*0-tri;1-sphr;*/
+uint primId(uint dat){return ref & 0x0FFFFFFFu;}
+bool isLeaf(BVHNode n){return (floatBitsToUint(n.bmax.w) & 0x80000000u) != 0u;}
+uint lChild(BVHNode n){return floatBitsToUint(n.bmin.w);}
+uint rChild(BVHNode n){return floatBitsToUint(n.bmax.w);}
+uint leafFirst(BVHNode n){return floatBitsToUint(n.bmin.w);}
+uint leafN(BVHNode n){return floatBitsToUint(n.bmax.w)& 0x7fffffffu;}
+
 layout(std430,binding=2) readonly buffer SphrBuf {
     Sphr spheres[];
 };
@@ -45,6 +55,9 @@ layout(std430,binding=3) readonly buffer BVHBuf {
 };
 layout(std430,binding=4) readonly buffer MatBuf {
     Mat mats[];
+};
+layout(std430,binding=5) readonly buffer PrimBuf {
+    uint prims[];
 };
 bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     float epsilon=0.000001;
@@ -76,9 +89,9 @@ bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     }
     return false;
 }
-bool intersectsAABB(vec3 rayOrigin,vec3 rayVector,vec3 minv,vec3 maxv,float tMax){
-    vec3 t0=(minv-rayOrigin)*rayVector;
-    vec3 t1=(maxv-rayOrigin)*rayVector;
+bool intersectsAABB(vec3 rayOrigin,vec3 invRayVec,vec3 minv,vec3 maxv,float tMax){
+    vec3 t0=(minv-rayOrigin)*invRayVec;
+    vec3 t1=(maxv-rayOrigin)*invRayVec;
     vec3 tmin=min(t0,t1);
     vec3 tmax=max(t0,t1);
     float lo = max(max(tmin.x,tmin.y),max(tmin.z,0.0));
@@ -125,6 +138,73 @@ struct RayHit{
 RayHit trace(vec3 rayOrigin,vec3 rayVector){
     RayHit res;
     res.isValid=false;
+    vec3 invR= 1.0/rayVector;
+    uint stp=1;
+    uint stack[64];
+    stack[0]=0;
+    while(stp>0){
+        uint i=stack[stp-1];
+        --stp;
+        BVH bvh=bvh_v[i];
+        float ta;
+        if (!intersectsAABB(rayOrigin,invR,bvh.bmin.xyz,bvh.bmax.xyz,ta)){
+            continue;
+        }
+        res.t=ta;
+        bool isLeafNode=isLeaf(bvh);
+        uint datmin= floatBitsToUint(n.bmin.w);
+        uint datmax= floatBitsToUint(n.bmax.w);
+        if(!isLeafNode){
+            stack[stp+1]=datmin;
+            ++stp;
+            stack[stp+1]=datmax;
+            ++stp;
+            continue;
+        }
+        uint lN=leafN(bvh);
+        for (uint j=0;j<lN;++j){
+            uint primDat=prims[datmin+j];
+            uint type=primType(primDat);
+            uint id=primId(primDat);
+            if (type==0){
+                Tri tri=tris[id];
+                float t;
+                if(intersects(rayOrigin,rayVector,tri,t)){
+                    if (!res.isValid){
+                        res.isValid=true;
+                    }
+                    else if (res.t<t){
+                        continue;
+                    }
+                    res.t=t;
+                    res.matId=tri.matId;
+
+                    vec3 v0=tri.v0.xyz;
+                    vec3 v1=tri.v1.xyz;
+                    vec3 v2=tri.v2.xyz;
+                    res.n=normalize(cross(v1-v0,v2-v0));
+                }
+            }else if (type==1){
+                Sphr sp=spheres[id];
+                float t;
+                if (intersectsSphere(rayOrigin,rayVector,sp,t)){
+                    if (!res.isValid){
+                        res.isValid=true;
+                    }
+                    else if (res.t<t){
+                        continue;
+                    }
+                    res.t=t;
+                    res.matId=sp.matId;
+
+                    vec3 cr=sp.c_r.xyz;
+                    vec3 p = rayOrigin+t*rayVector;
+                    res.n = normalize(p-cr);
+                }
+            }
+        }
+    }
+    /* no BVH version- might be needed for testing
     for (uint i=0;i<tric;++i){
         Tri tri=tris[i];
         float t;
@@ -161,7 +241,7 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
             vec3 p = rayOrigin+t*rayVector;
             res.n = normalize(p-cr);
         }
-    }
+    }*/
     return res;
 
 }

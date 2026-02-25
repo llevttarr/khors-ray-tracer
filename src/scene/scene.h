@@ -11,8 +11,17 @@ struct RenderTri{
     uint pad0,pad1,pad2;
 };
 struct BVH{
-    Vec4<float> min;
-    Vec4<float> max;
+    Vec4<float> mindat;
+    Vec4<float> maxdat;
+};
+struct AABB{
+    Vec3<float> minv;
+    Vec3<float> maxv;
+};
+struct Prim{
+    AABB aabb;
+    Vec3<float> c;
+    uint32_t dat;
 };
 struct Mat{
     Vec4<float> rgba;
@@ -30,6 +39,18 @@ struct RenderScene{
     std::vector<BVH> bvh_v;
     std::vector<Sphr> sphr_v;
     std::vector<Mat> mat_v;
+    std::vector<uint32_t> prim_v;
+};
+namespace scene_util{
+    uint32_t get_type_id(uint32_t type, uint32_t id);
+    AABB tri_to_aabb(const RenderTri& t);
+    AABB sphr_to_aabb(const Sphr& s);
+    AABB merge_aabb(const AABB& a, const AABB& b);
+    AABB prims_vec_aabb(std::vector<Prim>& prims,size_t l,size_t r);
+    AABB c_prims_aabb(std::vector<Prim>& prims,size_t l,size_t r);
+    uint16_t max_axis(const AABB& a);
+    Vec3<float> get_c_aabb(const AABB& a);
+    uint32_t build_bvh(std::vector<Prim>& prims,size_t l,size_t r, std::vector<uint32_t>& prim_v,std::vector<BVH>& bvh_v);
 };
 class Scene{
 public:
