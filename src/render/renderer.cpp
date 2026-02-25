@@ -64,8 +64,8 @@ void Renderer::update_scene(RenderScene& render_scene){
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, prim_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.prim_v.size()*sizeof(Prim),render_scene.prim_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, prim_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.prim_v.size()*sizeof(uint32_t),render_scene.prim_v.data(),GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, prim_ssbo);
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 

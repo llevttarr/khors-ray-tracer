@@ -1,9 +1,9 @@
 #include "scene.h"
+#include <bit>
 #include <random>
 #include <chrono> 
 #include <iostream>
 #include <algorithm>
-#include <bit>
 const uint BVH_LEAF_SIZE=4;
 constexpr uint32_t IS_LEAF_FLAG=0x80000000u;
 
@@ -11,8 +11,8 @@ uint32_t scene_util::get_type_id(uint32_t type, uint32_t id) {
     return (type << 28)|(id & 0x0FFFFFFF);
 }
 AABB scene_util::tri_to_aabb(const RenderTri& t){
-    Vec3<float> mn{std::min(t.v0.x,t.v1.x,t.v2.x),std::min(t.v0.y,t.v1.y,t.v2.y),std::min(t.v0.z,t.v1.z,t.v2.z)};
-    Vec3<float> mx{std::max(t.v0.x,t.v1.x,t.v2.x),std::max(t.v0.y,t.v1.y,t.v2.y),std::max(t.v0.z,t.v1.z,t.v2.z)};
+    Vec3<float> mn{std::min({t.v0.x,t.v1.x,t.v2.x}),std::min({t.v0.y,t.v1.y,t.v2.y}),std::min({t.v0.z,t.v1.z,t.v2.z})};
+    Vec3<float> mx{std::max({t.v0.x,t.v1.x,t.v2.x}),std::max({t.v0.y,t.v1.y,t.v2.y}),std::max({t.v0.z,t.v1.z,t.v2.z})};
     return {mn,mx};
 }
 AABB scene_util::sphr_to_aabb(const Sphr& s){
@@ -38,7 +38,7 @@ AABB scene_util::prims_vec_aabb(std::vector<Prim>& prims,size_t l,size_t r){
 }
 AABB scene_util::c_prims_aabb(std::vector<Prim>& prims,size_t l,size_t r){
     AABB a{prims[l].c,prims[l].c};
-    for(size_t i=l+1;l<r;++i){
+    for(size_t i=l+1;i<r;++i){
         Vec3<float> c=prims[i].c;
         a.minv.x=std::min(a.minv.x,c.x);
         a.minv.y=std::min(a.minv.y,c.y);
@@ -65,7 +65,7 @@ uint32_t scene_util::build_bvh(std::vector<Prim>& prims,size_t l,size_t r,
     AABB p_aabb = prims_vec_aabb(prims,l,r);
     uint32_t curr_i=bvh_v.size();
     bvh_v.push_back(BVH{});
-    size_t n=l-r;
+    size_t n=r-l;
     if(n<=BVH_LEAF_SIZE){
         uint32_t first=prim_v.size();
         for (size_t i=l;i<r;++i){
@@ -74,6 +74,7 @@ uint32_t scene_util::build_bvh(std::vector<Prim>& prims,size_t l,size_t r,
         Vec4<float> mndt{p_aabb.minv.x,p_aabb.minv.y,p_aabb.minv.z,std::bit_cast<float>(first)};
         Vec4<float> mxdt{p_aabb.maxv.x,p_aabb.maxv.y,p_aabb.maxv.z,std::bit_cast<float>((uint32_t)n|IS_LEAF_FLAG)};
         BVH bvh{mndt,mxdt};
+        bvh_v[curr_i]=bvh;
         return curr_i;
     }
     AABB c_aabb=c_prims_aabb(prims,l,r);

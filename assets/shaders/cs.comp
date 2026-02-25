@@ -39,13 +39,13 @@ struct BVH{
     vec4 maxdat;
 };
 uint makePrimDat(uint type,uint id) { return (type<<28)|(id&0x0FFFFFFFu); }
-uint primType(uint dat){ return ref >> 28;} /*0-tri;1-sphr;*/
-uint primId(uint dat){return ref & 0x0FFFFFFFu;}
-bool isLeaf(BVHNode n){return (floatBitsToUint(n.bmax.w) & 0x80000000u) != 0u;}
-uint lChild(BVHNode n){return floatBitsToUint(n.bmin.w);}
-uint rChild(BVHNode n){return floatBitsToUint(n.bmax.w);}
-uint leafFirst(BVHNode n){return floatBitsToUint(n.bmin.w);}
-uint leafN(BVHNode n){return floatBitsToUint(n.bmax.w)& 0x7fffffffu;}
+uint primType(uint dat){ return dat >> 28;} /*0-tri;1-sphr;*/
+uint primId(uint dat){return dat & 0x0FFFFFFFu;}
+bool isLeaf(BVH n){return (floatBitsToUint(n.maxdat.w) & 0x80000000u) != 0u;}
+uint lChild(BVH n){return floatBitsToUint(n.mindat.w);}
+uint rChild(BVH n){return floatBitsToUint(n.maxdat.w);}
+uint leafFirst(BVH n){return floatBitsToUint(n.mindat.w);}
+uint leafN(BVH n){return floatBitsToUint(n.maxdat.w)& 0x7fffffffu;}
 
 layout(std430,binding=2) readonly buffer SphrBuf {
     Sphr spheres[];
@@ -138,6 +138,7 @@ struct RayHit{
 RayHit trace(vec3 rayOrigin,vec3 rayVector){
     RayHit res;
     res.isValid=false;
+    res.t=1e30;
     vec3 invR= 1.0/rayVector;
     uint stp=1;
     uint stack[64];
@@ -147,17 +148,21 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
         --stp;
         BVH bvh=bvh_v[i];
         float ta;
-        if (!intersectsAABB(rayOrigin,invR,bvh.bmin.xyz,bvh.bmax.xyz,ta)){
+        float tMax=1e30;
+        if (res.isValid){
+            tMax=res.t;
+        }
+        if (!intersectsAABB(rayOrigin,invR,bvh.mindat.xyz,bvh.maxdat.xyz,tMax)){
             continue;
         }
         res.t=ta;
         bool isLeafNode=isLeaf(bvh);
-        uint datmin= floatBitsToUint(n.bmin.w);
-        uint datmax= floatBitsToUint(n.bmax.w);
+        uint datmin= floatBitsToUint(bvh.mindat.w);
+        uint datmax= floatBitsToUint(bvh.maxdat.w);
         if(!isLeafNode){
-            stack[stp+1]=datmin;
+            stack[stp]=datmin;
             ++stp;
-            stack[stp+1]=datmax;
+            stack[stp]=datmax;
             ++stp;
             continue;
         }
