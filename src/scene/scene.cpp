@@ -1,12 +1,17 @@
 #include "scene.h"
 #include <bit>
-#include <random>
-#include <chrono> 
 #include <iostream>
 #include <algorithm>
 const uint BVH_LEAF_SIZE=4;
 constexpr uint32_t IS_LEAF_FLAG=0x80000000u;
 
+Vec4<float> scene_util::rand_vec(std::mt19937& engine, std::uniform_real_distribution<float>& dist){
+    float x=dist(engine);
+    float y=dist(engine);
+    float  z=dist(engine);
+    float w=dist(engine);
+    return {x,y,z,w};
+}
 uint32_t scene_util::get_type_id(uint32_t type, uint32_t id) {
     return (type << 28)|(id & 0x0FFFFFFF);
 }
@@ -137,12 +142,8 @@ RenderScene Scene::to_render_scene() const{
     res.prim_v.reserve(999);
     // std::cout<<"building bvh...";
     scene_util::build_bvh(prims,0,prims.size(),res.prim_v,res.bvh_v);
-
-    Vec4<float> amb{0.7,0.7,0.7,1.0};
-    Vec4<float> diff{1.0,1.0,1.0,1.0};
-    Vec4<float> spec{1.0,1.0,1.0,1.0};
-    Vec4<float> emis{1.0,1.0,1.0,1.0};
-    res.mat_v.push_back(Mat{amb,diff,spec,emis});
+    res.mat_v=mat_v;
+    res.light_v=light_v; 
     return res;
 }
 
@@ -165,14 +166,16 @@ uint32_t Scene::add_sphere(Sphr s){
     sphere_v.push_back(std::move(s));
     return (uint32_t)(sphere_v.size()-1);
 }
+
 void Scene::test_scene_init(){
     Mesh tri_sphere_mesh=obj_util::create_sphere_tri(3,4);
 
     uint32_t tri_sphere_id = add_mesh(std::move(tri_sphere_mesh));
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 engine(seed);
-    std::uniform_real_distribution<float> dist(-290.0, 120.0);
-
+    std::uniform_real_distribution<float> dist(-180.0, 60.0);
+    std::uniform_int_distribution<uint32_t> mat_dist(1,5);
+    
     std::vector<uint32_t> objs{};
     objs.reserve(11);
     Mat4<float> identity{};
@@ -183,33 +186,42 @@ void Scene::test_scene_init(){
     uint32_t obj;
     Sphr sp;
     sphere_v.reserve(100);
-    for (size_t i=0;i<2056;++i){
+    for (size_t i=0;i<258;++i){
         sp=Sphr{};
         sp.cx=dist(engine);
         sp.cy=dist(engine)/5.0;
         sp.cz=dist(engine);
-        sp.r=2.5;
-        sp.matid=1;
+        sp.r=mat_dist(engine);
+        sp.matid=mat_dist(engine);
         add_sphere(sp);
 
-        // r0=dist(engine);
-        // r1=1.0;
-        // r2=dist(engine);
-        // temp=identity.translate(r0,r1,r2);
-        // obj=add_object(Object{tri_sphere_id,temp});
-
-
     }
+    std::uniform_real_distribution<float> light_diff(0.3,0.95);
 
-
-    // Mat4<float> t0{};
-    // t0 = t0.translate(10.0,2.0,10.0);
-    // uint32_t obj0 = add_object(Object{sphere_id,t0});
-    // Mat4<float> t1{};
-    // t1 = t1.translate(-10.0,-2.0,-2.0);
-    // uint32_t obj1 = add_object(Object{sphere_id,t1});
-    // Mat4<float> t2{};
-    // t2 = t2.translate(2.0,2.0,-2.0);
-    // uint32_t obj2 = add_object(Object{sphere_id,t2});
-    
+    for (size_t i=0;i<2;++i){
+        Vec4<float> pos=scene_util::rand_vec(engine,dist);
+        pos.w=4;
+        Vec4<float> amb=scene_util::rand_vec(engine,light_diff);
+        Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
+        Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
+        Light l{pos,amb,diff,spec};
+        light_v.push_back(l);
+    }
+    Light l;
+    l.pos = {0.2f, 39.f,0.2f,200.f};
+    l.ambient = {0.02f,0.02f,0.02f,1.f};
+    l.diffuse = {0.7f,0.7f,0.7f,0.6f};
+    l.specular = {0.8f,0.8f,0.7f,0.7f};
+    light_v.push_back(l);
+    std::uniform_real_distribution<float> light_diff_small(0.02f,0.15f);
+    for (size_t i=0;i<5;++i){
+        Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
+        // Vec4<float> diff={amb.x+0.01f,amb.y+0.01f,amb.z+0.01f,amb.w+0.01f};
+        Vec4<float> spec=scene_util::rand_vec(engine,light_diff_small);
+        Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
+        // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};
+        Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
+        Mat m{amb,diff,spec,emis};
+        mat_v.push_back(m);
+    }
 }

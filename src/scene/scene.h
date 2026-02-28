@@ -1,6 +1,9 @@
 #ifndef SCENE_H
 #define SCENE_H
 #include <vector>
+#include <random>
+#include <chrono> 
+
 #include "object.h"
 #include "../core/math/vec4.h"
 struct RenderTri{
@@ -52,6 +55,7 @@ struct RenderScene{
     std::vector<Light> light_v;
 };
 namespace scene_util{
+    Vec4<float> rand_vec(std::mt19937& engine, std::uniform_real_distribution<float>& dist);
     uint32_t get_type_id(uint32_t type, uint32_t id);
     AABB tri_to_aabb(const RenderTri& t);
     AABB sphr_to_aabb(const Sphr& s);
@@ -74,6 +78,7 @@ private:
     std::vector<Sphr> sphere_v;
     std::vector<Mesh> mesh_v;
     std::vector<Object> obj_v;
+    std::vector<Mat> mat_v;
     std::vector<Light> light_v;
     void test_scene_init();
 };

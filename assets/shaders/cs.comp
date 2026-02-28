@@ -9,6 +9,7 @@ uniform uint tric;
 uniform uint spherec;
 uniform uint bvhc;
 uniform uint matc;
+uniform uint lightc;
 
 uniform vec3 camPos;
 uniform vec3 camForward;
@@ -27,7 +28,7 @@ struct Light{
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
-    // strenght?
+    // strength - pos.w
 };
 struct Tri{
     vec4 v0;
@@ -68,6 +69,9 @@ layout(std430,binding=4) readonly buffer MatBuf {
 };
 layout(std430,binding=5) readonly buffer PrimBuf {
     uint prims[];
+};
+layout(std430,binding=6) readonly buffer LightBuf {
+    Light light_v[];
 };
 bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     float epsilon=0.000001;
@@ -145,6 +149,81 @@ struct RayHit{
     uint matId;
     vec3 n;
 };
+bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
+    vec3 invR=1.0/rayVector;
+
+    uint stp=1;
+    uint stack[64];
+    stack[0]=0;
+    float eps=0.0001;
+    while(stp>0){
+        uint i=stack[stp-1];
+        --stp;
+        BVH bvh=bvh_v[i];
+        if (!intersectsAABB(rayOrigin,invR,bvh.mindat.xyz,bvh.maxdat.xyz,tMax)){
+            continue;
+        }
+        bool isLeafNode=isLeaf(bvh);
+        uint datmin= floatBitsToUint(bvh.mindat.w);
+        uint datmax= floatBitsToUint(bvh.maxdat.w);
+        if(!isLeafNode){
+            stack[stp]=datmin;
+            ++stp;
+            stack[stp]=datmax;
+            ++stp;
+            continue;
+        }
+        uint lN=leafN(bvh);
+        for (uint j=0;j<lN;++j){
+            uint primDat=prims[datmin+j];
+            uint type=primType(primDat);
+            uint id=primId(primDat);
+            if (type==0){
+                Tri tri=tris[id];
+                float t;
+                if(intersects(rayOrigin,rayVector,tri,t)){
+                    if (t>eps&&t<tMax){
+                        return true;
+                    }
+                }
+            }else if (type==1){
+                Sphr sp=spheres[id];
+                float t;
+                if (intersectsSphere(rayOrigin,rayVector,sp,t)){
+                    if (t>eps&&t<tMax){
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
+    Mat mat=mats[hit.matId-1];
+    vec3 col=mat.ambient.rgb;
+
+    vec3 point=rayOrigin+hit.t*rayVector;
+    vec3 v=normalize(rayOrigin-point);
+    vec3 n=hit.n;
+    if(dot(n,v)<0.0){
+        n=-n;
+    }
+    float sh=max(1.0,mat.ambient.w);
+    for (uint i=0;i<lightc;++i){
+        Light l= light_v[i];
+        vec3 ptol=normalize(l.pos.xyz-point);
+        float nDotPtol=max(0.0,dot(n,ptol));
+        vec3 diff=mat.diffuse.rgb*l.diffuse.rgb*nDotPtol;
+        vec3 ref=reflect(-ptol,n);
+        float rDotV=max(0.0,dot(ref,v));
+        float specStr =pow(rDotV,sh);
+        vec3 spec = mat.specular.rgb*l.specular.rgb*specStr;
+        vec3 amb = mat.ambient.rgb * l.ambient.rgb;
+        col += amb+diff+spec;
+    }
+    return col;
+}
 RayHit trace(vec3 rayOrigin,vec3 rayVector){
     RayHit res;
     res.isValid=false;
@@ -259,6 +338,19 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
 
 }
 
+vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
+    RayHit hit=trace(rayOrigin,rayVector);
+    if (!hit.isValid){
+        float t= ndcy/2.0;
+        float tr=max(0.2,0.4+t);
+        float tg=max(0.4,0.965+t);
+        float tb=max(0.5,1.0+t);
+        return vec3(tr,tg,tb);
+    }
+    vec3 base=phongShading(rayOrigin,rayVector,hit);
+    return base;
+}
+
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;
 
@@ -276,24 +368,15 @@ void main() {
     float fovTan=tan(0.5*camFov);
 
     rayVector=normalize(camForward+ndc.x*fovTan*camRight+ndc.y*fovTan*camUp);
-    RayHit hit=trace(rayOrigin,rayVector);
-
-    if (!hit.isValid){
-        float t= ndc.y/2.0;
-        float tr=max(0.2,0.4+t);
-        float tg=max(0.4,0.965+t);
-        float tb=max(0.5,1.0+t);
-        color=vec3(tr,tg,tb);
-    }else{
-        vec3 L=normalize(lightSource);
-        float d=dot(hit.n,L);
-        if(d<0.0){
-            d=0.05;
-        }
-        uint mati= hit.matId;
-        Mat resMat= mats[mati-1];
-        vec4 resMatRGBA=resMat.ambient;
-        color=resMatRGBA.rgb*d+vec3(0.05,0.05,0.05);
-    }
+    // RayHit hit=trace(rayOrigin,rayVector);
+    // if (!hit.isValid){
+    //     float t= ndc.y/2.0;
+    //     float tr=max(0.2,0.4+t);
+    //     float tg=max(0.4,0.965+t);
+    //     float tb=max(0.5,1.0+t);
+    //     color = vec3(tr,tg,tb);
+    // }
+    // color=phongShading(rayOrigin,rayVector,hit);
+    color = getTracingResult(rayOrigin,rayVector,ndc.y);
     imageStore(outImage, ivec2(gid), vec4(color, 1.0));
 }

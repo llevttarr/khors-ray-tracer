@@ -44,6 +44,12 @@ void Renderer::update_scene(RenderScene& render_scene){
     lightc=(uint32_t)render_scene.light_v.size();
     // primc=(uint32_t)render_scene.prim_v.size();
 
+
+    for (size_t i =0;i<lightc;++i){
+        std::cout<<"light "+std::to_string(i)<<":"<<std::endl;
+        Light l =render_scene.light_v[i];
+        std::cout<<std::to_string(l.pos.x)<<"; "<<std::to_string(l.pos.y)<<"; "<<std::to_string(l.pos.z)<<std::endl;
+    }
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, tri_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.tri_v.size()*sizeof(RenderTri),render_scene.tri_v.data(),GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tri_ssbo);
@@ -94,6 +100,7 @@ void Renderer::run(){
     comp_shader.set_uint("spherec",spherec);
     comp_shader.set_uint("bvhc",bvhc);
     comp_shader.set_uint("matc",matc);
+    comp_shader.set_uint("lightc",lightc);
 
     comp_shader.set_vec3("camPos",camera.get_pos());
     comp_shader.set_vec3("camForward",camera.get_forward());
