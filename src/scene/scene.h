@@ -14,6 +14,12 @@ struct BVH{
     Vec4<float> mindat;
     Vec4<float> maxdat;
 };
+struct Light{
+    Vec4<float> pos;
+    Vec4<float> ambient;
+    Vec4<float> diffuse;
+    Vec4<float> specular;
+};
 struct AABB{
     Vec3<float> minv;
     Vec3<float> maxv;
@@ -24,7 +30,10 @@ struct Prim{
     uint32_t dat;
 };
 struct Mat{
-    Vec4<float> rgba;
+    Vec4<float> ambient;
+    Vec4<float> diffuse;
+    Vec4<float> specular;
+    Vec4<float> emission;
 };
 struct Sphr{
     float cx;
@@ -40,6 +49,7 @@ struct RenderScene{
     std::vector<Sphr> sphr_v;
     std::vector<Mat> mat_v;
     std::vector<uint32_t> prim_v;
+    std::vector<Light> light_v;
 };
 namespace scene_util{
     uint32_t get_type_id(uint32_t type, uint32_t id);
@@ -64,6 +74,7 @@ private:
     std::vector<Sphr> sphere_v;
     std::vector<Mesh> mesh_v;
     std::vector<Object> obj_v;
+    std::vector<Light> light_v;
     void test_scene_init();
 };
 #endif // SCENE_H

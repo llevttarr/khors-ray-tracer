@@ -17,7 +17,17 @@ uniform vec3 camUp;
 uniform float camFov;
 
 struct Mat{
-    vec4 rgba;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 emission;
+};
+struct Light{
+    vec4 pos;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    // strenght?
 };
 struct Tri{
     vec4 v0;
@@ -147,7 +157,6 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
         uint i=stack[stp-1];
         --stp;
         BVH bvh=bvh_v[i];
-        float ta;
         float tMax=1e30;
         if (res.isValid){
             tMax=res.t;
@@ -155,7 +164,6 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
         if (!intersectsAABB(rayOrigin,invR,bvh.mindat.xyz,bvh.maxdat.xyz,tMax)){
             continue;
         }
-        res.t=ta;
         bool isLeafNode=isLeaf(bvh);
         uint datmin= floatBitsToUint(bvh.mindat.w);
         uint datmax= floatBitsToUint(bvh.maxdat.w);
@@ -271,16 +279,20 @@ void main() {
     RayHit hit=trace(rayOrigin,rayVector);
 
     if (!hit.isValid){
-        color=vec3(0.45,0.45,0.45);
+        float t= ndc.y/2.0;
+        float tr=max(0.2,0.4+t);
+        float tg=max(0.4,0.965+t);
+        float tb=max(0.5,1.0+t);
+        color=vec3(tr,tg,tb);
     }else{
         vec3 L=normalize(lightSource);
         float d=dot(hit.n,L);
         if(d<0.0){
-            d=0.0;
+            d=0.05;
         }
         uint mati= hit.matId;
         Mat resMat= mats[mati-1];
-        vec4 resMatRGBA=resMat.rgba;
+        vec4 resMatRGBA=resMat.ambient;
         color=resMatRGBA.rgb*d+vec3(0.05,0.05,0.05);
     }
     imageStore(outImage, ivec2(gid), vec4(color, 1.0));

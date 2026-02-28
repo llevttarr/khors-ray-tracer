@@ -28,8 +28,10 @@ private:
     GLuint bvh_ssbo = 0;
     GLuint mat_ssbo = 0;
     GLuint prim_ssbo = 0;
+    GLuint light_ssbo = 0;
     uint32_t tric = 0;
     uint32_t spherec = 0;
+    uint32_t lightc = 0;
     uint32_t framec=0;
     uint32_t bvhc=0;
     uint32_t matc=0;

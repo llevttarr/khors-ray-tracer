@@ -119,7 +119,7 @@ RenderScene Scene::to_render_scene() const{
             Vec4<float> v0=Vec4<float>::matvec_mul(t,Vec4<float>(p0.x,p0.y,p0.z,1.0));
             Vec4<float> v1=Vec4<float>::matvec_mul(t,Vec4<float>(p1.x,p1.y,p1.z,1.0));
             Vec4<float> v2=Vec4<float>::matvec_mul(t,Vec4<float>(p2.x,p2.y,p2.z,1.0));
-            RenderTri r{v0,v1,v2,1};
+            RenderTri r{v0,v1,v2,obj.matid};
             res.tri_v.push_back(r);
         }
     }
@@ -135,11 +135,14 @@ RenderScene Scene::to_render_scene() const{
     }
     res.bvh_v.reserve(999);
     res.prim_v.reserve(999);
-    std::cout<<"building bvh...";
+    // std::cout<<"building bvh...";
     scene_util::build_bvh(prims,0,prims.size(),res.prim_v,res.bvh_v);
 
-    Vec4<float> r{1.0,0.5,1.0,1.0};
-    res.mat_v.push_back(Mat{r});
+    Vec4<float> amb{0.7,0.7,0.7,1.0};
+    Vec4<float> diff{1.0,1.0,1.0,1.0};
+    Vec4<float> spec{1.0,1.0,1.0,1.0};
+    Vec4<float> emis{1.0,1.0,1.0,1.0};
+    res.mat_v.push_back(Mat{amb,diff,spec,emis});
     return res;
 }
 
@@ -168,7 +171,7 @@ void Scene::test_scene_init(){
     uint32_t tri_sphere_id = add_mesh(std::move(tri_sphere_mesh));
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 engine(seed);
-    std::uniform_real_distribution<float> dist(-60.0, 10.0);
+    std::uniform_real_distribution<float> dist(-290.0, 120.0);
 
     std::vector<uint32_t> objs{};
     objs.reserve(11);
@@ -180,12 +183,12 @@ void Scene::test_scene_init(){
     uint32_t obj;
     Sphr sp;
     sphere_v.reserve(100);
-    for (size_t i=0;i<32;++i){
+    for (size_t i=0;i<2056;++i){
         sp=Sphr{};
         sp.cx=dist(engine);
-        sp.cy=0.0;
+        sp.cy=dist(engine)/5.0;
         sp.cz=dist(engine);
-        sp.r=2.0;
+        sp.r=2.5;
         sp.matid=1;
         add_sphere(sp);
 
