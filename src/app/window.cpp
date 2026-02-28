@@ -3,12 +3,15 @@
 
 #include <glad/gl.h> 
 
-void Window::size_callback(GLFWwindow* w,double x,double y){
+void Window::size_callback(GLFWwindow* w,int nw,int nh){
     auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
     if(!state){
         throw std::runtime_error("size fail");
     }
-    //TODO
+    state->w=nw;
+    state->h=nh;
+    auto camera=state->camera;
+    camera->upd_aspect(nw,nh);
 }
 void Window::mouse_callback(GLFWwindow* w,double x,double y){
     auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
@@ -57,6 +60,7 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p)
     glfwSwapInterval(1);
     glfwSetWindowUserPointer(glfw_window, &p);
     glfwSetCursorPosCallback(glfw_window,mouse_callback);
+    glfwSetWindowSizeCallback(glfw_window,size_callback);
     
 }
 

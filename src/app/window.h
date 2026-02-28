@@ -21,7 +21,7 @@ public:
 
     GLFWwindow* get_glfw_window() {return glfw_window;}
     static void mouse_callback(GLFWwindow* w,double x,double y);
-    static void size_callback(GLFWwindow* w,double nw,double nh);
+    static void size_callback(GLFWwindow* w,int nw,int nh);
 private:
     GLFWwindow* glfw_window;
     int width;

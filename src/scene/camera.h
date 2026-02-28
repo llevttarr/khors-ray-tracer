@@ -23,6 +23,8 @@ public:
     void set_fov(float f){fov=f;}
     void set_pos(const Vec3<float>& p){pos=p;}
     void upd_aspect(int nw,int nh){w=nw;h=nh;}
+    int get_w(){return w;}
+    int get_h(){return h;}
     float get_fov() const {return fov;}
     float get_yaw() const {return yaw;}
     float get_pitch() const {return pitch;}

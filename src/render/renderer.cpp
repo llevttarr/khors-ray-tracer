@@ -80,6 +80,10 @@ void Renderer::update_scene(RenderScene& render_scene){
 
 }
 void Renderer::run(){
+    if (camera.get_w()!=w || camera.get_h()!=h){
+        resize(camera.get_w(),camera.get_h());
+    }
+
     comp_shader.use();
 
     glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -98,7 +102,7 @@ void Renderer::run(){
     comp_shader.set_float("camFov",camera.get_fov());
     std::string y=std::to_string(camera.get_yaw());
     std::string p=std::to_string(camera.get_pitch());
-    // std::cout<<"spherec: "+std::to_string(spherec)+"; matc: "+std::to_string(matc)<<std::endl;
+    // std::cout<<"w: "+std::to_string(w)+"; h: "+std::to_string(h)<<std::endl;
     const int dx=(w+15)/16;
     const int dy=(h+15)/16;
     glDispatchCompute(dx, dy, 1);
