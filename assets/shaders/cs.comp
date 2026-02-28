@@ -212,9 +212,15 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     float sh=max(1.0,mat.ambient.w);
     for (uint i=0;i<lightc;++i){
         Light l= light_v[i];
-        vec3 ptol=normalize(l.pos.xyz-point);
+
+        vec3 ptol=l.pos.xyz-point;
+        float dist=length(ptol);
+        ptol=ptol/dist;
         float nDotPtol=max(0.0,dot(n,ptol));
         vec3 diff=mat.diffuse.rgb*l.diffuse.rgb*nDotPtol;
+        if(traceAny(point,ptol,dist)){
+            continue;
+        }
         vec3 ref=reflect(-ptol,n);
         float rDotV=max(0.0,dot(ref,v));
         float specStr =pow(rDotV,sh);
