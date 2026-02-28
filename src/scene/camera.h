@@ -33,7 +33,7 @@ public:
 private:
     int w;
     int h;
-    Vec3<float> pos{-15.f, 1.f, -15.f};
+    Vec3<float> pos{0.f, 1.f,0.f};
     Vec3<float> forward{0.f, 0.f, 1.f};
     Vec3<float> right{1.f, 0.f, 0.f};
     Vec3<float> up{0.f, 1.f, 0.f};
