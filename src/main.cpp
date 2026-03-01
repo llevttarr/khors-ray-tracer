@@ -12,8 +12,9 @@ int main(int argc, char* argv[]) {
     ProgramState p{};
 
     EulerCamera camera{w,h};
+    bool using_vsync=true;
     p.camera=&camera;
-    Window window(w,h, "Ray tracer",p);
+    Window window(w,h, "Ray tracer",p,using_vsync);
     Renderer renderer(window.get_w(),window.get_h(),camera);  // resize?
     Scene scene{};
     RenderScene r=scene.to_render_scene();

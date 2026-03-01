@@ -7,6 +7,7 @@ struct ProgramState{
     int h=720;
     EulerCamera* camera=nullptr;
     bool first_mouse=true;
+    bool cursor_locked= true;
     double last_x = 0.0;
     double last_y= 0.0;
 };

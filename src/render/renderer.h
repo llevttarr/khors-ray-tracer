@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include <cstdint>
+#include <chrono>
 #include "shader.h"
 #include "comp_shader.h"
 #include "../scene/scene.h"
@@ -12,6 +13,7 @@ public:
     explicit Renderer(int width, int height,EulerCamera& camera);
     ~Renderer();
     void run();
+    void get_fps();
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
 private:
@@ -35,6 +37,10 @@ private:
     uint32_t framec=0;
     uint32_t bvhc=0;
     uint32_t matc=0;
+
+    uint32_t frame_last_sec=0;
+    std::chrono::time_point<std::chrono::steady_clock> time_prev_sec;
+
     // GLuint vbo = 0;
 };
 #endif //RENDERER_H

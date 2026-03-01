@@ -1,6 +1,6 @@
 #include "window.h"
 #include <stdexcept>
-
+#include <iostream>
 #include <glad/gl.h> 
 
 void Window::size_callback(GLFWwindow* w,int nw,int nh){
@@ -13,10 +13,36 @@ void Window::size_callback(GLFWwindow* w,int nw,int nh){
     auto camera=state->camera;
     camera->upd_aspect(nw,nh);
 }
+void Window::key_callback(GLFWwindow* w,int key,int scancode, int action, int mods){
+    auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
+    if(!state){
+        throw std::runtime_error("key fail");
+    }
+    if (key == GLFW_KEY_ESCAPE&& action == GLFW_PRESS){
+        bool cursor_locked=state->cursor_locked;
+        state->cursor_locked=!cursor_locked;
+        if (cursor_locked==true){ // now false
+            glfwSetInputMode(w,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+        }else{
+            glfwSetInputMode(w,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+        }
+    }
+}
+void Window::mouse_input_callback(GLFWwindow* w,int button, int action, int mods){
+    auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
+    if(!state){
+        throw std::runtime_error("mouse input fail");
+    }
+
+
+}
 void Window::mouse_callback(GLFWwindow* w,double x,double y){
     auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
     if(!state){
         throw std::runtime_error("mouse fail");
+    }
+    if (!state->cursor_locked){
+        return;
     }
     if(state->first_mouse){
         state->last_x=x;
@@ -36,7 +62,7 @@ void Window::mouse_callback(GLFWwindow* w,double x,double y){
     camera->set_pitch(camera->get_pitch()+dy);
     camera->upd_dir();
 }
-Window::Window(int w, int h, const std::string& title,ProgramState& p)
+Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using_vsync)
     : width(w), height(h),glfw_window(nullptr)
 {
     if (!glfwInit()){
@@ -57,10 +83,15 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p)
         glfwTerminate();
         throw std::runtime_error("glad init fail");
     }
-    glfwSwapInterval(1);
+    if (using_vsync){
+        glfwSwapInterval(1);
+    }else{
+        glfwSwapInterval(0);    
+    }
     glfwSetWindowUserPointer(glfw_window, &p);
     glfwSetCursorPosCallback(glfw_window,mouse_callback);
     glfwSetWindowSizeCallback(glfw_window,size_callback);
+    glfwSetKeyCallback(glfw_window,key_callback);
     glfwSetInputMode(glfw_window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
     
 }

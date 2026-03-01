@@ -25,6 +25,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w,h,0, GL_RGBA, GL_FLOAT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
+    time_prev_sec=std::chrono::steady_clock::now();
 }
 Renderer::~Renderer() {
     glDeleteVertexArrays(1, &vao);
@@ -126,6 +127,18 @@ void Renderer::run(){
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
+    get_fps();
+}
+void Renderer::get_fps(){
+    auto curr_time=std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff=curr_time-time_prev_sec;
+    ++frame_last_sec;
+    if (diff.count()>=1.0){
+        auto fps=frame_last_sec/diff.count();
+        std::cout<<"fps: "+std::to_string(fps)<<std::endl;
+        frame_last_sec=0;
+        time_prev_sec=curr_time;
+    }
 }
 void Renderer::resize(int nw, int nh){
     h=nh;
