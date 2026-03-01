@@ -61,6 +61,7 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p)
     glfwSetWindowUserPointer(glfw_window, &p);
     glfwSetCursorPosCallback(glfw_window,mouse_callback);
     glfwSetWindowSizeCallback(glfw_window,size_callback);
+    glfwSetInputMode(glfw_window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
     
 }
 

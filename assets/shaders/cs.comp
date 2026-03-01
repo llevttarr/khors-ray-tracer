@@ -73,6 +73,17 @@ layout(std430,binding=5) readonly buffer PrimBuf {
 layout(std430,binding=6) readonly buffer LightBuf {
     Light light_v[];
 };
+bool intersectsGround(vec3 rayOrigin,vec3 rayVector,out float res){
+    vec3 groundNormal=vec3(0.0,1.0,0.0);
+    vec3 groundPoint=vec3(0.0,-4.0,0.0);
+    float d=dot(groundNormal,rayVector);
+    float eps=0.001;
+    if (abs(d)<eps){
+        return false;
+    }
+    res=dot(groundNormal,(groundPoint-rayOrigin))/d;
+    return res>0.0;
+}
 bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     float epsilon=0.000001;
     vec3 v0=tri.v0.xyz;
@@ -197,6 +208,12 @@ bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
             }
         }
     }
+    float tg;
+    if (intersectsGround(rayOrigin,rayVector,tg)){
+        if (tg>eps){
+            return true;
+        }
+    }
     return false;
 }
 vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
@@ -301,6 +318,18 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
                 }
             }
         }
+    }
+    float tg;
+    if (intersectsGround(rayOrigin,rayVector,tg)){
+        if (!res.isValid){
+            res.isValid=true;
+        }
+        else if (res.t<tg){
+            return res;
+        }
+        res.t=tg;
+        res.matId=1;
+        res.n=vec3(0.0,1.0,0.0);
     }
     /* no BVH version- might be needed for testing
     for (uint i=0;i<tric;++i){
