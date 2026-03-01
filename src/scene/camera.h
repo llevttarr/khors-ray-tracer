@@ -3,10 +3,13 @@
 
 #include <cstdint>
 #include <cmath>
+#include <chrono>
 // #include <numbers>
 #include "../core/math/vec3.h"
 #include "../core/math/mat4.h"
 
+constexpr uint16_t MOVE_TICKS_CAP = 100;
+constexpr float SPEED_BASE = 0.5;
 class EulerCamera {
 public:
     EulerCamera(int wi,int hi);
@@ -16,7 +19,7 @@ public:
     Vec3<float> get_right() const {return right;}
     Vec3<float> get_forward() const { return forward;}
     Vec3<float> get_pos()const {return pos;}
-    void move();
+    void move(uint16_t fwd,uint16_t rght,uint16_t up);
     void upd_dir();
     void set_yaw(float y);
     void set_pitch(float p);
@@ -40,6 +43,9 @@ private:
     float yaw=0.1f;
     float pitch=0.1f;
     float fov=60.f*3.14159f/180.f;
-    float speed;
+    float speed=1.0;
+    std::chrono::time_point<std::chrono::steady_clock> time_speedup;
+    uint16_t move_ticks=0;
+    void calculate_move_ticks();
 };
 #endif //CAMERA_H

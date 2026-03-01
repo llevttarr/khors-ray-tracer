@@ -1,6 +1,7 @@
 #ifndef APP_UTIL_H
 #define APP_UTIL_H
 #include "../scene/camera.h"
+#include <vector>
 
 struct ProgramState{
     int w=1280;
@@ -10,6 +11,7 @@ struct ProgramState{
     bool cursor_locked= true;
     double last_x = 0.0;
     double last_y= 0.0;
+    std::vector<int> active_input{};
 };
 
 #endif // APP_UTIL_H

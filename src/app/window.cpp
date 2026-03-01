@@ -1,6 +1,7 @@
 #include "window.h"
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
 #include <glad/gl.h> 
 
 void Window::size_callback(GLFWwindow* w,int nw,int nh){
@@ -17,6 +18,17 @@ void Window::key_callback(GLFWwindow* w,int key,int scancode, int action, int mo
     auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
     if(!state){
         throw std::runtime_error("key fail");
+    }
+    auto& inp = state->active_input;
+    auto inp_i=std::find(inp.begin(),inp.end(),key);
+    if (action == GLFW_PRESS){
+        if (inp_i==inp.end()){
+            inp.push_back(key);
+        }
+    }else if (action==GLFW_RELEASE){
+        if (inp_i!=inp.end()){
+            inp.erase(inp_i);
+        }
     }
     if (key == GLFW_KEY_ESCAPE&& action == GLFW_PRESS){
         bool cursor_locked=state->cursor_locked;
