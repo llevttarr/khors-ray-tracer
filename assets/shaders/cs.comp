@@ -252,6 +252,7 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
     res.isValid=false;
     res.t=1e30;
     vec3 invR= 1.0/rayVector;
+    
     uint stp=1;
     uint stack[64];
     stack[0]=0;
@@ -368,6 +369,18 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
             vec3 p = rayOrigin+t*rayVector;
             res.n = normalize(p-cr);
         }
+    }
+    float tg;
+    if (intersectsGround(rayOrigin,rayVector,tg)){
+        if (!res.isValid){
+            res.isValid=true;
+        }
+        else if (res.t<tg){
+            return res;
+        }
+        res.t=tg;
+        res.matId=1;
+        res.n=vec3(0.0,1.0,0.0);
     }*/
     return res;
 

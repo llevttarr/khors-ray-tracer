@@ -187,7 +187,7 @@ void Scene::test_scene_init(){
     Sphr sp;
     sphere_v.reserve(100);
 
-    int n_spheres = 16;
+    int n_spheres = 4096;
     float eps=0.001f;
     int spheres_per_side = static_cast<int>(std::ceil(std::sqrt(n_spheres)));
 
