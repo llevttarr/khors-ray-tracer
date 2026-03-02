@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <unordered_map>
+#include <vector>
 #include "../core/math/mat3.h"
 #include "../core/math/mat4.h"
 #include "../core/math/vec4.h"
@@ -28,6 +29,7 @@ private:
 
 namespace glsl_util{
     std::string read_file(const std::string& filename);
+    void out_csv(const std::string& firstline,const std::string& filename,const std::vector<std::string>& outp);
     GLuint create_shader(GLenum t,const std::string& s);
     GLuint link_shaders(GLuint vert, GLuint frag);
     GLuint link_comp(GLuint comp);

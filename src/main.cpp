@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     ProgramState p{};
 
     EulerCamera camera{w,h};
-    bool using_vsync=true;
+    bool using_vsync=false;
     p.camera=&camera;
     Window window(w,h, "KHORS",p,using_vsync);
     Renderer renderer(window.get_w(),window.get_h(),camera);  // resize?

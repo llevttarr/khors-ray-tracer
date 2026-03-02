@@ -7,6 +7,7 @@
 #include "comp_shader.h"
 #include "../scene/scene.h"
 #include "../scene/camera.h"
+#include "../util/benchmark.h"
 
 class Renderer {
 public:
@@ -22,6 +23,7 @@ private:
     Shader shader;
     ComputeShader comp_shader;
     EulerCamera& camera;
+    Benchmark benchmark;
 
     GLuint vao = 0;
     GLuint cbuff = 0;

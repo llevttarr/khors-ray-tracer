@@ -135,7 +135,9 @@ void Renderer::get_fps(){
     ++frame_last_sec;
     if (diff.count()>=1.0){
         auto fps=frame_last_sec/diff.count();
-        std::cout<<"fps: "+std::to_string(fps)<<std::endl;
+        std::string f=std::to_string(fps);
+        benchmark.update(f);
+        std::cout<<"fps: "+f<<std::endl;
         frame_last_sec=0;
         time_prev_sec=curr_time;
     }

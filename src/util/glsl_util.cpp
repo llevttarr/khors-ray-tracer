@@ -20,6 +20,22 @@ GLint GLSLUniformCache::get_location(const std::string& name) {
     }
 
 namespace glsl_util{
+    void out_csv(const std::string& firstline,const std::string& filename, const std::vector<std::string>& outp){
+        std::ofstream file(filename);
+        if(!file.is_open()){
+            throw GLSLUtilException("invalid filepath");
+            return;
+        }
+        file<<firstline<<std::endl;
+        for(size_t i=0;i<outp.size();++i){
+            file<<i;
+            file<<",";
+            file<<outp[i];
+            file<<std::endl;
+        }
+        file.close();
+        return;
+    }
 
     std::string read_file(const std::string& filename){
         std::ifstream instr(filename);
