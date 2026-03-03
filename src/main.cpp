@@ -20,11 +20,11 @@ uint16_t get_status_movement(ProgramState& p, int f, int b){
 
 int main(int argc, char* argv[]) {
     int h=720;
-    int w=1280;
+    int w=1020;
     ProgramState p{};
 
     EulerCamera camera{w,h};
-    bool using_vsync=false;
+    bool using_vsync=true;
     p.camera=&camera;
     Window window(w,h, "KHORS",p,using_vsync);
     Renderer renderer(window.get_w(),window.get_h(),camera);  // resize?

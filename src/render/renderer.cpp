@@ -2,6 +2,9 @@
 #include <glad/gl.h>
 #include <iostream>
 #include <string>
+
+constexpr int LOCAL_SIZE_X = 16;
+constexpr int LOCAL_SIZE_Y = 4;
 Renderer::Renderer(int width, int height,EulerCamera& cam)
 
   : w(width), h(height),camera(cam),
@@ -111,8 +114,8 @@ void Renderer::run(){
     std::string y=std::to_string(camera.get_yaw());
     std::string p=std::to_string(camera.get_pitch());
     // std::cout<<"w: "+std::to_string(w)+"; h: "+std::to_string(h)<<std::endl;
-    const int dx=(w+15)/16;
-    const int dy=(h+15)/16;
+    const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
+    const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
     glDispatchCompute(dx, dy, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     glViewport(0, 0, w, h);

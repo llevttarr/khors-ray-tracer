@@ -173,7 +173,7 @@ void Scene::test_scene_init(){
     uint32_t tri_sphere_id = add_mesh(std::move(tri_sphere_mesh));
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::mt19937 engine(seed);
-    std::uniform_real_distribution<float> dist(-50.0, 7.0);
+    std::uniform_real_distribution<float> dist(-50.0, 50.0);
     std::uniform_int_distribution<uint32_t> mat_dist(2,5);
     
     std::vector<uint32_t> objs{};
@@ -184,10 +184,18 @@ void Scene::test_scene_init(){
     float r1;
     float r2;
     uint32_t obj;
+    // for (size_t i=0;i<30;++i){
+    //     r0=dist(engine);
+    //     r1=6.0+dist(engine)/10.0;
+    //     r2=dist(engine);
+    //     temp=identity.translate(r0,r1,r2);
+    //     uint32_t matid=mat_dist(engine);
+    //     obj=add_object(Object{tri_sphere_id,temp,matid});
+    // }
     Sphr sp;
     sphere_v.reserve(100);
 
-    int n_spheres = 4096;
+    int n_spheres = 8192;
     float eps=0.001f;
     int spheres_per_side = static_cast<int>(std::ceil(std::sqrt(n_spheres)));
 
@@ -206,12 +214,12 @@ void Scene::test_scene_init(){
         }
     }
 
-    // for (size_t i=0;i<32;++i){
+    // for (size_t i=0;i<128;++i){
     //     sp=Sphr{};
-    //     sp.cx=dist(engine);
-    //     sp.cy=dist(engine)/5.0;
-    //     sp.cz=dist(engine);
-    //     sp.r=2.5;
+    //     sp.cx=dist(engine)*2.0;
+    //     sp.cy=8.0-dist(engine)/4.0;
+    //     sp.cz=dist(engine)*2.0;
+    //     sp.r=3.5;
     //     sp.matid=mat_dist(engine);
     //     add_sphere(sp);
 
@@ -228,7 +236,7 @@ void Scene::test_scene_init(){
     //     light_v.push_back(l);
     // }
     Light l;
-    l.pos = {0.2f, 0.f,0.2f,200.f};
+    l.pos = {0.2f, 60.f,0.2f,200.f};
     l.ambient = {0.02f,0.02f,0.02f,1.f};
     l.diffuse = {0.7f,0.7f,0.7f,0.6f};
     l.specular = {0.8f,0.8f,0.7f,0.7f};
