@@ -6,6 +6,8 @@
 
 #include "object.h"
 #include "../core/math/vec4.h"
+#include "../core/math/vec3.h"
+#include "../core/math/vec2.h"
 struct RenderTri{
     Vec4<float> v0;
     Vec4<float> v1;
@@ -37,6 +39,9 @@ struct Mat{
     Vec4<float> diffuse;
     Vec4<float> specular;
     Vec4<float> emission;
+    Vec3<int> texture;
+    Vec2<float> uv_scale;
+    Vec2<float> uv_offset;
 };
 struct Sphr{
     float cx;

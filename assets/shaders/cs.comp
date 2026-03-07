@@ -22,6 +22,9 @@ struct Mat{
     vec4 diffuse;
     vec4 specular;
     vec4 emission;
+    ivec3 tex; // x-base,y-normal,z-specular
+    vec2 uvScale;
+    vec2 uvOffset;
 };
 struct Light{
     vec4 pos;
@@ -332,56 +335,6 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
         res.matId=1;
         res.n=vec3(0.0,1.0,0.0);
     }
-    /* no BVH version- might be needed for testing
-    for (uint i=0;i<tric;++i){
-        Tri tri=tris[i];
-        float t;
-        if(intersects(rayOrigin,rayVector,tri,t)){
-            if (!res.isValid){
-                res.isValid=true;
-            }
-            else if (res.t<t){
-                continue;
-            }
-            res.t=t;
-            res.matId=tri.matId;
-
-            vec3 v0=tri.v0.xyz;
-            vec3 v1=tri.v1.xyz;
-            vec3 v2=tri.v2.xyz;
-            res.n=normalize(cross(v1-v0,v2-v0));
-        }
-    }
-    for (uint i=0;i<spherec;++i){
-        Sphr sp=spheres[i];
-        float t;
-        if (intersectsSphere(rayOrigin,rayVector,sp,t)){
-            if (!res.isValid){
-                res.isValid=true;
-            }
-            else if (res.t<t){
-                continue;
-            }
-            res.t=t;
-            res.matId=sp.matId;
-
-            vec3 cr=sp.c_r.xyz;
-            vec3 p = rayOrigin+t*rayVector;
-            res.n = normalize(p-cr);
-        }
-    }
-    float tg;
-    if (intersectsGround(rayOrigin,rayVector,tg)){
-        if (!res.isValid){
-            res.isValid=true;
-        }
-        else if (res.t<tg){
-            return res;
-        }
-        res.t=tg;
-        res.matId=1;
-        res.n=vec3(0.0,1.0,0.0);
-    }*/
     return res;
 
 }
@@ -416,15 +369,6 @@ void main() {
     float fovTan=tan(0.5*camFov);
 
     rayVector=normalize(camForward+ndc.x*fovTan*camRight+ndc.y*fovTan*camUp);
-    // RayHit hit=trace(rayOrigin,rayVector);
-    // if (!hit.isValid){
-    //     float t= ndc.y/2.0;
-    //     float tr=max(0.2,0.4+t);
-    //     float tg=max(0.4,0.965+t);
-    //     float tb=max(0.5,1.0+t);
-    //     color = vec3(tr,tg,tb);
-    // }
-    // color=phongShading(rayOrigin,rayVector,hit);
     color = getTracingResult(rayOrigin,rayVector,ndc.y);
     imageStore(outImage, ivec2(gid), vec4(color, 1.0));
 }
