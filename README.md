@@ -35,5 +35,5 @@ make
 ```
 Run the ray-tracer program
 ```
-./RayTracer
+./KHORS_RayTracer
 ```
