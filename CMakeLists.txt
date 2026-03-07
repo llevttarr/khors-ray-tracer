@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(RayTracer VERSION 0.0.1 LANGUAGES C CXX)
+project(KHORS_RayTracer VERSION 0.0.1 LANGUAGES C CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -22,22 +22,25 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(glfw)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
-add_executable(RayTracer ${SOURCES}
+add_executable(KHORS_RayTracer ${SOURCES}
 )
-add_custom_command(TARGET RayTracer POST_BUILD
+add_custom_command(TARGET KHORS_RayTracer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/assets
-            $<TARGET_FILE_DIR:RayTracer>/assets
+            $<TARGET_FILE_DIR:KHORS_RayTracer>/assets
 )
 
 add_library(glad external/glad/src/gl.c)
+add_library(stb_image STATIC external/stb/stb_img_impl.cpp)
 
 target_include_directories(glad PUBLIC external/glad/include)
+target_include_directories(stb_image PUBLIC external/stb/include)
 # find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
-target_link_libraries(RayTracer
+target_link_libraries(KHORS_RayTracer
     PRIVATE
         glfw
         OpenGL::GL
         glad
+        stb_image
 )

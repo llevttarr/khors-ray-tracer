@@ -1,7 +1,12 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <stdexcept>
+#include "stb_image.h"
 
+struct ImageUtilException: public std::runtime_error{
+    using std::runtime_error::runtime_error;
+};
 struct Image{
     int w;
     int h;
@@ -10,4 +15,6 @@ struct Image{
 };
 namespace image_util{
     Image load_image(const std::string& filepath);
+    Image load_image_stb(const std::string& filepath);
+    Image load_image_svg(const std::string& filepath);
 }

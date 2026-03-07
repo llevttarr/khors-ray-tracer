@@ -1,4 +1,5 @@
 #include "window.h"
+#include "../util/image_util.h"
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
@@ -105,9 +106,22 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using
     glfwSetWindowSizeCallback(glfw_window,size_callback);
     glfwSetKeyCallback(glfw_window,key_callback);
     glfwSetInputMode(glfw_window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+    glfwSetErrorCallback(err_callback);
     
+    load_icon();
 }
-
+void Window::err_callback(int code,const char* desc){
+    std::cout<<"glfw error: "<<code<<": "<<desc<<std::endl;
+}
+void Window::load_icon(){
+    std::string iconpath="assets/img/logo_khors.png";
+    Image icon=image_util::load_image(iconpath);
+    GLFWimage img;
+    img.pixels=icon.data.data();
+    img.height=icon.h;
+    img.width=icon.w;
+    glfwSetWindowIcon(glfw_window,1,&img);
+}
 Window::~Window() {
     glfwDestroyWindow(glfw_window);
     glfwTerminate();
