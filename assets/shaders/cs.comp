@@ -25,10 +25,8 @@ struct Mat{
     vec4 diffuse;
     vec4 specular;
     vec4 emission;
-    ivec3 tex; // x-base,y-normal,z-specular
-    vec2 uvScale;
-    vec2 uvOffset;
-    int flags;
+    vec4 uv;
+    ivec4 tex;
 };
 struct Light{
     vec4 pos;
@@ -242,9 +240,9 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     Mat mat=mats[hit.matId-1];
     vec3 col=mat.ambient.rgb;
 
-    vec2 texUV=hit.uv *mat.uvScale + mat.uvOffset;
+    vec2 texUV=hit.uv *mat.uv.xy + mat.uv.zw;
     vec3 base=mat.diffuse.rgb;
-    if (hit.matId==1 || mat.flags==0){
+    if (hit.matId==1){
         // skip textures 
     }else{
         base=texture(baseTexArr,vec3(texUV, mat.tex.x)).rgb;
@@ -265,6 +263,7 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
         ptol=ptol/dist;
         float nDotPtol=max(0.0,dot(n,ptol));
         vec3 diff=base*l.diffuse.rgb*nDotPtol;
+        // vec3 diff=base;
         if(traceAny(point,ptol,dist)){
             continue;
         }

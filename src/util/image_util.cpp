@@ -17,10 +17,10 @@ Image image_util::load_image(const std::string& filepath, int flipflag){
 Image image_util::load_image_stb(const std::string& filepath, int flipflag){
     int width;
     int height;
-    int chan;
-    stbi_set_flip_vertically_on_load(flipflag);
+    int chan=4;
+    // stbi_set_flip_vertically_on_load(flipflag);
     const char* filename=filepath.c_str();
-    unsigned char* imgdat = stbi_load(filename,&width,&height,&chan,0);
+    unsigned char* imgdat = stbi_load(filename,&width,&height,&chan,STBI_rgb_alpha);
     if (imgdat == nullptr) {
         throw ImageUtilException("Invalid filepath");
     }

@@ -43,10 +43,8 @@ struct Mat{
     Vec4<float> diffuse;
     Vec4<float> specular;
     Vec4<float> emission;
-    Vec3<int32_t> texture;
-    Vec2<float> uv_scale;
-    Vec2<float> uv_offset;
-    int32_t flags;
+    Vec4<float> uv; //x y = scale, z w = offset
+    Vec4<int32_t> tex;
 };
 struct Sphr{
     float cx;

@@ -255,6 +255,9 @@ void Scene::test_scene_init(){
     std::string base_path="assets/textures/test1_base.png";
     std::string normal_path="assets/textures/test1_normal.png";
     std::string specular_path="assets/textures/test1_specular.png";
+    int basei=texman.load_base(base_path);
+    int normali=texman.load_normal(normal_path);
+    int speculari=texman.load_specular(specular_path);
     for (size_t i=0;i<5;++i){
         Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
         // Vec4<float> diff={amb.x+0.01f,amb.y+0.01f,amb.z+0.01f,amb.w+0.01f};
@@ -264,13 +267,9 @@ void Scene::test_scene_init(){
         // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};
         Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
         
-        int basei=texman.load_base(base_path);
-        int normali=texman.load_normal(normal_path);
-        int speculari=texman.load_specular(specular_path);
-        Vec3<int32_t> tex={basei,normali,speculari};
-        Vec2<float> uvsc={1.0,1.0};
-        Vec2<float> uvoffs={1.0,1.0};
-        Mat m{amb,diff,spec,emis,tex,uvsc,uvoffs,1};
+        Vec4<int32_t> tex={basei,normali,speculari,1};
+        Vec4<float> uv={1.0,1.0,1.0,1.0};
+        Mat m{amb,diff,spec,emis,uv,tex};
         mat_v.push_back(m);
     }
     tex_manager=texman;
