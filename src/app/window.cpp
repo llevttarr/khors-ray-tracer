@@ -115,7 +115,7 @@ void Window::err_callback(int code,const char* desc){
 }
 void Window::load_icon(){
     std::string iconpath="assets/img/logo_khors.png";
-    Image icon=image_util::load_image(iconpath);
+    Image icon=image_util::load_image(iconpath,0);
     GLFWimage img;
     img.pixels=icon.data.data();
     img.height=icon.h;

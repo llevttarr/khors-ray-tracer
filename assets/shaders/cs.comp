@@ -2,6 +2,9 @@
 layout(local_size_x = 16,local_size_y = 4) in;
 
 layout(rgba32f,binding = 0) uniform image2D outImage;
+layout(binding = 1) uniform sampler2DArray baseTexArr;
+layout(binding =2) uniform sampler2DArray normalTexArr;
+layout(binding =3) uniform sampler2DArray specularTexArr;
 
 uniform uint width;
 uniform uint height;
@@ -25,6 +28,7 @@ struct Mat{
     ivec3 tex; // x-base,y-normal,z-specular
     vec2 uvScale;
     vec2 uvOffset;
+    int flags;
 };
 struct Light{
     vec4 pos;
@@ -37,8 +41,11 @@ struct Tri{
     vec4 v0;
     vec4 v1;
     vec4 v2;
+    vec2 uv0;
+    vec2 uv1;
+    vec2 uv2;
     uint matId;
-    uint pad0,pad1,pad2;
+    uint pad0;
 };
 layout(std430,binding=1) readonly buffer TriBuf {
     Tri tris[];
@@ -87,7 +94,7 @@ bool intersectsGround(vec3 rayOrigin,vec3 rayVector,out float res){
     res=dot(groundNormal,(groundPoint-rayOrigin))/d;
     return res>0.0;
 }
-bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
+bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res, out vec2 uv,out vec3 hitPos){
     float epsilon=0.000001;
     vec3 v0=tri.v0.xyz;
     vec3 v1=tri.v1.xyz;
@@ -113,6 +120,9 @@ bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res){
     }
     res=invDet*dot(edge1,sCrossE0);
     if(res>epsilon){
+        hitPos=rayOrigin+res*rayVector;
+        float w = 1.0-u-v;
+        uv=w*tri.uv0+u*tri.uv1+v*tri.uv2;
         return true;
     }
     return false;
@@ -126,7 +136,7 @@ bool intersectsAABB(vec3 rayOrigin,vec3 invRayVec,vec3 minv,vec3 maxv,float tMax
     float hi = min(min(tmax.x,tmax.y),min(tmax.z,tMax));
     return hi >= lo;
 }
-bool intersectsSphere(vec3 rayOrigin,vec3 rayVector,Sphr sphere,out float res){
+bool intersectsSphere(vec3 rayOrigin,vec3 rayVector,Sphr sphere,out float res,out vec2 uv,out vec3 hitPos){
     float epsilon=0.000001;
     vec3 cv=sphere.c_r.xyz;
     float r=sphere.c_r.w;
@@ -155,6 +165,11 @@ bool intersectsSphere(vec3 rayOrigin,vec3 rayVector,Sphr sphere,out float res){
         return false;
     }
     res=t;
+    hitPos=rayOrigin+t*rayVector;
+    vec3 p = normalize(hitPos-sphere.c_r.xyz);
+    float u = 0.5+atan(p.z, p.x)/(2.0*3.14159);
+    float v = 0.5-asin(p.y)/3.14159;
+    uv=vec2(u,v);
     return true;
 }
 struct RayHit{
@@ -162,6 +177,8 @@ struct RayHit{
     float t;
     uint matId;
     vec3 n;
+    vec2 uv;
+    vec3 hitPos;
 };
 bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
     vec3 invR=1.0/rayVector;
@@ -192,10 +209,12 @@ bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
             uint primDat=prims[datmin+j];
             uint type=primType(primDat);
             uint id=primId(primDat);
+            vec3 hitPos;
+            vec2 uv;
             if (type==0){
                 Tri tri=tris[id];
                 float t;
-                if(intersects(rayOrigin,rayVector,tri,t)){
+                if(intersects(rayOrigin,rayVector,tri,t,uv,hitPos)){
                     if (t>eps&&t<tMax){
                         return true;
                     }
@@ -203,7 +222,7 @@ bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
             }else if (type==1){
                 Sphr sp=spheres[id];
                 float t;
-                if (intersectsSphere(rayOrigin,rayVector,sp,t)){
+                if (intersectsSphere(rayOrigin,rayVector,sp,t,uv,hitPos)){
                     if (t>eps&&t<tMax){
                         return true;
                     }
@@ -223,7 +242,15 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     Mat mat=mats[hit.matId-1];
     vec3 col=mat.ambient.rgb;
 
-    vec3 point=rayOrigin+hit.t*rayVector;
+    vec2 texUV=hit.uv *mat.uvScale + mat.uvOffset;
+    vec3 base=mat.diffuse.rgb;
+    if (hit.matId==1 || mat.flags==0){
+        // skip textures 
+    }else{
+        base=texture(baseTexArr,vec3(texUV, mat.tex.x)).rgb;
+    }
+
+    vec3 point=hit.hitPos;
     vec3 v=normalize(rayOrigin-point);
     vec3 n=hit.n;
     if(dot(n,v)<0.0){
@@ -237,7 +264,7 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
         float dist=length(ptol);
         ptol=ptol/dist;
         float nDotPtol=max(0.0,dot(n,ptol));
-        vec3 diff=mat.diffuse.rgb*l.diffuse.rgb*nDotPtol;
+        vec3 diff=base*l.diffuse.rgb*nDotPtol;
         if(traceAny(point,ptol,dist)){
             continue;
         }
@@ -285,10 +312,12 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
             uint primDat=prims[datmin+j];
             uint type=primType(primDat);
             uint id=primId(primDat);
+            vec2 uv;
+            vec3 hitPos;
             if (type==0){
                 Tri tri=tris[id];
                 float t;
-                if(intersects(rayOrigin,rayVector,tri,t)){
+                if(intersects(rayOrigin,rayVector,tri,t,uv,hitPos)){
                     if (!res.isValid){
                         res.isValid=true;
                     }
@@ -297,6 +326,8 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
                     }
                     res.t=t;
                     res.matId=tri.matId;
+                    res.hitPos=hitPos;
+                    res.uv=uv;
 
                     vec3 v0=tri.v0.xyz;
                     vec3 v1=tri.v1.xyz;
@@ -306,7 +337,7 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
             }else if (type==1){
                 Sphr sp=spheres[id];
                 float t;
-                if (intersectsSphere(rayOrigin,rayVector,sp,t)){
+                if (intersectsSphere(rayOrigin,rayVector,sp,t,uv,hitPos)){
                     if (!res.isValid){
                         res.isValid=true;
                     }
@@ -315,6 +346,8 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
                     }
                     res.t=t;
                     res.matId=sp.matId;
+                    res.hitPos=hitPos;
+                    res.uv=uv;
 
                     vec3 cr=sp.c_r.xyz;
                     vec3 p = rayOrigin+t*rayVector;
@@ -334,6 +367,8 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
         res.t=tg;
         res.matId=1;
         res.n=vec3(0.0,1.0,0.0);
+        res.hitPos = rayOrigin+tg*rayVector;
+        res.uv = res.hitPos.xz*0.25;
     }
     return res;
 

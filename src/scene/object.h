@@ -7,12 +7,14 @@
 #include <stdexcept>
 #include "../core/math/mat4.h"
 #include "../core/math/vec3.h"
+#include "../core/math/vec2.h"
 
 struct MeshLoadException: public std::runtime_error{
     using std::runtime_error::runtime_error;
 };
 struct Mesh{
     std::vector<Vec3<float>> pos;
+    std::vector<Vec2<float>> uv;
     std::vector<uint32_t> ind;
 };
 struct Object{

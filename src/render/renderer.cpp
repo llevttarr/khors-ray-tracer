@@ -46,6 +46,7 @@ void Renderer::update_scene(RenderScene& render_scene){
     bvhc=(uint32_t)render_scene.bvh_v.size();
     matc=(uint32_t)render_scene.mat_v.size();
     lightc=(uint32_t)render_scene.light_v.size();
+    tex_manager=render_scene.tex_manager;
     // primc=(uint32_t)render_scene.prim_v.size();
 
 
@@ -88,6 +89,30 @@ void Renderer::update_scene(RenderScene& render_scene){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
+    base_tex_arr= create_texture_arr(tex_manager.get_base());
+    normal_tex_arr =create_texture_arr(tex_manager.get_normal());
+    specular_tex_arr = create_texture_arr(tex_manager.get_specular());
+}
+GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
+    int w=img_v.at(0).w;
+    int h=img_v.at(0).h;
+    int layers=img_v.size();
+    GLuint tex=0;
+    glGenTextures(1,&tex);
+    glBindTexture(GL_TEXTURE_2D_ARRAY,tex);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S,GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T,GL_REPEAT);
+
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8,w,h,layers);
+
+    for (size_t i=0; i<layers;++i) {
+        const Image& img = img_v[i];
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY,0,0,0,i,w,h,1,GL_RGBA,GL_UNSIGNED_BYTE,img.data.data());
+    }
+    glBindTexture(GL_TEXTURE_2D_ARRAY,0);
+    return tex;
 }
 void Renderer::run(){
     if (camera.get_w()!=w || camera.get_h()!=h){
@@ -114,6 +139,15 @@ void Renderer::run(){
     std::string y=std::to_string(camera.get_yaw());
     std::string p=std::to_string(camera.get_pitch());
     // std::cout<<"w: "+std::to_string(w)+"; h: "+std::to_string(h)<<std::endl;
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D_ARRAY,base_tex_arr);
+    comp_shader.set_int("baseTexArr",1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D_ARRAY,normal_tex_arr);
+    comp_shader.set_int("normalTexArr", 2);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, specular_tex_arr);
+    comp_shader.set_int("specularTexArr", 3);
     const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
     const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
     glDispatchCompute(dx, dy, 1);

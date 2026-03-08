@@ -124,7 +124,10 @@ RenderScene Scene::to_render_scene() const{
             Vec4<float> v0=Vec4<float>::matvec_mul(t,Vec4<float>(p0.x,p0.y,p0.z,1.0));
             Vec4<float> v1=Vec4<float>::matvec_mul(t,Vec4<float>(p1.x,p1.y,p1.z,1.0));
             Vec4<float> v2=Vec4<float>::matvec_mul(t,Vec4<float>(p2.x,p2.y,p2.z,1.0));
-            RenderTri r{v0,v1,v2,obj.matid};
+            Vec2<float> uv0=mesh.uv[i0];
+            Vec2<float> uv1=mesh.uv[i1];
+            Vec2<float> uv2=mesh.uv[i2];
+            RenderTri r{v0,v1,v2,uv0,uv1,uv2,obj.matid};
             res.tri_v.push_back(r);
         }
     }
@@ -143,7 +146,8 @@ RenderScene Scene::to_render_scene() const{
     // std::cout<<"building bvh...";
     scene_util::build_bvh(prims,0,prims.size(),res.prim_v,res.bvh_v);
     res.mat_v=mat_v;
-    res.light_v=light_v; 
+    res.light_v=light_v;
+    res.tex_manager=tex_manager;
     return res;
 }
 
@@ -241,11 +245,16 @@ void Scene::test_scene_init(){
     l.diffuse = {0.7f,0.7f,0.7f,0.6f};
     l.specular = {0.8f,0.8f,0.7f,0.7f};
     light_v.push_back(l);
+    TextureManager texman;
     std::uniform_real_distribution<float> light_diff_small(0.02f,0.15f);
     Vec4<float> gamb=Vec4<float>{0.4f,0.6f,0.6f,0.1f};
     Vec4<float> gdiff=Vec4<float>{0.9f,0.9f,0.9f,0.9f};
     Vec4<float> gemis{0.0f,0.0f,0.0f,0.0f};
     Mat mg{gamb,gdiff,gdiff,gemis};
+
+    std::string base_path="assets/textures/test1_base.png";
+    std::string normal_path="assets/textures/test1_normal.png";
+    std::string specular_path="assets/textures/test1_specular.png";
     for (size_t i=0;i<5;++i){
         Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
         // Vec4<float> diff={amb.x+0.01f,amb.y+0.01f,amb.z+0.01f,amb.w+0.01f};
@@ -254,7 +263,15 @@ void Scene::test_scene_init(){
         // Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
         // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};
         Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
-        Mat m{amb,diff,spec,emis};
+        
+        int basei=texman.load_base(base_path);
+        int normali=texman.load_normal(normal_path);
+        int speculari=texman.load_specular(specular_path);
+        Vec3<int32_t> tex={basei,normali,speculari};
+        Vec2<float> uvsc={1.0,1.0};
+        Vec2<float> uvoffs={1.0,1.0};
+        Mat m{amb,diff,spec,emis,tex,uvsc,uvoffs,1};
         mat_v.push_back(m);
     }
+    tex_manager=texman;
 }

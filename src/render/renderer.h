@@ -7,6 +7,7 @@
 #include "comp_shader.h"
 #include "../scene/scene.h"
 #include "../scene/camera.h"
+#include "../scene/textures.h"
 #include "../util/benchmark.h"
 
 class Renderer {
@@ -17,6 +18,7 @@ public:
     void get_fps();
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
+    GLuint create_texture_arr(const std::vector<Image>& img_v);
 private:
     int w;
     int h;
@@ -24,6 +26,7 @@ private:
     ComputeShader comp_shader;
     EulerCamera& camera;
     Benchmark benchmark;
+    TextureManager tex_manager;
 
     GLuint vao = 0;
     GLuint cbuff = 0;
@@ -33,12 +36,17 @@ private:
     GLuint mat_ssbo = 0;
     GLuint prim_ssbo = 0;
     GLuint light_ssbo = 0;
+    GLuint base_tex_arr=0;
+    GLuint normal_tex_arr=0;
+    GLuint specular_tex_arr=0;
+    
     uint32_t tric = 0;
     uint32_t spherec = 0;
     uint32_t lightc = 0;
     uint32_t framec=0;
     uint32_t bvhc=0;
     uint32_t matc=0;
+
 
     uint32_t frame_last_sec=0;
     std::chrono::time_point<std::chrono::steady_clock> time_prev_sec;

@@ -5,6 +5,7 @@
 #include <chrono> 
 
 #include "object.h"
+#include "textures.h"
 #include "../core/math/vec4.h"
 #include "../core/math/vec3.h"
 #include "../core/math/vec2.h"
@@ -12,8 +13,11 @@ struct RenderTri{
     Vec4<float> v0;
     Vec4<float> v1;
     Vec4<float> v2;
+    Vec2<float> uv0;
+    Vec2<float> uv1;
+    Vec2<float> uv2;
     uint matid;
-    uint pad0,pad1,pad2;
+    uint pad0;
 };
 struct BVH{
     Vec4<float> mindat;
@@ -39,9 +43,10 @@ struct Mat{
     Vec4<float> diffuse;
     Vec4<float> specular;
     Vec4<float> emission;
-    Vec3<int> texture;
+    Vec3<int32_t> texture;
     Vec2<float> uv_scale;
     Vec2<float> uv_offset;
+    int32_t flags;
 };
 struct Sphr{
     float cx;
@@ -58,6 +63,7 @@ struct RenderScene{
     std::vector<Mat> mat_v;
     std::vector<uint32_t> prim_v;
     std::vector<Light> light_v;
+    TextureManager tex_manager; 
 };
 namespace scene_util{
     Vec4<float> rand_vec(std::mt19937& engine, std::uniform_real_distribution<float>& dist);
@@ -86,5 +92,6 @@ private:
     std::vector<Mat> mat_v;
     std::vector<Light> light_v;
     void test_scene_init();
+    TextureManager tex_manager;
 };
 #endif // SCENE_H
