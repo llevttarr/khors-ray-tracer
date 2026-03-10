@@ -248,7 +248,7 @@ vec3 normalMapping(vec3 normMap,mat3 TBN){
 mat3 getTBNSphere(vec3 n){
     vec3 anyv = abs(n.x)>0.9?vec3(0.0,1.0,0.0):vec3(1.0,0.0,0.0);
     vec3 t=normalize(cross(anyv,n));
-    vec3 b = normalize(dot(t,n));
+    vec3 b = normalize(cross(t,n));
     return mat3(t,b,n);
 }
 vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
@@ -284,6 +284,8 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     if (hit.matId!=1){
         n=normalMapping(normMap,tbn);
     }
+    float hemi = 0.5+0.5*n.y;
+    col*=hemi;
     float sh=max(1.0,mat.ambient.w);
     for (uint i=0;i<lightc;++i){
         Light l= light_v[i];
@@ -301,7 +303,11 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
         float rDotV=max(0.0,dot(ref,v));
         float specStr =pow(rDotV,sh);
         vec3 spec = mat.specular.rgb*l.specular.rgb*specStr;
-        vec3 amb = mat.ambient.rgb * l.ambient.rgb;
+        if (hit.matId!=1){
+            spec*=specMap;
+        }
+        vec3 amb = mat.ambient.rgb * l.ambient.rgb*hemi;
+
         col += amb+diff+spec;
     }
     return col;

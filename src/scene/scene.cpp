@@ -282,7 +282,7 @@ void Scene::test_scene_init(){
         Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
         
         Vec4<int32_t> tex={basei,normali,speculari,1};
-        Vec4<float> uv={1.0,1.0,1.0,1.0};
+        Vec4<float> uv={1.0,1.0,0.0,0.0};
         Mat m{amb,diff,spec,emis,uv,tex};
         mat_v.push_back(m);
     }
