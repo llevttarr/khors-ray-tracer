@@ -39,6 +39,9 @@ struct Tri{
     vec4 v0;
     vec4 v1;
     vec4 v2;
+    vec4 t;
+    vec4 b;
+    vec4 n;
     vec2 uv0;
     vec2 uv1;
     vec2 uv2;
@@ -177,6 +180,8 @@ struct RayHit{
     vec3 n;
     vec2 uv;
     vec3 hitPos;
+    uint type;
+    mat3 tbn;
 };
 bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
     vec3 invR=1.0/rayVector;
@@ -236,23 +241,48 @@ bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
     }
     return false;
 }
+vec3 normalMapping(vec3 normMap,mat3 TBN){
+    vec3 mapN=normalize(normMap*2.0-1.0);
+    return normalize(TBN*mapN);
+}
+mat3 getTBNSphere(vec3 n){
+    vec3 anyv = abs(n.x)>0.9?vec3(0.0,1.0,0.0):vec3(1.0,0.0,0.0);
+    vec3 t=normalize(cross(anyv,n));
+    vec3 b = normalize(dot(t,n));
+    return mat3(t,b,n);
+}
 vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     Mat mat=mats[hit.matId-1];
     vec3 col=mat.ambient.rgb;
 
     vec2 texUV=hit.uv *mat.uv.xy + mat.uv.zw;
     vec3 base=mat.diffuse.rgb;
+    vec3 normMap;
+    vec3 specMap;
     if (hit.matId==1){
         // skip textures 
     }else{
         base=texture(baseTexArr,vec3(texUV, mat.tex.x)).rgb;
+        normMap=texture(normalTexArr,vec3(texUV,mat.tex.y)).rgb;
+        specMap=texture(specularTexArr,vec3(texUV,mat.tex.z)).rgb;
+        col=0.2*base + 0.7*mat.ambient.rgb;
     }
 
     vec3 point=hit.hitPos;
     vec3 v=normalize(rayOrigin-point);
     vec3 n=hit.n;
+    mat3 tbn;
+    if (hit.type==1){ // sphere
+        tbn=getTBNSphere(n);
+    }else if (hit.type==0){
+        tbn=hit.tbn;
+    }
     if(dot(n,v)<0.0){
         n=-n;
+        tbn=-tbn;
+    }
+    if (hit.matId!=1){
+        n=normalMapping(normMap,tbn);
     }
     float sh=max(1.0,mat.ambient.w);
     for (uint i=0;i<lightc;++i){
@@ -328,10 +358,13 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
                     res.hitPos=hitPos;
                     res.uv=uv;
 
-                    vec3 v0=tri.v0.xyz;
-                    vec3 v1=tri.v1.xyz;
-                    vec3 v2=tri.v2.xyz;
-                    res.n=normalize(cross(v1-v0,v2-v0));
+                    // vec3 v0=tri.v0.xyz;
+                    // vec3 v1=tri.v1.xyz;
+                    // vec3 v2=tri.v2.xyz;
+                    // res.n=normalize(cross(v1-v0,v2-v0));
+                    res.n=tri.n.xyz;
+                    res.tbn=mat3(tri.t.xyz,tri.b.xyz,tri.n.xyz);
+                    res.type=0;
                 }
             }else if (type==1){
                 Sphr sp=spheres[id];
@@ -351,6 +384,7 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
                     vec3 cr=sp.c_r.xyz;
                     vec3 p = rayOrigin+t*rayVector;
                     res.n = normalize(p-cr);
+                    res.type=1;
                 }
             }
         }

@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include "./mat4.h"
+#include "./vec3.h"
 
 template<typename T>
 class Vec4 {
@@ -56,5 +57,8 @@ public:
         res.z=a.at(2,0)*b.x + a.at(2,1)*b.y+ a.at(2,2)*b.z+a.at(2,3)*b.w;
         res.w=a.at(3,0)*b.x + a.at(3,1)*b.y+ a.at(3,2)*b.z+a.at(3,3)*b.w;
         return res;
+    }
+    static Vec4 from_v3(const Vec3<T>& v){
+        return Vec4{v.x,v.y,v.z,1.0};
     }
 };

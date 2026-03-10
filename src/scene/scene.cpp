@@ -121,13 +121,27 @@ RenderScene Scene::to_render_scene() const{
             Vec3<float> p0=mesh.pos[i0];
             Vec3<float> p1=mesh.pos[i1];
             Vec3<float> p2=mesh.pos[i2];
-            Vec4<float> v0=Vec4<float>::matvec_mul(t,Vec4<float>(p0.x,p0.y,p0.z,1.0));
-            Vec4<float> v1=Vec4<float>::matvec_mul(t,Vec4<float>(p1.x,p1.y,p1.z,1.0));
-            Vec4<float> v2=Vec4<float>::matvec_mul(t,Vec4<float>(p2.x,p2.y,p2.z,1.0));
+            Vec4<float> v0=Vec4<float>::matvec_mul(t,Vec4<float>::from_v3(p0));
+            Vec4<float> v1=Vec4<float>::matvec_mul(t,Vec4<float>::from_v3(p0));
+            Vec4<float> v2=Vec4<float>::matvec_mul(t,Vec4<float>::from_v3(p0));
             Vec2<float> uv0=mesh.uv[i0];
             Vec2<float> uv1=mesh.uv[i1];
             Vec2<float> uv2=mesh.uv[i2];
-            RenderTri r{v0,v1,v2,uv0,uv1,uv2,obj.matid};
+            //cross(v1-v0 v2-v0)
+            Vec3<float> v1mv0{v1.x-v0.x,v1.y-v0.y,v1.z-v0.z};
+            Vec3<float> v2mv0{v2.x-v0.x,v2.y-v0.y,v2.z-v0.z};
+            Vec3<float> n_v3=Vec3<float>::cross(v1mv0,v2mv0);
+            Vec4<float> n =Vec4<float>::from_v3(Vec3<float>::normalize(n_v3));
+            
+            Vec2<float> duv0=uv1-uv0;
+            Vec2<float> duv1=uv2-uv0;
+            float det=duv0.x*duv1.y-duv1.x*duv0.y;
+            float f=1.0/det; // avoid div by zero ?
+            Vec3<float> t_inn=v1mv0*duv1.y+v2mv0*(-duv0.y);
+            Vec3<float> b_inn=v1mv0*(-duv1.x)+v2mv0*duv0.x;
+            Vec4<float> t=Vec4<float>::from_v3(t_inn*f);
+            Vec4<float> b=Vec4<float>::from_v3(b_inn*f);
+            RenderTri r{v0,v1,v2,n,t,b,uv0,uv1,uv2,obj.matid};
             res.tri_v.push_back(r);
         }
     }

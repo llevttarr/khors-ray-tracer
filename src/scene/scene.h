@@ -13,6 +13,9 @@ struct RenderTri{
     Vec4<float> v0;
     Vec4<float> v1;
     Vec4<float> v2;
+    Vec4<float> t;
+    Vec4<float> b;
+    Vec4<float> n; //maybe we can store n as the last coordinates of v0 v1 v2
     Vec2<float> uv0;
     Vec2<float> uv1;
     Vec2<float> uv2;
