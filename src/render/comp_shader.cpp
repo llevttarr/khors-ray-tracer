@@ -5,7 +5,7 @@
 ComputeShader::ComputeShader(const std::string& path,const std::string& filename){
     const std::string comp_pre=glsl_util::read_file(filename);
     const std::string comp= process_imports(comp_pre,path);
-    std::cout << "FINAL SHADER:\n" << comp << std::endl;
+    // std::cout << "FINAL SHADER:\n" << comp << std::endl;
     GLuint comp_s=glsl_util::create_shader(GL_COMPUTE_SHADER,comp);
     progr=glsl_util::link_comp(comp_s);
     cache.set_program(progr);

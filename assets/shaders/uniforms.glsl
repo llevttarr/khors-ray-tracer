@@ -1,4 +1,9 @@
 
+layout(rgba32f,binding = 0) uniform image2D outImage;
+layout(binding = 1) uniform sampler2DArray baseTexArr;
+layout(binding =2) uniform sampler2DArray normalTexArr;
+layout(binding =3) uniform sampler2DArray specularTexArr;
+
 uniform uint width;
 uniform uint height;
 uniform uint tric;
@@ -13,15 +18,10 @@ uniform vec3 camRight;
 uniform vec3 camUp;
 uniform float camFov;
 
-
-layout(binding = 1) uniform sampler2DArray baseTexArr;
-layout(binding =2) uniform sampler2DArray normalTexArr;
-layout(binding =3) uniform sampler2DArray specularTexArr;
-
-layout(rgba32f,binding = 0) uniform image2D outImage;
 layout(std430,binding=1) readonly buffer TriBuf {
     Tri tris[];
 };
+
 layout(std430,binding=2) readonly buffer SphrBuf {
     Sphr spheres[];
 };
