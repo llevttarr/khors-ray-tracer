@@ -1,6 +1,8 @@
 #version 430 core
 layout(local_size_x = 16,local_size_y = 4) in;
 
+// TODO: refactor old code !!!
+
 layout(rgba32f,binding = 0) uniform image2D outImage;
 layout(binding = 1) uniform sampler2DArray baseTexArr;
 layout(binding =2) uniform sampler2DArray normalTexArr;
@@ -412,18 +414,39 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
     return res;
 
 }
+vec3 getSky(float ndcy){
+    float t= ndcy/2.0;
+    float tr=max(0.2,0.4+t);
+    float tg=max(0.4,0.965+t);
+    float tb=max(0.5,1.0+t);
+    return vec3(tr,tg,tb);
+}
 
 vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
     RayHit hit=trace(rayOrigin,rayVector);
+    vec3 sky=getSky(ndcy);
     if (!hit.isValid){
-        float t= ndcy/2.0;
-        float tr=max(0.2,0.4+t);
-        float tg=max(0.4,0.965+t);
-        float tb=max(0.5,1.0+t);
-        return vec3(tr,tg,tb);
+        return sky;
     }
     vec3 base=phongShading(rayOrigin,rayVector,hit);
-    return base;
+    
+    Mat mat = mats[hit.matId-1];
+    float reflStr = mat.specular.w;
+    if (reflStr<= 0.01) {
+        return base;
+    }
+
+    vec3 p = rayOrigin+rayVector*hit.t;
+    vec3 n = normalize(hit.n);
+    vec3 reflO = p +n* 0.001;
+    vec3 reflDir = normalize(reflect(rayVector, n));
+
+    RayHit reflHit = trace(reflO,reflDir);
+    vec3 reflCol = sky;
+    if (reflHit.isValid) {
+        reflCol = phongShading(reflO,reflDir,reflHit);
+    }
+    return mix(base,reflCol, reflStr);
 }
 
 void main() {

@@ -277,6 +277,11 @@ void Scene::test_scene_init(){
         // Vec4<float> diff={amb.x+0.01f,amb.y+0.01f,amb.z+0.01f,amb.w+0.01f};
         Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
         Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
+        if (i==0){
+            spec.w=0.2f;
+        }else{
+            spec.w=0.1f;
+        }
         // Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
         // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};
         Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
