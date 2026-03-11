@@ -1,7 +1,7 @@
 
 vec3 getSky(float ndcy){
     float t= ndcy/2.0;
-    float tr=max(0.2,0.4+t);
+    float tr=max(0.6,0.8+t);
     float tg=max(0.4,0.965+t);
     float tb=max(0.5,1.0+t);
     return vec3(tr,tg,tb);
