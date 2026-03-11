@@ -1,46 +1,4 @@
-#version 430 core
-layout(local_size_x = 16,local_size_y = 4) in;
 
-// TODO: refactor old code !!!
-//#import "structs.glsl"
-layout(rgba32f,binding = 0) uniform image2D outImage;
-layout(binding = 1) uniform sampler2DArray baseTexArr;
-layout(binding =2) uniform sampler2DArray normalTexArr;
-layout(binding =3) uniform sampler2DArray specularTexArr;
-
-uniform uint width;
-uniform uint height;
-uniform uint tric;
-uniform uint spherec;
-uniform uint bvhc;
-uniform uint matc;
-uniform uint lightc;
-
-uniform vec3 camPos;
-uniform vec3 camForward;
-uniform vec3 camRight;
-uniform vec3 camUp;
-uniform float camFov;
-
-layout(std430,binding=1) readonly buffer TriBuf {
-    Tri tris[];
-};
-
-layout(std430,binding=2) readonly buffer SphrBuf {
-    Sphr spheres[];
-};
-layout(std430,binding=3) readonly buffer BVHBuf {
-    BVH bvh_v[];
-};
-layout(std430,binding=4) readonly buffer MatBuf {
-    Mat mats[];
-};
-layout(std430,binding=5) readonly buffer PrimBuf {
-    uint prims[];
-};
-layout(std430,binding=6) readonly buffer LightBuf {
-    Light light_v[];
-};
 bool intersectsGround(vec3 rayOrigin,vec3 rayVector,out float res){
     vec3 groundNormal=vec3(0.0,1.0,0.0);
     vec3 groundPoint=vec3(0.0,-4.0,0.0);
@@ -52,6 +10,7 @@ bool intersectsGround(vec3 rayOrigin,vec3 rayVector,out float res){
     res=dot(groundNormal,(groundPoint-rayOrigin))/d;
     return res>0.0;
 }
+
 bool intersects(vec3 rayOrigin,vec3 rayVector,Tri tri, out float res, out vec2 uv,out vec3 hitPos){
     float epsilon=0.000001;
     vec3 v0=tri.v0.xyz;
@@ -188,77 +147,7 @@ bool traceAny(vec3 rayOrigin,vec3 rayVector,float tMax){
     }
     return false;
 }
-vec3 normalMapping(vec3 normMap,mat3 TBN){
-    vec3 mapN=normalize(normMap*2.0-1.0);
-    return normalize(TBN*mapN);
-}
-mat3 getTBNSphere(vec3 n){
-    vec3 anyv = abs(n.x)>0.9?vec3(0.0,1.0,0.0):vec3(1.0,0.0,0.0);
-    vec3 t=normalize(cross(anyv,n));
-    vec3 b = normalize(cross(t,n));
-    return mat3(t,b,n);
-}
-vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
-    Mat mat=mats[hit.matId-1];
-    vec3 col=mat.ambient.rgb;
 
-    vec2 texUV=hit.uv *mat.uv.xy + mat.uv.zw;
-    vec3 base=mat.diffuse.rgb;
-    vec3 normMap;
-    vec3 specMap;
-    if (hit.matId==1){
-        // skip textures 
-    }else{
-        base=texture(baseTexArr,vec3(texUV, mat.tex.x)).rgb;
-        normMap=texture(normalTexArr,vec3(texUV,mat.tex.y)).rgb;
-        specMap=texture(specularTexArr,vec3(texUV,mat.tex.z)).rgb;
-        col=0.2*base + 0.7*mat.ambient.rgb;
-    }
-
-    vec3 point=hit.hitPos;
-    vec3 v=normalize(rayOrigin-point);
-    vec3 n=hit.n;
-    mat3 tbn;
-    if (hit.type==1){ // sphere
-        tbn=getTBNSphere(n);
-    }else if (hit.type==0){
-        tbn=hit.tbn;
-    }
-    if(dot(n,v)<0.0){
-        n=-n;
-        tbn=-tbn;
-    }
-    if (hit.matId!=1){
-        n=normalMapping(normMap,tbn);
-    }
-    float hemi = 0.5+0.5*n.y;
-    col*=hemi;
-    float sh=max(1.0,mat.ambient.w);
-    for (uint i=0;i<lightc;++i){
-        Light l= light_v[i];
-
-        vec3 ptol=l.pos.xyz-point;
-        float dist=length(ptol);
-        ptol=ptol/dist;
-        float nDotPtol=max(0.0,dot(n,ptol));
-        vec3 diff=base*l.diffuse.rgb*nDotPtol;
-        // vec3 diff=base;
-        if(traceAny(point,ptol,dist)){
-            continue;
-        }
-        vec3 ref=reflect(-ptol,n);
-        float rDotV=max(0.0,dot(ref,v));
-        float specStr =pow(rDotV,sh);
-        vec3 spec = mat.specular.rgb*l.specular.rgb*specStr;
-        if (hit.matId!=1){
-            spec*=specMap;
-        }
-        vec3 amb = mat.ambient.rgb * l.ambient.rgb*hemi;
-
-        col += amb+diff+spec;
-    }
-    return col;
-}
 RayHit trace(vec3 rayOrigin,vec3 rayVector){
     RayHit res;
     res.isValid=false;
@@ -358,59 +247,4 @@ RayHit trace(vec3 rayOrigin,vec3 rayVector){
     }
     return res;
 
-}
-vec3 getSky(float ndcy){
-    float t= ndcy/2.0;
-    float tr=max(0.2,0.4+t);
-    float tg=max(0.4,0.965+t);
-    float tb=max(0.5,1.0+t);
-    return vec3(tr,tg,tb);
-}
-
-vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
-    RayHit hit=trace(rayOrigin,rayVector);
-    vec3 sky=getSky(ndcy);
-    if (!hit.isValid){
-        return sky;
-    }
-    vec3 base=phongShading(rayOrigin,rayVector,hit);
-    
-    Mat mat = mats[hit.matId-1];
-    float reflStr = mat.specular.w;
-    if (reflStr<= 0.01) {
-        return base;
-    }
-
-    vec3 p = rayOrigin+rayVector*hit.t;
-    vec3 n = normalize(hit.n);
-    vec3 reflO = p +n* 0.001;
-    vec3 reflDir = normalize(reflect(rayVector, n));
-
-    RayHit reflHit = trace(reflO,reflDir);
-    vec3 reflCol = sky;
-    if (reflHit.isValid) {
-        reflCol = phongShading(reflO,reflDir,reflHit);
-    }
-    return mix(base,reflCol, reflStr);
-}
-
-void main() {
-    uvec2 gid = gl_GlobalInvocationID.xy;
-
-    if (gid.x >= width||gid.y >= height){
-        return;
-    }
-    float aspect=float(width)/float(height);
-    vec3 rayOrigin=camPos;
-    vec3 rayVector;
-    vec3 color;
-    vec3 lightSource=vec3(-1.0,1.0,-1.0);
-    vec2 uv=vec2((gid.x+0.5)/float(width),(gid.y+0.5)/float(height));
-    vec2 ndc=2.0*uv-1.0;
-    ndc.x*=aspect;
-    float fovTan=tan(0.5*camFov);
-
-    rayVector=normalize(camForward+ndc.x*fovTan*camRight+ndc.y*fovTan*camUp);
-    color = getTracingResult(rayOrigin,rayVector,ndc.y);
-    imageStore(outImage, ivec2(gid), vec4(color, 1.0));
 }

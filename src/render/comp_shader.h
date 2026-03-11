@@ -13,7 +13,7 @@ struct CShaderUseException: public std::runtime_error{
 class ComputeShader{
 public:
     ComputeShader() = default;
-    explicit ComputeShader(const std::string& filename);
+    explicit ComputeShader(const std::string& path,const std::string& filename);
     ~ComputeShader();
 
     GLuint id() const{return progr; }
@@ -28,6 +28,7 @@ public:
 private:
     GLuint progr=0;
     GLSLUniformCache cache;
+    std::string process_imports(const std::string& str,const std::string& path);
 };
 
 #endif //COMPSHADER_H

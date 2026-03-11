@@ -9,7 +9,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
 
   : w(width), h(height),camera(cam),
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
-    comp_shader("assets/shaders/cs.comp")
+    comp_shader("assets/shaders/", "assets/shaders/cs.comp")
 {
     glGenBuffers(1, &tri_ssbo);
     glGenBuffers(1, &sphr_ssbo);
