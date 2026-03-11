@@ -213,7 +213,7 @@ void Scene::test_scene_init(){
     Sphr sp;
     sphere_v.reserve(100);
 
-    int n_spheres = 8192;
+    int n_spheres = 4096;
     float eps=0.001f;
     int spheres_per_side = static_cast<int>(std::ceil(std::sqrt(n_spheres)));
 
@@ -254,7 +254,7 @@ void Scene::test_scene_init(){
     //     light_v.push_back(l);
     // }
     Light l;
-    l.pos = {0.2f, 60.f,0.2f,200.f};
+    l.pos = {0.2f,30.f,0.2f,200.f};
     l.ambient = {0.02f,0.02f,0.02f,1.f};
     l.diffuse = {0.7f,0.7f,0.7f,0.6f};
     l.specular = {0.8f,0.8f,0.7f,0.7f};
@@ -278,9 +278,9 @@ void Scene::test_scene_init(){
         Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
         Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
         if (i==0){
-            spec.w=0.2f;
+            spec.w=0.7f;
         }else{
-            spec.w=0.1f;
+            spec.w=0.0f;
         }
         // Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
         // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};

@@ -3,6 +3,7 @@
 - Taras Levytskyi
 
 ![Demo](static/alpha4_demo.jpg)
+![Demo2](static/alpha4_demo2.png)
 
 <img align="center" src="static/logo_khors.svg" alt="KHORS" width="128" height="128">
 
