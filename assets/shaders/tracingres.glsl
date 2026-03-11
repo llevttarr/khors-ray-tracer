@@ -1,4 +1,6 @@
 
+const float REFL_T_THRESHOLD=100.0;
+
 vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
     RayHit hit=trace(rayOrigin,rayVector);
     vec3 sky=getSky(ndcy);
@@ -9,7 +11,7 @@ vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
     
     Mat mat = mats[hit.matId-1];
     float reflStr = mat.specular.w;
-    if (reflStr<= 0.01) {
+    if (hit.t>REFL_T_THRESHOLD || reflStr<= 0.01) {
         return base;
     }
 
