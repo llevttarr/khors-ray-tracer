@@ -93,6 +93,12 @@ void Renderer::update_scene(RenderScene& render_scene){
     normal_tex_arr =create_texture_arr(tex_manager.get_normal());
     specular_tex_arr = create_texture_arr(tex_manager.get_specular());
 }
+void Renderer::update_mats(RenderScene& render_scene){
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mat_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.mat_v.size()*sizeof(Mat),render_scene.mat_v.data(),GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, mat_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
 GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
     int w=img_v.at(0).w;
     int h=img_v.at(0).h;

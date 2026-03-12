@@ -18,6 +18,7 @@ public:
     void get_fps();
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
+    void update_mats(RenderScene& render_scene);
     GLuint create_texture_arr(const std::vector<Image>& img_v);
 private:
     int w;

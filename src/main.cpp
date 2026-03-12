@@ -48,6 +48,11 @@ int main(int argc, char* argv[]) {
         ImGui::NewFrame();
         ImGui::Begin("test");
         ImGui::Text("test");
+        if (ImGui::Button("randomize mats")){
+            scene.gen_random_mats(5,0,0,0);
+            r.mat_v=std::move(scene.get_mats());
+            renderer.update_mats(r);
+        }
         ImGui::End();
 
         ImGui::Render();

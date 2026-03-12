@@ -184,6 +184,32 @@ uint32_t Scene::add_sphere(Sphr s){
     sphere_v.push_back(std::move(s));
     return (uint32_t)(sphere_v.size()-1);
 }
+void Scene::gen_random_mats(size_t n,int basei,int normali,int speculari){
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::mt19937 engine(seed);
+    std::uniform_real_distribution<float> light_diff(0.1f,0.7f);
+    std::uniform_real_distribution<float> light_diff_small(0.02f,0.15f);
+    mat_v.clear();
+    for (size_t i=0;i<n;++i){
+        Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
+        // Vec4<float> diff={amb.x+0.01f,amb.y+0.01f,amb.z+0.01f,amb.w+0.01f};
+        Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
+        Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
+        if (i==0){
+            spec.w=0.0f;
+        }else{
+            spec.w=0.3f;
+        }
+        // Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
+        // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};
+        Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
+        
+        Vec4<int32_t> tex={basei,normali,speculari,1};
+        Vec4<float> uv={1.0,1.0,0.0,0.0};
+        Mat m{amb,diff,spec,emis,uv,tex};
+        mat_v.push_back(m);
+    }
+}
 
 void Scene::test_scene_init(){
     Mesh tri_sphere_mesh=obj_util::create_sphere_tri(3,4);
@@ -272,24 +298,6 @@ void Scene::test_scene_init(){
     int basei=texman.load_base(base_path);
     int normali=texman.load_normal(normal_path);
     int speculari=texman.load_specular(specular_path);
-    for (size_t i=0;i<5;++i){
-        Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
-        // Vec4<float> diff={amb.x+0.01f,amb.y+0.01f,amb.z+0.01f,amb.w+0.01f};
-        Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
-        Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
-        if (i==0){
-            spec.w=0.0f;
-        }else{
-            spec.w=0.3f;
-        }
-        // Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
-        // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};
-        Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
-        
-        Vec4<int32_t> tex={basei,normali,speculari,1};
-        Vec4<float> uv={1.0,1.0,0.0,0.0};
-        Mat m{amb,diff,spec,emis,uv,tex};
-        mat_v.push_back(m);
-    }
+    Scene::gen_random_mats(5,0,0,0);
     tex_manager=texman;
 }
