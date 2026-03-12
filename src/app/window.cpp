@@ -4,6 +4,9 @@
 #include <iostream>
 #include <algorithm>
 #include <glad/gl.h> 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 void Window::size_callback(GLFWwindow* w,int nw,int nh){
     auto* state = static_cast<ProgramState*>(glfwGetWindowUserPointer(w));
@@ -109,6 +112,15 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using
     glfwSetErrorCallback(err_callback);
     
     load_icon();
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
+    ImGui_ImplOpenGL3_Init("#version 430");
 }
 void Window::err_callback(int code,const char* desc){
     std::cout<<"glfw error: "<<code<<": "<<desc<<std::endl;

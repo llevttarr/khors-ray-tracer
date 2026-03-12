@@ -43,6 +43,15 @@ int main(int argc, char* argv[]) {
             camera.move(fwd,rght,upw);
         }
         renderer.run();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::Begin("test");
+        ImGui::Text("test");
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         window.swap_buffers();
     }
     return 0;

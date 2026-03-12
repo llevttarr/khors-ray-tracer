@@ -76,7 +76,7 @@ bool intersectsSphere(vec3 rayOrigin,vec3 rayVector,Sphr sphere,out float res,ou
     }else if (t1>epsilon){
         t=t1;
     }else{
-        t=-1.0;
+        +t=-1.0;
     }
     if (t<-epsilon){
         return false;
