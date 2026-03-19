@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef TEXTURES_H
+#define TEXTURES_H
 #include "../util/image_util.h"
 #include <vector>
 #include <string>
@@ -19,3 +19,5 @@ private:
     std::vector<Image> specular_img_v;
     std::vector<Image> normal_img_v;
 };
+
+#endif //TEXTURES_H

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MAT3_H
+#define MAT3_H
 #include <cmath>
 #include <array>
 
@@ -37,3 +38,4 @@ public:
 private:
     std::array<T,9> dat{};
 };
+#endif //MAT3_H

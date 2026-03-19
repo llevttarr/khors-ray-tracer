@@ -1,4 +1,6 @@
-#pragma once
+#ifndef IMAGE_UTIL_H
+#define IMAGE_UTIL_H
+
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -18,3 +20,4 @@ namespace image_util{
     Image load_image_stb(const std::string& filepath, int flipflag);
     Image load_image_svg(const std::string& filepath, int flipflag);
 }
+#endif //IMAGE_UTIL_H

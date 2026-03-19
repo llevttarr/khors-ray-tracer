@@ -12,6 +12,8 @@ uniform uint bvhc;
 uniform uint matc;
 uniform uint lightc;
 
+uniform uint brdf_type; //0-phong,1-blinn-phong
+
 uniform vec3 camPos;
 uniform vec3 camForward;
 uniform vec3 camRight;

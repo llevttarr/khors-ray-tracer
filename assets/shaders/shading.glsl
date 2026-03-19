@@ -16,7 +16,19 @@ mat3 getTBNSphere(vec3 n){
     vec3 b = normalize(cross(t,n));
     return mat3(t,b,n);
 }
-vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
+float blinnPhongSpecStr(vec3 v,vec3 ptol,vec3 n,float sh){
+    vec3 halfw=v+ptol;
+    float blinnAngle=dot(halfw,n);
+    float specStr =pow(max(0.0,blinnAngle),sh);
+    return specStr;
+}
+float phongSpecStr(vec3 v,vec3 ptol,vec3 n,float sh){
+    vec3 ref=reflect(-ptol,n);
+    float rDotV=max(0.0,dot(ref,v));
+    float specStr =pow(rDotV,sh);
+    return specStr;
+}
+vec3 brdfShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     Mat mat=mats[hit.matId-1];
     vec3 col=mat.ambient.rgb;
 
@@ -64,9 +76,12 @@ vec3 phongShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
         if(traceAny(point,ptol,dist)){
             continue;
         }
-        vec3 ref=reflect(-ptol,n);
-        float rDotV=max(0.0,dot(ref,v));
-        float specStr =pow(rDotV,sh);
+        float specStr;
+        if (brdf_type==0){
+            specStr =phongSpecStr(v,ptol,n,sh);
+        }else{
+            specStr =blinnPhongSpecStr(v,ptol,n,sh);
+        }
         vec3 spec = mat.specular.rgb*l.specular.rgb*specStr;
         if (hit.matId!=1){
             spec*=specMap;

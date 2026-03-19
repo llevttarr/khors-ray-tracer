@@ -137,6 +137,8 @@ void Renderer::run(){
     comp_shader.set_uint("matc",matc);
     comp_shader.set_uint("lightc",lightc);
 
+    comp_shader.set_uint("brdf_type",brdf_type);
+
     comp_shader.set_vec3("camPos",camera.get_pos());
     comp_shader.set_vec3("camForward",camera.get_forward());
     comp_shader.set_vec3("camRight",camera.get_right());

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VEC2_H
+#define VEC2_H
 #include <cmath>
 
 template<typename T>
@@ -53,3 +54,4 @@ public:
         );
     }
 };
+#endif //VEC2_H

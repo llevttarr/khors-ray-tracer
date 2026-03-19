@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MAT4_H
+#define MAT4_H
 #include <cmath>
 #include <array>
 
@@ -53,3 +54,4 @@ public:
 private:
     std::array<T,16> dat{};
 };
+#endif //MAT4_H

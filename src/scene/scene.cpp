@@ -198,7 +198,7 @@ void Scene::gen_random_mats(size_t n,int basei,int normali,int speculari){
         if (i==0){
             spec.w=0.0f;
         }else{
-            spec.w=0.3f;
+            spec.w=0.0f;
         }
         // Vec4<float> diff{0.7f,0.5f,0.8f,1.0f};
         // Vec4<float> spec{0.7f,0.5f,0.8f,0.2f};

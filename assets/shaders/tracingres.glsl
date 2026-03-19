@@ -7,7 +7,7 @@ vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
     if (!hit.isValid){
         return sky;
     }
-    vec3 base=phongShading(rayOrigin,rayVector,hit);
+    vec3 base=brdfShading(rayOrigin,rayVector,hit);
     
     Mat mat = mats[hit.matId-1];
     float reflStr = mat.specular.w;
@@ -23,7 +23,7 @@ vec3 getTracingResult(vec3 rayOrigin,vec3 rayVector,float ndcy){
     RayHit reflHit = trace(reflO,reflDir);
     vec3 reflCol = sky;
     if (reflHit.isValid) {
-        reflCol = phongShading(reflO,reflDir,reflHit);
+        reflCol = brdfShading(reflO,reflDir,reflHit);
     }
     return mix(base,reflCol, reflStr);
 }

@@ -48,6 +48,7 @@ private:
     uint32_t bvhc=0;
     uint32_t matc=0;
 
+    uint32_t brdf_type=1;
 
     uint32_t frame_last_sec=0;
     std::chrono::time_point<std::chrono::steady_clock> time_prev_sec;

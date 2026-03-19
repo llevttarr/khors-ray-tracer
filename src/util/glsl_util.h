@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GLSL_UTIL_H
+#define GLSL_UTIL_H
 
 #include <string>
 #include <glad/gl.h>
@@ -41,3 +42,4 @@ namespace glsl_util{
     void set_vec3(GLuint program,const Vec3<float>& v,const std::string& name,GLSLUniformCache& c);
     void set_vec4(GLuint program,const Vec4<float>& v,const std::string& name,GLSLUniformCache& c);
 }
+#endif //GLSL_UTIL_H

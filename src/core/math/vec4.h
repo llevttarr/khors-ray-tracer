@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VEC4_H
+#define VEC4_H
 #include <cmath>
 #include "./mat4.h"
 #include "./vec3.h"
@@ -62,3 +63,4 @@ public:
         return Vec4{v.x,v.y,v.z,1.0};
     }
 };
+#endif //VEC4
