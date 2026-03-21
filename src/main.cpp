@@ -5,6 +5,9 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include "./app/window.h"
+#include "./app/ui_manager.h"
+#include "./app/widget.h"
+#include "./app/mat_widget.h"
 #include "./render/renderer.h"
 #include "./scene/camera.h"
 #include "./util/app_util.h"
@@ -33,6 +36,8 @@ int main(int argc, char* argv[]) {
     Renderer renderer(window.get_w(),window.get_h(),camera);
     Scene scene{};
     RenderScene r=scene.to_render_scene();
+    UIManager uim;
+    uim.add_widget(std::make_unique<MatWidget>(scene,renderer,r));
     renderer.update_scene(r);
     while (!window.should_close()){
         window.poll_events();
@@ -46,14 +51,8 @@ int main(int argc, char* argv[]) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::Begin("test");
-        ImGui::Text("test");
-        if (ImGui::Button("randomize mats")){
-            scene.gen_random_mats(5,0,0,0);
-            r.mat_v=std::move(scene.get_mats());
-            renderer.update_mats(r);
-        }
-        ImGui::End();
+
+        uim.draw();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
