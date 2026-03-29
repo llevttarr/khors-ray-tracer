@@ -14,6 +14,9 @@ struct MeshLoadException: public std::runtime_error{
 };
 struct Mesh{
     std::vector<Vec3<float>> pos;
+    std::vector<Vec3<float>> norm_v;
+    std::vector<Vec3<float>> tang_v;
+    std::vector<Vec3<float>> bitang_v;
     std::vector<Vec2<float>> uv;
     std::vector<uint32_t> ind;
 };
@@ -26,5 +29,6 @@ namespace obj_util{
     Mesh create_sphere_tri(float radius,uint16_t detail_lvl);
     static uint32_t parse_face_ind(const std::string& t, size_t n);
     Mesh load_mesh_obj(const std::string& file_path);
+    void gen_tbn(Mesh& mesh);
 };
 #endif //OBJECT_H

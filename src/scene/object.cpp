@@ -55,6 +55,46 @@ namespace obj_util{
         }
         return static_cast<uint32_t>(static_cast<int>(n)+i);
     }
+    void gen_tbn(Mesh& mesh){
+        
+        for(size_t i=0; i<mesh.ind.size()-2;i+=3){
+            uint32_t i0=mesh.ind[i];
+            uint32_t i1=mesh.ind[i+1];
+            uint32_t i2=mesh.ind[i+2];
+            Vec3<float> p0=mesh.pos[i0];
+            Vec3<float> p1=mesh.pos[i1];
+            Vec3<float> p2=mesh.pos[i2];
+            Vec2<float> uv0=mesh.uv[i0];
+            Vec2<float> uv1=mesh.uv[i1];
+            Vec2<float> uv2=mesh.uv[i2];
+            
+            Vec3<float> dp1=p1-p0;
+            Vec3<float> dp2=p2-p0;
+            Vec2<float> duv1=uv1-uv0;
+            Vec2<float> duv2=uv2-uv0;
+            float d=duv1.x*duv2.y-duv1.y*duv2.x;
+            float r=0.0f;
+            if(std::abs(d)>0.0001f){
+                r=1.0f/d;
+            }
+            Vec3<float> t=(dp1*duv2.y-dp2*duv1.y)*r;
+            Vec3<float> b=(dp2*duv1.x-dp1*duv2.x)*r;
+            mesh.tang_v[i0]=mesh.tang_v[i0]+t;
+            mesh.tang_v[i1]=mesh.tang_v[i1]+t;
+            mesh.tang_v[i2]=mesh.tang_v[i2]+t;
+            mesh.bitang_v[i0]=mesh.bitang_v[i0]+b;
+            mesh.bitang_v[i1]=mesh.bitang_v[i1]+b;
+            mesh.bitang_v[i2]=mesh.bitang_v[i2]+b;
+        }
+        for(size_t i=0; i<mesh.pos.size(); ++i){
+            Vec3<float> n = Vec3<float>::normalize(mesh.norm_v[i]);
+            Vec3<float> t = Vec3<float>::normalize(mesh.tang_v[i]-n* Vec3<float>::dot(n,mesh.tang_v[i]));
+            Vec3<float> b = (Vec3<float>::dot(Vec3<float>::cross(n,t),mesh.bitang_v[i])<0.0f) ? Vec3<float>::cross(n,t)*(-1.0f) : Vec3<float>::cross(n,t);
+            mesh.tang_v[i]=t;
+            mesh.bitang_v[i]=b;
+            mesh.norm_v[i]=n;
+        }
+    }
     Mesh load_mesh_obj(const std::string& file_path){
         std::ifstream file(file_path,std::ios::in);
         if(!file.is_open()){
@@ -88,13 +128,20 @@ namespace obj_util{
                 }
             }else if (sym=="vn"){
                 // VERT NORMAL - todo
+                Vec3<float> vn;
+                line_s>>vn.x>>vn.y>>vn.z;
+                res.norm_v.push_back(vn);
                 continue;
             }else if (sym=="vt"){
                 // VERT TEXTURE - todo
+                Vec2<float> vt;
+                line_s>>vt.x>>vt.y;
+                res.uv.push_back(vt); 
                 continue;
             }
         }
         file.close();
+        obj_util::gen_tbn(res);
         return res;
     }
 }
