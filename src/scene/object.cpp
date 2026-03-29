@@ -81,7 +81,7 @@ namespace obj_util{
                     uint32_t vi= parse_face_ind(temp,res.pos.size());
                     f.push_back(vi);
                 }
-                for(size_t i=1;i<f.size()+1;++i){
+                for(size_t i=1;i<f.size();++i){
                     res.ind.push_back(f[0]);
                     res.ind.push_back(f[i]);
                     res.ind.push_back(f[i+1]);
