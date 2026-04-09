@@ -11,7 +11,7 @@ class ObjWidget : public Widget{
 
         ImGui::Begin("Objects");
         ImGui::Text("Object management");
-        if (ImGui::Button("random materials")) {
+        if (ImGui::Button("Import")) {
             
         }
         ImGui::End();
