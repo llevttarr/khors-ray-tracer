@@ -10,6 +10,7 @@
 #include "./app/mat_widget.h"
 #include "./render/renderer.h"
 #include "./scene/camera.h"
+#include "./scene/scene_parser.h"
 #include "./util/app_util.h"
 
 uint16_t get_status_movement(ProgramState& p, int f, int b){
@@ -36,6 +37,7 @@ int main(int argc, char* argv[]) {
     Renderer renderer(window.get_w(),window.get_h(),camera);
     Scene scene{};
     RenderScene r=scene.to_render_scene();
+    SceneParser sp{r};
     UIManager uim;
     uim.add_widget(std::make_unique<MatWidget>(scene,renderer,r));
     renderer.update_scene(r);
