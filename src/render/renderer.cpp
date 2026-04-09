@@ -41,6 +41,9 @@ Renderer::~Renderer() {
     glDeleteTextures(1,&cbuff);
 }
 void Renderer::update_scene(RenderScene& render_scene){
+    glDeleteTextures(1, &base_tex_arr);
+    glDeleteTextures(1, &normal_tex_arr);
+    glDeleteTextures(1, &specular_tex_arr);
     tric=(uint32_t)render_scene.tri_v.size();
     spherec=(uint32_t)render_scene.sphr_v.size();
     bvhc=(uint32_t)render_scene.bvh_v.size();
@@ -100,9 +103,6 @@ void Renderer::update_mats(RenderScene& render_scene){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
-    int w=img_v.at(0).w;
-    int h=img_v.at(0).h;
-    int layers=img_v.size();
     GLuint tex=0;
     glGenTextures(1,&tex);
     glBindTexture(GL_TEXTURE_2D_ARRAY,tex);
@@ -110,7 +110,16 @@ GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T,GL_REPEAT);
-
+    if (img_v.empty()) {
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 1, 1, 1);
+        uint32_t px = 0x00000000;
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 1,GL_RGBA, GL_UNSIGNED_BYTE, &px);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        return tex;
+    }
+    int w=img_v.at(0).w;
+    int h=img_v.at(0).h;
+    int layers=img_v.size();
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8,w,h,layers);
 
     for (size_t i=0; i<layers;++i) {

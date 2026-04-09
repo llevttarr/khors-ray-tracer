@@ -8,6 +8,8 @@
 #include "./app/ui_manager.h"
 #include "./app/widget.h"
 #include "./app/mat_widget.h"
+#include "./app/obj_widget.h"
+#include "./app/scene_widget.h"
 #include "./render/renderer.h"
 #include "./scene/camera.h"
 #include "./scene/scene_parser.h"
@@ -40,6 +42,7 @@ int main(int argc, char* argv[]) {
     SceneParser sp{r};
     UIManager uim;
     uim.add_widget(std::make_unique<MatWidget>(scene,renderer,r));
+    uim.add_widget(std::make_unique<SceneWidget>(scene,renderer,r,sp));
     renderer.update_scene(r);
     while (!window.should_close()){
         window.poll_events();

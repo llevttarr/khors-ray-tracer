@@ -6,7 +6,8 @@
 #include "../scene/scene.h"
 
 class ObjWidget : public Widget{
-    ObjWidget(Scene& s,Renderer&r,RenderScene&rs):scene(s),renderer(r),r(rs){}
+public:
+    ObjWidget(Scene& s,Renderer&r,RenderScene&rs):scene(s),renderer(r),rs(rs){}
     void draw() override{
 
         ImGui::Begin("Objects");
@@ -18,7 +19,7 @@ class ObjWidget : public Widget{
     }
 private:
     Scene& scene;
-    RenderScene& r;
+    RenderScene& rs;
     Renderer& renderer;
 };
 
