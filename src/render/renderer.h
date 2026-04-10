@@ -9,6 +9,15 @@
 #include "../scene/camera.h"
 #include "../scene/textures.h"
 #include "../util/benchmark.h"
+#include "../core/math/vec3.h"
+struct Reservoir{
+    int y;
+    float w_sum;
+    int m;
+    float w;
+    Vec3<float> y_pos;
+    Vec3<float> y_norm;
+};
 
 class Renderer {
 public:
@@ -40,6 +49,11 @@ private:
     GLuint base_tex_arr=0;
     GLuint normal_tex_arr=0;
     GLuint specular_tex_arr=0;
+
+    GLuint reservoir_a=0;
+    GLuint reservoir_b=0;
+    GLuint reservoir_h=0;
+    GLuint gbuffer=0;
     
     uint32_t tric = 0;
     uint32_t spherec = 0;

@@ -17,6 +17,9 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glGenBuffers(1, &mat_ssbo);
     glGenBuffers(1, &prim_ssbo);
     glGenBuffers(1, &light_ssbo);
+    glGenBuffers(1, &reservoir_a);
+    glGenBuffers(1, &reservoir_b);
+    glGenBuffers(1, &reservoir_h);
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
     glBindTexture(GL_TEXTURE_2D, cbuff);
@@ -90,8 +93,20 @@ void Renderer::update_scene(RenderScene& render_scene){
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, light_ssbo);
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_a);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, reservoir_a);
 
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_b);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, reservoir_b);
 
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_h);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, reservoir_h);
+    
     base_tex_arr= create_texture_arr(tex_manager.get_base());
     normal_tex_arr =create_texture_arr(tex_manager.get_normal());
     specular_tex_arr = create_texture_arr(tex_manager.get_specular());
