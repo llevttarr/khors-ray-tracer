@@ -20,6 +20,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glGenBuffers(1, &reservoir_a);
     glGenBuffers(1, &reservoir_b);
     glGenBuffers(1, &reservoir_h);
+    glGenBuffers(1, &gbuffer);
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
     glBindTexture(GL_TEXTURE_2D, cbuff);
@@ -41,6 +42,10 @@ Renderer::~Renderer() {
     glDeleteBuffers(1,&mat_ssbo);
     glDeleteBuffers(1,&prim_ssbo);
     glDeleteBuffers(1,&light_ssbo);
+    glDeleteBuffers(1,&reservoir_a);
+    glDeleteBuffers(1,&reservoir_b);
+    glDeleteBuffers(1,&reservoir_h);
+    glDeleteBuffers(1,&gbuffer);
     glDeleteTextures(1,&cbuff);
 }
 void Renderer::update_scene(RenderScene& render_scene){
@@ -106,7 +111,13 @@ void Renderer::update_scene(RenderScene& render_scene){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_h);
     glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, reservoir_h);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gbuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(GBufferPixel),nullptr, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, gbuffer);
     
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     base_tex_arr= create_texture_arr(tex_manager.get_base());
     normal_tex_arr =create_texture_arr(tex_manager.get_normal());
     specular_tex_arr = create_texture_arr(tex_manager.get_specular());
@@ -148,38 +159,8 @@ void Renderer::run(){
     if (camera.get_w()!=w || camera.get_h()!=h){
         resize(camera.get_w(),camera.get_h());
     }
+    bind_unif(comp_shader);
 
-    comp_shader.use();
-
-    glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-    comp_shader.set_uint("width",w);
-    comp_shader.set_uint("height",h);
-    comp_shader.set_uint("tric",tric);
-    comp_shader.set_uint("spherec",spherec);
-    comp_shader.set_uint("bvhc",bvhc);
-    comp_shader.set_uint("matc",matc);
-    comp_shader.set_uint("lightc",lightc);
-
-    comp_shader.set_uint("brdf_type",brdf_type);
-
-    comp_shader.set_vec3("camPos",camera.get_pos());
-    comp_shader.set_vec3("camForward",camera.get_forward());
-    comp_shader.set_vec3("camRight",camera.get_right());
-    comp_shader.set_vec3("camUp",camera.get_up());
-    comp_shader.set_float("camFov",camera.get_fov());
-    std::string y=std::to_string(camera.get_yaw());
-    std::string p=std::to_string(camera.get_pitch());
-    // std::cout<<"w: "+std::to_string(w)+"; h: "+std::to_string(h)<<std::endl;
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D_ARRAY,base_tex_arr);
-    comp_shader.set_int("baseTexArr",1);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D_ARRAY,normal_tex_arr);
-    comp_shader.set_int("normalTexArr", 2);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, specular_tex_arr);
-    comp_shader.set_int("specularTexArr", 3);
     const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
     const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
     glDispatchCompute(dx, dy, 1);
@@ -220,5 +201,49 @@ void Renderer::resize(int nw, int nh){
 
     comp_shader.set_uint("width",nw);
     comp_shader.set_uint("height",nh);
+    size_t pixel_count = w * h;
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gbuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 
+                 pixel_count * sizeof(GBufferPixel), nullptr, GL_DYNAMIC_COPY);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_a);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 
+                 pixel_count * sizeof(Reservoir), nullptr, GL_DYNAMIC_COPY);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_b);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 
+                 pixel_count * sizeof(Reservoir), nullptr, GL_DYNAMIC_COPY);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_h);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 
+                 pixel_count * sizeof(Reservoir), nullptr, GL_DYNAMIC_COPY);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+void Renderer::bind_unif(ComputeShader& sh){
+    sh.use();
+    sh.set_uint("width",w);
+    sh.set_uint("height",h);
+    sh.set_uint("tric", tric);
+    sh.set_uint("spherec",spherec);
+    sh.set_uint("bvhc", bvhc);
+    sh.set_uint("matc", matc);
+    sh.set_uint("lightc", lightc);
+    sh.set_uint("framec", framec);
+    sh.set_vec3("camPos", camera.get_pos());
+    sh.set_vec3("camForward",camera.get_forward());
+    sh.set_vec3("camRight", camera.get_right());
+    sh.set_vec3("camUp",camera.get_up());
+    sh.set_float("camFov",camera.get_fov());
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, base_tex_arr);
+    sh.set_int("baseTexArr", 1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, normal_tex_arr);
+    sh.set_int("normalTexArr", 2);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, specular_tex_arr);
+    sh.set_int("specularTexArr", 3);
 }

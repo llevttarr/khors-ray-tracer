@@ -18,6 +18,9 @@ struct Reservoir{
     Vec3<float> y_pos;
     Vec3<float> y_norm;
 };
+struct GBufferPixel{
+
+};
 
 class Renderer {
 public:
@@ -25,6 +28,7 @@ public:
     ~Renderer();
     void run();
     void get_fps();
+    void bind_unif(ComputeShader& cs);
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
     void update_mats(RenderScene& render_scene);
@@ -33,7 +37,14 @@ private:
     int w;
     int h;
     Shader shader;
+    
     ComputeShader comp_shader;
+
+    ComputeShader cs_res_sampling;
+    ComputeShader cs_temp_reuse;
+    ComputeShader cs_spat_reuse;
+    ComputeShader cs_res_shade;
+
     EulerCamera& camera;
     Benchmark benchmark;
     TextureManager tex_manager;
