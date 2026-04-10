@@ -157,7 +157,7 @@ RenderScene Scene::to_render_scene() const{
     }
     res.bvh_v.reserve(999);
     res.prim_v.reserve(999);
-    // std::cout<<"building bvh...";
+    std::cout<<"building bvh...";
     scene_util::build_bvh(prims,0,prims.size(),res.prim_v,res.bvh_v);
     res.mat_v=mat_v;
     res.light_v=light_v;

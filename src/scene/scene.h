@@ -87,6 +87,7 @@ public:
     uint32_t add_mat(Mat m);
     uint32_t add_object(Object o);
     uint32_t add_sphere(Sphr s);
+    void change_mat(Mat& m, uint32_t matid);
     void gen_random_mats(size_t n,int basei,int normali,int speculari);
     void load_obj(const std::string& fpath,uint32_t matid);
     std::vector<Mat> get_mats(){return mat_v;}
