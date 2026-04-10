@@ -17,7 +17,7 @@ public:
         ImGui::InputText("File name", filename_buf,sizeof(filename_buf));
         if (ImGui::Button("Import")) {
             try {
-                scene.load_obj(std::string(filename_buf));
+                scene.load_obj(std::string(filename_buf),matid);
                 RenderScene newrs=scene.to_render_scene();
                 rs =std::move(newrs);
                 renderer.update_scene(rs);
@@ -59,6 +59,7 @@ private:
     RenderScene& rs;
     Renderer& renderer;
     char filename_buf[256]{};
+    uint32_t matid=0;
     std::string status_msg;
     bool status = true;
 };
