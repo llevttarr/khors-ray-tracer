@@ -172,6 +172,10 @@ Scene::Scene(){
 Scene::~Scene(){
 
 }
+uint32_t Scene::add_mat(Mat m){
+    mat_v.push_back(std::move(m));
+    return (uint32_t)(mat_v.size()-1);
+}
 uint32_t Scene::add_mesh(Mesh m){
     mesh_v.push_back(std::move(m));
     return (uint32_t)(mesh_v.size()-1);
@@ -302,5 +306,27 @@ void Scene::test_scene_init(){
     tex_manager=texman;
 }
 void Scene::load_obj(const std::string& fpath){
+    Mesh m= obj_util::load_mesh_obj(fpath+".obj");
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::mt19937 engine(seed);
+    std::uniform_real_distribution<float> dist(-50.0, 50.0);
+    std::uniform_int_distribution<uint32_t> mat_dist(2,5);
+    std::uniform_real_distribution<float> light_diff(0.1f,0.7f);
+    std::uniform_real_distribution<float> light_diff_small(0.05f,0.3f);
+    uint32_t mid=add_mesh(m);
 
+    Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
+    Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
+    Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
+    Vec4<float> emis{0.0f,0.0f,0.0f,0.0f};
+    int i=mat_v.size();
+    Vec4<int32_t> tex={i,i,i,1};
+    Vec4<float> uv={1.0,1.0,0.0,0.0};
+    Mat mat{amb,diff,spec,emis,uv,tex};
+
+    Mat4<float> identity{};
+
+    uint32_t matid=add_mat(mat);
+    Object o={mid,identity,matid};
+    uint32_t objid=add_object(o);
 }

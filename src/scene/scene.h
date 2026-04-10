@@ -84,6 +84,7 @@ public:
     ~Scene();
     RenderScene to_render_scene() const;
     uint32_t add_mesh(Mesh m);
+    uint32_t add_mat(Mat m);
     uint32_t add_object(Object o);
     uint32_t add_sphere(Sphr s);
     void gen_random_mats(size_t n,int basei,int normali,int speculari);

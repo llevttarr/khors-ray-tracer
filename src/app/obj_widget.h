@@ -27,6 +27,24 @@ public:
                 status  = false;
             }
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Translate")) {
+            try {
+
+            } catch (const std::exception& e) {
+                status_msg = std::string("Translate failed: ") + e.what();
+                status  = false;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Set matid")) {
+            try {
+
+            } catch (const std::exception& e) {
+                status_msg = std::string("Translate failed: ") + e.what();
+                status  = false;
+            }
+        }
         if (!status_msg.empty()) {
             ImGui::Spacing();
             ImGui::TextColored(status ? ImVec4(0,1,0,1) : ImVec4(1,0.3f,0.3f,1),"%s", status_msg.c_str());
