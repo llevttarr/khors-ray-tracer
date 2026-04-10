@@ -29,6 +29,7 @@ public:
     void run();
     void get_fps();
     void bind_unif(ComputeShader& cs);
+    void bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat);
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
     void update_mats(RenderScene& render_scene);

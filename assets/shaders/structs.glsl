@@ -61,7 +61,7 @@ struct Reservoir {
     float W;
     vec3 yPos;
     vec3 yNorm;
-}
+};
 struct GBufferPixel {
     vec4 pos;
     vec4 norm;

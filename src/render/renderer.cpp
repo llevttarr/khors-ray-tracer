@@ -66,61 +66,29 @@ void Renderer::update_scene(RenderScene& render_scene){
         Light l =render_scene.light_v[i];
         std::cout<<std::to_string(l.pos.x)<<"; "<<std::to_string(l.pos.y)<<"; "<<std::to_string(l.pos.z)<<std::endl;
     }
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, tri_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.tri_v.size()*sizeof(RenderTri),render_scene.tri_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tri_ssbo);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, sphr_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.sphr_v.size()*sizeof(Sphr),render_scene.sphr_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, sphr_ssbo);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bvh_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.bvh_v.size()*sizeof(BVH),render_scene.bvh_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, bvh_ssbo);
+    int i=1;
+    bind_stor_buff(i++,render_scene.tri_v.size()*sizeof(RenderTri),GL_STATIC_DRAW,tri_ssbo,render_scene.tri_v.data());
+    bind_stor_buff(i++,render_scene.sphr_v.size()*sizeof(Sphr),GL_STATIC_DRAW,sphr_ssbo,render_scene.sphr_v.data());
+    bind_stor_buff(i++,render_scene.bvh_v.size()*sizeof(BVH),GL_STATIC_DRAW,bvh_ssbo,render_scene.bvh_v.data());
+    bind_stor_buff(i++,render_scene.mat_v.size()*sizeof(Mat),GL_STATIC_DRAW,mat_ssbo,render_scene.mat_v.data());
+    bind_stor_buff(i++,render_scene.prim_v.size()*sizeof(uint32_t),GL_STATIC_DRAW,prim_ssbo,render_scene.prim_v.data());
+    bind_stor_buff(i++,render_scene.light_v.size()*sizeof(Light),GL_STATIC_DRAW,light_ssbo,render_scene.light_v.data());
     
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, mat_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.mat_v.size()*sizeof(Mat),render_scene.mat_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, mat_ssbo);
-    
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, prim_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.prim_v.size()*sizeof(uint32_t),render_scene.prim_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, prim_ssbo);
-    
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.light_v.size()*sizeof(Light),render_scene.light_v.data(),GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, light_ssbo);
-    
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_a);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, reservoir_a);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_b);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, reservoir_b);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_h);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(Reservoir),nullptr, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, reservoir_h);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gbuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, w* h * sizeof(GBufferPixel),nullptr, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, gbuffer);
+    bind_stor_buff(i++,w* h * sizeof(Reservoir),GL_DYNAMIC_COPY,reservoir_a,nullptr);
+    bind_stor_buff(i++,w* h * sizeof(Reservoir),GL_DYNAMIC_COPY,reservoir_b,nullptr);
+    bind_stor_buff(i++,w* h * sizeof(Reservoir),GL_DYNAMIC_COPY,reservoir_h,nullptr);
+    bind_stor_buff(i++,w* h * sizeof(GBufferPixel),GL_DYNAMIC_COPY,gbuffer,nullptr);
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     base_tex_arr= create_texture_arr(tex_manager.get_base());
     normal_tex_arr =create_texture_arr(tex_manager.get_normal());
     specular_tex_arr = create_texture_arr(tex_manager.get_specular());
+}
+void Renderer::bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat){
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buff);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,size,dat,glt);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,i, buff);
 }
 void Renderer::update_mats(RenderScene& render_scene){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, mat_ssbo);
@@ -160,6 +128,7 @@ void Renderer::run(){
         resize(camera.get_w(),camera.get_h());
     }
     bind_unif(comp_shader);
+    glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
     const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
