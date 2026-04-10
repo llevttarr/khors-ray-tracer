@@ -36,14 +36,17 @@ vec3 brdfShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     vec3 base=mat.diffuse.rgb;
     vec3 normMap;
     vec3 specMap;
-    if (hit.matId==1){
-        // skip textures 
-    }else{
+
+    if (mat.tex.x!=-1){
         base=texture(baseTexArr,vec3(texUV, mat.tex.x)).rgb;
-        normMap=texture(normalTexArr,vec3(texUV,mat.tex.y)).rgb;
-        specMap=texture(specularTexArr,vec3(texUV,mat.tex.z)).rgb;
-        col=0.2*base + 0.7*mat.ambient.rgb;
     }
+    if (mat.tex.y!=-1){
+        normMap=texture(normalTexArr,vec3(texUV,mat.tex.y)).rgb;
+    }
+    if (mat.tex.z!=-1){
+        specMap=texture(specularTexArr,vec3(texUV,mat.tex.z)).rgb;
+    }
+    // col=0.2*base + 0.7*mat.ambient.rgb;
 
     vec3 point=hit.hitPos;
     vec3 v=normalize(rayOrigin-point);

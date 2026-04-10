@@ -330,3 +330,7 @@ void Scene::load_obj(const std::string& fpath,uint32_t matid){
     Object o={mid,identity,matid};
     uint32_t objid=add_object(o);
 }
+
+void Scene::change_mat(Mat& m, uint32_t matid){
+    mat_v[matid]=m;
+}
