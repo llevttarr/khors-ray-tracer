@@ -1,6 +1,8 @@
 #ifndef OBJ_WIDGET_H
 #define OBJ_WIDGET_H
 
+#include <iostream>
+#include <string>
 #include "widget.h"
 #include "../render/renderer.h"
 #include "../scene/scene.h"
@@ -12,6 +14,7 @@ public:
 
         ImGui::Begin("Objects");
         ImGui::Text("Object management");
+        ImGui::InputText("File name", filename_buf,sizeof(filename_buf));
         if (ImGui::Button("Import")) {
             try {
                 scene.load_obj(std::string(filename_buf));
