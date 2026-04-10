@@ -54,3 +54,9 @@ struct RayHit{
     uint type;
     mat3 tbn;
 };
+struct Reservoir {
+    int sampledLight;
+    float wSum;
+    int M;
+    float W;
+}
