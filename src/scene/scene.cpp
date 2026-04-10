@@ -301,3 +301,6 @@ void Scene::test_scene_init(){
     Scene::gen_random_mats(5,0,0,0);
     tex_manager=texman;
 }
+void Scene::load_obj(const std::string& fpath){
+
+}
