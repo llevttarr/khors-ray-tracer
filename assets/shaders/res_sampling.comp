@@ -1,0 +1,59 @@
+#version 430 core
+layout(local_size_x = 16,local_size_y = 4) in;
+
+//#import "structs.glsl"
+//#import "uniforms.glsl"
+
+layout(std430,binding=1) readonly buffer TriBuf {
+    Tri tris[];
+};
+layout(std430,binding=2) readonly buffer SphrBuf {
+    Sphr spheres[];
+};
+layout(std430,binding=3) readonly buffer BVHBuf {
+    BVH bvh_v[];
+};
+layout(std430,binding=4) readonly buffer MatBuf {
+    Mat mats[];
+};
+layout(std430,binding=5) readonly buffer PrimBuf {
+    uint prims[];
+};
+layout(std430,binding=6) readonly buffer LightBuf {
+    Light light_v[];
+};
+
+layout(std430,binding=7) readonly buffer ReservoirBuf {
+    Reservoir reser_v[];
+};
+layout(std430,binding=10) readonly buffer GBuf {
+    GBufferPixel reser_v[];
+};
+
+//#import "intersection.glsl"
+//#import "shading.glsl"
+//#import "wrs.glsl"
+//#import "pathtracing.glsl"
+
+void main() {
+    uvec2 gid = gl_GlobalInvocationID.xy;
+
+    if (gid.x >= width||gid.y >= height){
+        return;
+    }
+    float aspect=float(width)/float(height);
+    vec3 rayOrigin=camPos;
+    vec3 rayVector;
+    vec3 color;
+    vec3 lightSource=vec3(-1.0,1.0,-1.0);
+    vec2 uv=vec2((gid.x+0.5)/float(width),(gid.y+0.5)/float(height));
+    vec2 ndc=2.0*uv-1.0;
+    ndc.x*=aspect;
+    float fovTan=tan(0.5*camFov);
+    rayVector=normalize(camForward+ndc.x*fovTan*camRight+ndc.y*fovTan*camUp);
+
+    RayHit hit=trace(rayOrigin,rayVector);
+    // TODO
+
+    imageStore(outImage, ivec2(gid), vec4(color, 1.0));
+}

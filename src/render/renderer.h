@@ -19,7 +19,13 @@ struct Reservoir{
     Vec3<float> y_norm;
 };
 struct GBufferPixel{
-
+    Vec4<float> pos;
+    Vec4<float> norm;
+    Vec4<float> diff;
+    int matid;
+    int _pad1;
+    int _pad2;
+    int _pad3;
 };
 
 class Renderer {

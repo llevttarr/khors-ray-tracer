@@ -4,6 +4,26 @@ layout(local_size_x = 16,local_size_y = 4) in;
 // TODO: refactor old code !!!
 //#import "structs.glsl"
 //#import "uniforms.glsl"
+
+layout(std430,binding=1) readonly buffer TriBuf {
+    Tri tris[];
+};
+layout(std430,binding=2) readonly buffer SphrBuf {
+    Sphr spheres[];
+};
+layout(std430,binding=3) readonly buffer BVHBuf {
+    BVH bvh_v[];
+};
+layout(std430,binding=4) readonly buffer MatBuf {
+    Mat mats[];
+};
+layout(std430,binding=5) readonly buffer PrimBuf {
+    uint prims[];
+};
+layout(std430,binding=6) readonly buffer LightBuf {
+    Light light_v[];
+};
+
 //#import "intersection.glsl"
 //#import "shading.glsl"
 //#import "pathtracing.glsl"

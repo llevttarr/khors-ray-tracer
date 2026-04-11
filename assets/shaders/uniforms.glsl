@@ -19,23 +19,3 @@ uniform vec3 camForward;
 uniform vec3 camRight;
 uniform vec3 camUp;
 uniform float camFov;
-
-layout(std430,binding=1) readonly buffer TriBuf {
-    Tri tris[];
-};
-
-layout(std430,binding=2) readonly buffer SphrBuf {
-    Sphr spheres[];
-};
-layout(std430,binding=3) readonly buffer BVHBuf {
-    BVH bvh_v[];
-};
-layout(std430,binding=4) readonly buffer MatBuf {
-    Mat mats[];
-};
-layout(std430,binding=5) readonly buffer PrimBuf {
-    uint prims[];
-};
-layout(std430,binding=6) readonly buffer LightBuf {
-    Light light_v[];
-};
