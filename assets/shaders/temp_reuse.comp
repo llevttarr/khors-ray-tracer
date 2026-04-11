@@ -35,12 +35,16 @@ layout(std430,binding=9) readonly buffer ResBufH {
 layout(std430,binding=10) readonly buffer GBuf {
     GBufferPixel gbuffer[];
 };
+layout(std430, binding=11) readonly buffer GBufH {
+    GBufferPixel gbuffer_h[];
+};
 uniform vec3 prevCamPos;
 uniform vec3 prevCamForward;
 uniform vec3 prevCamRight;
 uniform vec3 prevCamUp;
 uniform float prevCamFov;
 uniform float prevAspect;
+const float MIN_NORMAL_DOT = 0.906;
 vec3 reprojectToPrevFrame(vec3 worldPos) {
     vec3  delta = worldPos - prevCamPos;
     float forwardD = dot(delta, prevCamForward);
@@ -59,6 +63,9 @@ vec3 reprojectToPrevFrame(vec3 worldPos) {
 //#import "hash.glsl"
 //#import "shading.glsl"
 const uint KNUTH_MUL=2654435761u;
+const int NUM_NEIGHBORS = 5;
+const float SEARCH_RADIUS = 30.0;
+const float MAX_DEPTH_DIFF = 0.1;
 const int M_CAP = 20;
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;
@@ -80,10 +87,9 @@ void main() {
         reservoir_b[pidx] = cur;
         return;
     }
-    uint px_prev = clamp(
-        uint(prevUV3.y * float(height)) * width + uint(prevUV3.x * float(width)),
-        0u, width * height - 1u
-    );
+    uint px_x = clamp(uint(prevUV3.x * float(width)), 0u, width - 1u);
+    uint px_y = clamp(uint(prevUV3.y * float(height)), 0u, height - 1u);
+    uint px_prev = px_y * width + px_x;
     Reservoir prev = reservoir_h[px_prev];
 
 
@@ -91,12 +97,32 @@ void main() {
     vec3 pos = px.pos.xyz;
     vec3 n = normalize(px.norm.xyz);
     vec3 diffuse = px.diffuse.rgb;
+    GBufferPixel prevPx = gbuffer_h[px_prev];
+    if (prevPx.valid == -1) {
+        reservoir_b[pidx] = cur;
+        return;
+    }
+    vec3 prevN = normalize(prevPx.norm.xyz);
+    if (dot(n, prevN) < MIN_NORMAL_DOT) {
+        reservoir_b[pidx] = cur;
+        return;
+    }
+    float depthCur = length(pos - prevCamPos);
+    float depthPrev = length(prevPx.pos.xyz - prevCamPos);
+    if (abs(depthCur - depthPrev) / max(depthCur, 1e-4) > MAX_DEPTH_DIFF) {
+        reservoir_b[pidx] = cur;
+        return;
+    }
 
     uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
-    float xi = float(pcg_next(rng)) / 4294967295.0;
+    uint rngVal = pcg_next(rng);
+    float xi = float(rngVal & 0x00FFFFFFu) / 16777216.0;
 
     Reservoir combined = cur;
-    float pHatPrev = targetPDF(prev.sampledLight, pos, n, diffuse);
+    float pHatPrev = 0.0;
+    if (prev.sampledLight >= 0) {
+        pHatPrev = targetPDF(prev.sampledLight, pos, n, diffuse);
+    }
     float wPrev = pHatPrev * prev.W * float(prev.M);
 
     combined.wSum += wPrev;

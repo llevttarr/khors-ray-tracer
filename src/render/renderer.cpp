@@ -25,6 +25,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glGenBuffers(1, &reservoir_b);
     glGenBuffers(1, &reservoir_h);
     glGenBuffers(1, &gbuffer);
+    glGenBuffers(1, &gbuffer_h);
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
     glBindTexture(GL_TEXTURE_2D, cbuff);
@@ -50,6 +51,7 @@ Renderer::~Renderer() {
     glDeleteBuffers(1,&reservoir_b);
     glDeleteBuffers(1,&reservoir_h);
     glDeleteBuffers(1,&gbuffer);
+    glDeleteBuffers(1,&gbuffer_h);
     glDeleteTextures(1,&cbuff);
 }
 void Renderer::update_scene(RenderScene& render_scene){
@@ -82,6 +84,7 @@ void Renderer::update_scene(RenderScene& render_scene){
     bind_stor_buff(i++,w* h * sizeof(Reservoir),GL_DYNAMIC_COPY,reservoir_b,nullptr);
     bind_stor_buff(i++,w* h * sizeof(Reservoir),GL_DYNAMIC_COPY,reservoir_h,nullptr);
     bind_stor_buff(i++,w* h * sizeof(GBufferPixel),GL_DYNAMIC_COPY,gbuffer,nullptr);
+    bind_stor_buff(i++,w* h * sizeof(GBufferPixel),GL_DYNAMIC_COPY,gbuffer_h,nullptr);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     base_tex_arr= create_texture_arr(tex_manager.get_base());
@@ -145,6 +148,11 @@ void Renderer::run_rs(){
     glDispatchCompute(dx, dy, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     // - stage 2:= reservoir_a write, reservoir_b read, reservoir_h read -
+    if (framec == 0) {
+        glBindBuffer(GL_COPY_READ_BUFFER, gbuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, gbuffer_h);
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, w * h * sizeof(GBufferPixel));
+    }
     bind_unif(cs_temp_reuse); // todo: prev view proj
     cs_temp_reuse.set_vec3("prevCamPos",prev_camera.pos);
     cs_temp_reuse.set_vec3("prevCamForward",prev_camera.forward);
@@ -168,8 +176,12 @@ void Renderer::run_rs(){
     prev_camera = { camera.get_pos(), camera.get_forward(),camera.get_right(), camera.get_up(),camera.get_fov(), float(w)/float(h)};
     // todo: prev proj view
     std::swap(reservoir_a, reservoir_h);
+    std::swap(gbuffer_h, gbuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, reservoir_a);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, reservoir_h);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, gbuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 11, gbuffer_h);
 
     glViewport(0, 0, w, h);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -248,7 +260,9 @@ void Renderer::resize(int nw, int nh){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gbuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, 
                  pixel_count * sizeof(GBufferPixel), nullptr, GL_DYNAMIC_COPY);
-
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gbuffer_h);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+                pixel_count * sizeof(GBufferPixel), nullptr, GL_DYNAMIC_COPY);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, reservoir_a);
     glBufferData(GL_SHADER_STORAGE_BUFFER, 
                  pixel_count * sizeof(Reservoir), nullptr, GL_DYNAMIC_COPY);

@@ -62,18 +62,33 @@ void main() {
 
     uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
 
-    Reservoir combined = cur;
-    combined.M = cur.M;
+    Reservoir combined;
+    combined.wSum = 0.0;
+    combined.M = 0;
+    combined.sampledLight = -1;
+    combined.W = 0.0;
+    float pHatCenter = 0.0;
+    if (cur.sampledLight >= 0) {
+        pHatCenter = targetPDF(cur.sampledLight, pos, n, diffuse);
+    }
+    float wCenter = pHatCenter * cur.W * float(cur.M);
+
+    combined.wSum += wCenter;
+    combined.M += cur.M;
+    if (combined.wSum > 0.0) {
+        combined.sampledLight = cur.sampledLight;
+    }
+    float depthCur = length(pos-camPos);
     for (int i = 0; i<NUM_NEIGHBORS; ++i) {
-        vec2 offset;
-        for (int attempt = 0; attempt < 8; ++attempt) {
-            float u1 = float(pcg_next(rng)) / 4294967295.0;
-            float u2 = float(pcg_next(rng))/ 4294967295.0;
-            offset   = (vec2(u1, u2) * 2.0 - 1.0) * SEARCH_RADIUS;
-            if (dot(offset, offset) <= SEARCH_RADIUS * SEARCH_RADIUS){
-                break;
-            }
-        }
+        uint rngVal1 = pcg_next(rng);
+        uint rngVal2 = pcg_next(rng);
+
+        float u1 = float(rngVal1 & 0x00FFFFFFu) / 16777216.0;
+        float u2 = float(rngVal2 & 0x00FFFFFFu) / 16777216.0;
+
+        float radius = SEARCH_RADIUS * sqrt(u1);
+        float theta = 2.0 * 3.14159265 * u2;
+        vec2 offset = vec2(cos(theta), sin(theta)) * radius;
 
         ivec2 nCoord = ivec2(gid) + ivec2(round(offset));
         if (nCoord.x < 0 || nCoord.x >= int(width) ||nCoord.y < 0 || nCoord.y >= int(height))
@@ -87,7 +102,6 @@ void main() {
         if (dot(n, nNorm) < MIN_NORMAL_DOT)
             continue;
 
-        float depthCur = length(pos - camPos);
         float depthNeib = length(npx.pos.xyz - camPos);
     
         if (abs(depthCur - depthNeib) / max(depthCur, 1e-4) > MAX_DEPTH_DIFF)
@@ -99,7 +113,8 @@ void main() {
 
         float pHatN = targetPDF(nr.sampledLight, pos, n, diffuse);
         float wN = pHatN * nr.W * float(nr.M);
-        float xi = float(pcg_next(rng)) / 4294967295.0;
+        uint rngXi = pcg_next(rng);
+        float xi = float(rngXi & 0x00FFFFFFu) / 16777216.0;
         combined.wSum += wN;
         combined.M   += nr.M;
         if (nr.sampledLight >= 0 && combined.wSum > 0.0&&xi * combined.wSum < wN)

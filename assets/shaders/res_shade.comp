@@ -57,12 +57,13 @@ void main() {
     if (r.sampledLight >= 0 && r.W > 0.0) {
         Light l = light_v[r.sampledLight];
         vec3  ptol = l.pos.xyz - pos;
-        float dist = length(ptol);
+        float distSq = max(dot(ptol, ptol), 0.001);
+        float dist = sqrt(distSq);
         vec3  ldir = ptol / dist;
 
         if (!traceAny(pos + n * 0.001, ldir, dist)) {
             float ndotl = max(0.0, dot(n, ldir));
-            vec3 diff  = diffuse * l.diffuse.rgb * ndotl;
+            vec3 diff  =(diffuse * l.diffuse.rgb * ndotl) /*/ distSq*/;
 
             vec3 v = normalize(camPos - pos);
             float sh  = max(1.0, mat.ambient.w);
@@ -72,7 +73,7 @@ void main() {
             }else{
                 specStr = blinnPhongSpecStr(v, ldir, n, sh);
             }
-            vec3 spec = mat.specular.rgb * l.specular.rgb * specStr;
+            vec3 spec =(mat.specular.rgb * l.specular.rgb * specStr) /*/ distSq*/;
             if (px.matId != 1 && mat.tex.z != -1) {
                 vec3 specMap = texture(specularTexArr, vec3(px.uv, mat.tex.z)).rgb;
                 spec *= specMap;

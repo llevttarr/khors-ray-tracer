@@ -104,7 +104,7 @@ void main() {
     r.W = 0.0;
     uint rng = pcg_hash(pidx ^ (framec*KNUTH_MUL));
     for (uint i = 0u; i < init_candidates_restir; ++i) {
-        uint  lightIdx = pcg_next(rng) % lightc;
+        uint lightIdx = uint(float(pcg_next(rng)) * (1.0/4294967296.0) * float(lightc));
         float xi = float(pcg_next(rng)) * (1.0 / 4294967296.0);
         float p_hat = targetPDF(int(lightIdx), pos, n, diffuse);
         float w = p_hat * float(lightc);

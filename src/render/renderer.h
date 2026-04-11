@@ -75,12 +75,13 @@ private:
     GLuint reservoir_b=0;
     GLuint reservoir_h=0;
     GLuint gbuffer=0;
+    GLuint gbuffer_h=0;
     
     uint32_t tric = 0;
     uint32_t spherec = 0;
     uint32_t lightc = 0;
     uint32_t framec=0;
-    uint32_t init_candidates_restir=32;
+    uint32_t init_candidates_restir=64;
     uint32_t bvhc=0;
     uint32_t matc=0;
 
