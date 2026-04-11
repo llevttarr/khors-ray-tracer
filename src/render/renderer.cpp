@@ -127,29 +127,49 @@ GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
     glBindTexture(GL_TEXTURE_2D_ARRAY,0);
     return tex;
 }
-void Renderer::run(){
-    run_di();
+void Renderer::run(uint8_t tracing_type){
+    if (tracing_type==0){
+        run_di();
+    }else{
+        run_rs();
+    }
 }
 void Renderer::run_rs(){
     if (camera.get_w()!=w || camera.get_h()!=h){
         resize(camera.get_w(),camera.get_h());
     }
-    bind_unif(comp_shader);
-    glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
     const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
     const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
+    // - stage 1:= reservoir_a, gbuffer -
+    bind_unif(cs_res_sampling);
+    glDispatchCompute(dx, dy, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    // - stage 2:= reservoir_a write, reservoir_b read, reservoir_h read -
+    bind_unif(cs_temp_reuse); // todo: prev view proj
+    glDispatchCompute(dx, dy, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    // - stage 3:= reservoir_a read, reservoir_b write -
+    bind_unif(cs_spat_reuse);
+    glDispatchCompute(dx, dy, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    // - stage 4:= reservoir_a read, reservoir_b write -
+    bind_unif(cs_res_shade);
+    glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glDispatchCompute(dx, dy, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    // postprocess
+    framec++;
+    // todo: prev proj view
+    std::swap(reservoir_a, reservoir_h);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, reservoir_a);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, reservoir_h);
+
     glViewport(0, 0, w, h);
     glClear(GL_COLOR_BUFFER_BIT);
-
     shader.use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cbuff);
-
     shader.set_int("tex",0);
-
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);

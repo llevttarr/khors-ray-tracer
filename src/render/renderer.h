@@ -30,7 +30,7 @@ class Renderer {
 public:
     explicit Renderer(int width, int height,EulerCamera& camera);
     ~Renderer();
-    void run();
+    void run(uint8_t tracing_type=0);
     void run_di();
     void run_rs();
     void get_fps();
