@@ -59,6 +59,7 @@ vec3 reprojectToPrevFrame(vec3 worldPos) {
 //#import "hash.glsl"
 //#import "shading.glsl"
 const uint KNUTH_MUL=2654435761u;
+const int M_CAP = 20;
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;
 
@@ -72,5 +73,36 @@ void main() {
         reservoir_b[pidx] = cur;
         return;
     }
-    // imageStore(outImage, ivec2(gid), vec4(color, 1.0));
+    vec3 prevUV3 = reprojectToPrevFrame(px.pos.xyz);
+    bool validHistory = 
+        prevUV3.z > 0.0 && prevUV3.x >= 0.0 && prevUV3.x <= 1.0&& prevUV3.y >= 0.0 && prevUV3.y <= 1.0;
+    if (!validHistory) {
+        reservoir_b[pidx] = cur;
+        return;
+    }
+    uint px_prev = clamp(
+        uint(prevUV3.y * float(height)) * width + uint(prevUV3.x * float(width)),
+        0u, width * height - 1u
+    );
+    Reservoir prev = reservoir_h[px_prev];
+
+
+    prev.M = min(prev.M, M_CAP * max(cur.M, 1));
+    vec3 pos = px.pos.xyz;
+    vec3 n = normalize(px.norm.xyz);
+    vec3 diffuse = px.diffuse.rgb;
+
+    uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
+    float xi = float(pcg_next(rng)) / 4294967295.0;
+
+    Reservoir combined = cur;
+    float pHatPrev = targetPDF(prev.sampledLight, pos, n, diffuse);
+    float wPrev = pHatPrev * prev.W * float(prev.M);
+
+    combined.wSum += wPrev;
+    combined.M += prev.M;
+    if (prev.sampledLight >= 0 && combined.wSum > 0.0&&xi * combined.wSum < wPrev)
+        combined.sampledLight = prev.sampledLight;
+    finalize_reservoir(combined, pos, n, diffuse);
+    reservoir_b[pidx] = combined;
 }

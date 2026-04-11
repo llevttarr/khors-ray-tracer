@@ -37,6 +37,11 @@ layout(std430,binding=10) readonly buffer GBuf {
 //#import "wrs.glsl"
 //#import "hash.glsl"
 //#import "shading.glsl"
+const uint KNUTH_MUL=2654435761u;
+const int NUM_NEIGHBORS = 5;
+const float SEARCH_RADIUS = 30.0;
+const float MAX_DEPTH_DIFF = 0.1;
+const float MIN_NORMAL_DOT = 0.906;
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;
 
@@ -44,6 +49,63 @@ void main() {
         return;
     }
     uint pidx = gid.y * width + gid.x;
-    float aspect=float(width)/float(height);
-    // imageStore(outImage, ivec2(gid), vec4(color, 1.0));
+    GBufferPixel px = gbuffer[pidx];
+    Reservoir cur   = reservoir_b[pidx];
+
+    if (px.valid == -1) {
+        reservoir_a[pidx] = cur;
+        return;
+    }
+    vec3 pos= px.pos.xyz;
+    vec3 n= normalize(px.norm.xyz);
+    vec3 diffuse = px.diffuse.rgb;
+
+    uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
+
+    Reservoir combined = cur;
+    combined.M = cur.M;
+    for (int i = 0; i<NUM_NEIGHBORS; ++i) {
+        vec2 offset;
+        for (int attempt = 0; attempt < 8; ++attempt) {
+            float u1 = float(pcg_next(rng)) / 4294967295.0;
+            float u2 = float(pcg_next(rng))/ 4294967295.0;
+            offset   = (vec2(u1, u2) * 2.0 - 1.0) * SEARCH_RADIUS;
+            if (dot(offset, offset) <= SEARCH_RADIUS * SEARCH_RADIUS){
+                break;
+            }
+        }
+
+        ivec2 nCoord = ivec2(gid) + ivec2(round(offset));
+        if (nCoord.x < 0 || nCoord.x >= int(width) ||nCoord.y < 0 || nCoord.y >= int(height))
+            continue;
+
+        uint nIdx = uint(nCoord.y) * width + uint(nCoord.x);
+        GBufferPixel npx = gbuffer[nIdx];
+        if (npx.valid == -1) 
+            continue;
+        vec3 nNorm = normalize(npx.norm.xyz);
+        if (dot(n, nNorm) < MIN_NORMAL_DOT)
+            continue;
+
+        float depthCur = length(pos - camPos);
+        float depthNeib = length(npx.pos.xyz - camPos);
+    
+        if (abs(depthCur - depthNeib) / max(depthCur, 1e-4) > MAX_DEPTH_DIFF)
+            continue;
+
+        Reservoir nr = reservoir_b[nIdx];
+        if (nr.sampledLight < 0 || nr.M == 0)
+            continue;
+
+        float pHatN = targetPDF(nr.sampledLight, pos, n, diffuse);
+        float wN = pHatN * nr.W * float(nr.M);
+        float xi = float(pcg_next(rng)) / 4294967295.0;
+        combined.wSum += wN;
+        combined.M   += nr.M;
+        if (nr.sampledLight >= 0 && combined.wSum > 0.0&&xi * combined.wSum < wN)
+            combined.sampledLight = nr.sampledLight;
+    }
+
+    finalize_reservoir(combined, pos, n, diffuse);
+    reservoir_a[pidx] = combined;
 }
