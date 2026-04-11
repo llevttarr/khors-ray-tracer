@@ -59,6 +59,8 @@ void main() {
         px.norm = vec4(0.0);
         px.diffuse= vec4(0.0);
         px.matId = -1;
+        px.uv=vec2(0.0);
+        px.valid=-1;
         gbuffer[pidx] = px;
         Reservoir r;
         r.sampledLight = -1;
@@ -91,6 +93,8 @@ void main() {
     px.norm = vec4(n,0.0);
     px.diffuse= vec4(diffuse,0.0);
     px.matId = hit.matId;
+    px.uv=hit.uv;
+    px.valid=1;
     gbuffer[pidx] = px;
 
     Reservoir r;

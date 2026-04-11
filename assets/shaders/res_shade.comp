@@ -1,0 +1,86 @@
+#version 430 core
+layout(local_size_x = 16,local_size_y = 4) in;
+
+//#import "structs.glsl"
+//#import "uniforms.glsl"
+
+layout(std430,binding=1) readonly buffer TriBuf {
+    Tri tris[];
+};
+layout(std430,binding=2) readonly buffer SphrBuf {
+    Sphr spheres[];
+};
+layout(std430,binding=3) readonly buffer BVHBuf {
+    BVH bvh_v[];
+};
+layout(std430,binding=4) readonly buffer MatBuf {
+    Mat mats[];
+};
+layout(std430,binding=5) readonly buffer PrimBuf {
+    uint prims[];
+};
+layout(std430,binding=6) readonly buffer LightBuf {
+    Light light_v[];
+};
+
+layout(std430,binding=7) readonly buffer ReservoirBuf {
+    Reservoir reservoir_a[];
+};
+layout(std430,binding=10) readonly buffer GBuf {
+    GBufferPixel gbuffer[];
+};
+//#import "intersection.glsl"
+//#import "wrs.glsl"
+//#import "hash.glsl"
+//#import "shading.glsl"
+void main() {
+    uvec2 gid = gl_GlobalInvocationID.xy;
+
+    if (gid.x >= width||gid.y >= height){
+        return;
+    }
+    uint pidx = gid.y * width + gid.x;
+    GBufferPixel px = gbuffer[pidx];
+    if (px.valid == -1) {
+        vec2 uv = vec2((gid.x + 0.5) / float(width),(gid.y + 0.5) / float(height));
+        float ndy = 2.0 * uv.y - 1.0;
+        imageStore(outImage, ivec2(gid), vec4(getSky(ndy), 1.0));
+        return;
+    }
+    vec3 pos = px.pos.xyz;
+    vec3 n = normalize(px.norm.xyz);
+    vec3 diffuse = px.diffuse.xyz;
+    Mat mat = mats[px.matId - 1];
+    float hemi = 0.5 + 0.5 * n.y;
+    vec3  col  = mat.ambient.rgb * hemi;
+    Reservoir r = reservoir_a[pidx];
+    if (r.sampledLight >= 0 && r.W > 0.0) {
+        Light l = light_v[r.sampledLight];
+        vec3  ptol = l.pos.xyz - pos;
+        float dist = length(ptol);
+        vec3  ldir = ptol / dist;
+
+        if (!traceAny(pos + n * 0.001, ldir, dist)) {
+            float ndotl = max(0.0, dot(n, ldir));
+            vec3 diff  = diffuse * l.diffuse.rgb * ndotl;
+
+            vec3 v = normalize(camPos - pos);
+            float sh  = max(1.0, mat.ambient.w);
+            float specStr = 0.0;
+            if (brdf_type == 0){
+                specStr = phongSpecStr(v, ldir, n, sh);
+            }else{
+                specStr = blinnPhongSpecStr(v, ldir, n, sh);
+            }
+            vec3 spec = mat.specular.rgb * l.specular.rgb * specStr;
+            if (px.matId != 1 && mat.tex.z != -1) {
+                vec3 specMap = texture(specularTexArr, vec3(px.uv, mat.tex.z)).rgb;
+                spec *= specMap;
+            }
+            col += (diff + spec) * r.W;
+            col += mat.ambient.rgb * l.ambient.rgb * hemi;
+        }
+    }
+    col += mat.emission.rgb * mat.emission.w;
+    imageStore(outImage, ivec2(gid), vec4(col, 1.0));
+}

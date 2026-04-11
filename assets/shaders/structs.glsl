@@ -63,7 +63,8 @@ struct Reservoir {
 struct GBufferPixel {
     vec4 pos;
     vec4 norm;
-    vec4 diffuse; 
+    vec4 diffuse;
+    vec2 uv;
     uint matId;
-    int _pad[3];
+    int valid;
 };

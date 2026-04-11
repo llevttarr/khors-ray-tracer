@@ -10,10 +10,10 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
   : w(width), h(height),camera(cam),
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
     comp_shader("assets/shaders/", "assets/shaders/cs.comp"),
-    cs_res_sampling("assets/shaders/", "assets/shaders/res_sampling.comp")/*,
+    cs_res_sampling("assets/shaders/", "assets/shaders/res_sampling.comp"),
     cs_temp_reuse("assets/shaders/", "assets/shaders/temp_reuse.comp"),
     cs_spat_reuse("assets/shaders/", "assets/shaders/spat_reuse.comp"),
-    cs_res_shade("assets/shaders/", "assets/shaders/res_shade.comp")*/
+    cs_res_shade("assets/shaders/", "assets/shaders/res_shade.comp")
 {
     glGenBuffers(1, &tri_ssbo);
     glGenBuffers(1, &sphr_ssbo);

@@ -20,17 +20,16 @@ struct GBufferPixel{
     Vec4<float> pos;
     Vec4<float> norm;
     Vec4<float> diff;
+    Vec2<float> uv;
     uint32_t matid;
-    int _pad1;
-    int _pad2;
-    int _pad3;
+    int valid;
 };
 
 class Renderer {
 public:
     explicit Renderer(int width, int height,EulerCamera& camera);
     ~Renderer();
-    void run(uint8_t tracing_type=0);
+    void run(uint8_t tracing_type=1);
     void run_di();
     void run_rs();
     void get_fps();
