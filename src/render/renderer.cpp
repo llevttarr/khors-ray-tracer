@@ -127,7 +127,7 @@ GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
     glBindTexture(GL_TEXTURE_2D_ARRAY,0);
     return tex;
 }
-void Renderer::run(uint8_t tracing_type){
+void Renderer::run(){
     if (tracing_type==0){
         run_di();
     }else{
@@ -206,6 +206,20 @@ void Renderer::run_di(){
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
     get_fps();
+}
+void Renderer::switch_brdf(){
+    if (brdf_type==0){
+        brdf_type=1;
+    }else{
+        brdf_type=0;
+    }
+}
+void Renderer::switch_tt(){
+    if (tracing_type==0){
+        tracing_type=1;
+    }else{
+        tracing_type=0;
+    }
 }
 void Renderer::get_fps(){
     auto curr_time=std::chrono::steady_clock::now();

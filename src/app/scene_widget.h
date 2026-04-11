@@ -41,6 +41,14 @@ public:
                 status  = false;
             }
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Switch tracing type")) {
+            renderer.switch_tt();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Switch brdf type (only for tracing type 0)")) {
+            renderer.switch_brdf();
+        }
         if (!status_msg.empty()) {
             ImGui::Spacing();
             ImGui::TextColored(status ? ImVec4(0,1,0,1) : ImVec4(1,0.3f,0.3f,1),"%s", status_msg.c_str());

@@ -273,15 +273,15 @@ void Scene::test_scene_init(){
     // }
     std::uniform_real_distribution<float> light_diff(0.1f,0.7f);
 
-    // for (size_t i=0;i<2;++i){
-    //     Vec4<float> pos=scene_util::rand_vec(engine,dist);
-    //     pos.w=4;
-    //     Vec4<float> amb=scene_util::rand_vec(engine,light_diff);
-    //     Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
-    //     Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
-    //     Light l{pos,amb,diff,spec};
-    //     light_v.push_back(l);
-    // }
+    for (size_t i=0;i<5;++i){
+        Vec4<float> pos=scene_util::rand_vec(engine,dist);
+        pos.w=4;
+        Vec4<float> amb=scene_util::rand_vec(engine,light_diff);
+        Vec4<float> diff=scene_util::rand_vec(engine,light_diff);
+        Vec4<float> spec=scene_util::rand_vec(engine,light_diff);
+        Light l{pos,amb,diff,spec};
+        light_v.push_back(l);
+    }
     Light l;
     l.pos = {0.2f,30.f,0.2f,200.f};
     l.ambient = {0.02f,0.02f,0.02f,1.f};
