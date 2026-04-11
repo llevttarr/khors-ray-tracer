@@ -15,14 +15,12 @@ struct Reservoir{
     float w_sum;
     int m;
     float w;
-    Vec3<float> y_pos;
-    Vec3<float> y_norm;
 };
 struct GBufferPixel{
     Vec4<float> pos;
     Vec4<float> norm;
     Vec4<float> diff;
-    int matid;
+    uint32_t matid;
     int _pad1;
     int _pad2;
     int _pad3;
@@ -79,6 +77,7 @@ private:
     uint32_t spherec = 0;
     uint32_t lightc = 0;
     uint32_t framec=0;
+    uint32_t init_candidates_restir=32;
     uint32_t bvhc=0;
     uint32_t matc=0;
 

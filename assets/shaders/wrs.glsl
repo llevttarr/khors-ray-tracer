@@ -1,4 +1,4 @@
-
+const vec3 LUMINANCE=vec3(0.2126, 0.7152, 0.0722); 
 void wrs_update(inout Reservoir r, int candidate, float w, float xi) {
     r.wSum += w;
     r.M += 1;
@@ -11,7 +11,7 @@ float targetPDF(int lightIdx, vec3 pos, vec3 n, vec3 diffuse) {
     float dist = length(ptol);
     float ndotl = max(0.0, dot(n, ptol / dist));
     vec3  contrib = diffuse *l.diffuse.rgb * ndotl/(dist*dist);
-    return dot(contrib,vec3(0.2126, 0.7152, 0.0722));
+    return dot(contrib,LUMINANCE);
 }
 void finalize_reservoir(inout Reservoir r, vec3 pos, vec3 n, vec3 diffuse) {
     if (r.sampledLight < 0 || r.M == 0) { 

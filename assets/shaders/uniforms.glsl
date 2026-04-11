@@ -11,6 +11,8 @@ uniform uint spherec;
 uniform uint bvhc;
 uniform uint matc;
 uniform uint lightc;
+uniform uint framec;
+uniform uint init_candidates_restir;
 
 uniform uint brdf_type; //0-phong,1-blinn-phong
 

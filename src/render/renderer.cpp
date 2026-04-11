@@ -233,6 +233,7 @@ void Renderer::bind_unif(ComputeShader& sh){
     sh.set_uint("matc", matc);
     sh.set_uint("lightc", lightc);
     sh.set_uint("framec", framec);
+    sh.set_uint("init_candidates_restir", init_candidates_restir);
     sh.set_vec3("camPos", camera.get_pos());
     sh.set_vec3("camForward",camera.get_forward());
     sh.set_vec3("camRight", camera.get_right());
