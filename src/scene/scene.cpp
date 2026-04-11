@@ -1,6 +1,8 @@
 #include "scene.h"
 #include <bit>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <algorithm>
 const uint BVH_LEAF_SIZE=4;
 constexpr uint32_t IS_LEAF_FLAG=0x80000000u;
@@ -304,14 +306,15 @@ void Scene::test_scene_init(){
     Scene::gen_random_mats(5,0,0,0);
     tex_manager=texman;
 }
-void Scene::load_obj(const std::string& fpath,uint32_t matid){
+void Scene::load_obj(const std::string& fpath){
+    load_obj_mtl(fpath);
     Mesh m= obj_util::load_mesh_obj(fpath+".obj");
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::mt19937 engine(seed);
-    std::uniform_real_distribution<float> dist(-50.0, 50.0);
-    std::uniform_int_distribution<uint32_t> mat_dist(2,5);
-    std::uniform_real_distribution<float> light_diff(0.1f,0.7f);
-    std::uniform_real_distribution<float> light_diff_small(0.05f,0.3f);
+    // unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    // std::mt19937 engine(seed);
+    // std::uniform_real_distribution<float> dist(-50.0, 50.0);
+    // std::uniform_int_distribution<uint32_t> mat_dist(2,5);
+    // std::uniform_real_distribution<float> light_diff(0.1f,0.7f);
+    // std::uniform_real_distribution<float> light_diff_small(0.05f,0.3f);
     uint32_t mid=add_mesh(m);
 
     // Vec4<float> amb=scene_util::rand_vec(engine,light_diff_small);
@@ -326,10 +329,41 @@ void Scene::load_obj(const std::string& fpath,uint32_t matid){
     Mat4<float> identity{};
 
     // uint32_t matid=add_mat(mat);
-    Object o={mid,identity,matid};
+    Object o={mid,identity,1};
     uint32_t objid=add_object(o);
 }
+void Scene::load_obj_mtl(const std::string& fpath){
+    std::ifstream file(fpath+".mtl",std::ios::in);
+    if(!file.is_open()){
+        throw MeshLoadException("Could not load mesh from "+fpath+".obj");
+    }
+    std::string line;
+    while (std::getline(file,line)){
+        std::istringstream line_s(line);
+        std::string sym;
+        line_s>>sym;
+        if (sym== "newmtl"){ //new mat
 
+        }else if (sym=="Ka"){ // ambient
+
+        }else if (sym=="Kd"){ // diffuse
+
+        }else if (sym=="Ks"){ // specular
+
+        }else if (sym=="Ns"){ // diffuse[3]
+
+        }else if (sym=="d"){ //dissolve - skip(?)
+
+        }else if (sym=="map_Kd"){// text base
+
+        }else if (sym=="map_Ks"){//text spec
+
+        }else if (sym=="map_bump"||sym=="bump"){ //text norm
+
+        }
+    }
+    file.close();
+}
 void Scene::change_mat(Mat& m, uint32_t matid){
     mat_v[matid]=m;
 }

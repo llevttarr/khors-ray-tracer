@@ -96,9 +96,9 @@ namespace obj_util{
         }
     }
     Mesh load_mesh_obj(const std::string& file_path){
-        std::ifstream file(file_path,std::ios::in);
+        std::ifstream file(file_path+".obj",std::ios::in);
         if(!file.is_open()){
-            throw MeshLoadException("Could not load mesh from "+file_path);
+            throw MeshLoadException("Could not load mesh from "+file_path+".obj");
         }
         // TODO: change to loading object in the future
         Mesh res{};
