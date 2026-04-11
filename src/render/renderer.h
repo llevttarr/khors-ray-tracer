@@ -52,6 +52,7 @@ private:
     ComputeShader cs_res_shade;
 
     EulerCamera& camera;
+    CameraSnapshot prev_camera;
     Benchmark benchmark;
     TextureManager tex_manager;
 

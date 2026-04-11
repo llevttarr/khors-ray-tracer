@@ -23,10 +23,14 @@ layout(std430,binding=6) readonly buffer LightBuf {
     Light light_v[];
 };
 
-layout(std430,binding=7) writeonly buffer ReservoirBuf {
+
+layout(std430,binding=7) writeonly buffer ResBufA {
     Reservoir reservoir_a[];
 };
-layout(std430,binding=10) writeonly buffer GBuf {
+layout(std430,binding=8) readonly buffer ResBufB {
+    Reservoir reservoir_b[];
+};
+layout(std430,binding=10) readonly buffer GBuf {
     GBufferPixel gbuffer[];
 };
 //#import "intersection.glsl"

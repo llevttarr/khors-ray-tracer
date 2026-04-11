@@ -23,12 +23,37 @@ layout(std430,binding=6) readonly buffer LightBuf {
     Light light_v[];
 };
 
-layout(std430,binding=7) writeonly buffer ReservoirBuf {
+layout(std430,binding=7) readonly buffer ResBufA {
     Reservoir reservoir_a[];
 };
-layout(std430,binding=10) writeonly buffer GBuf {
+layout(std430,binding=8) writeonly buffer ResBufB {
+    Reservoir reservoir_b[];
+};
+layout(std430,binding=9) readonly buffer ResBufH {
+    Reservoir reservoir_h[];
+};
+layout(std430,binding=10) readonly buffer GBuf {
     GBufferPixel gbuffer[];
 };
+uniform vec3 prevCamPos;
+uniform vec3 prevCamForward;
+uniform vec3 prevCamRight;
+uniform vec3 prevCamUp;
+uniform float prevCamFov;
+uniform float prevAspect;
+vec3 reprojectToPrevFrame(vec3 worldPos) {
+    vec3  delta = worldPos - prevCamPos;
+    float forwardD = dot(delta, prevCamForward);
+    if (forwardD <= 0.0)
+        return vec3(0.0, 0.0, -1.0);
+
+    float fovTan = tan(0.5 * prevCamFov);
+    float rightD = dot(delta, prevCamRight);
+    float upD = dot(delta, prevCamUp);
+    float ndcX = (rightD / (forwardD * fovTan * prevAspect));
+    float ndcY = (upD / (forwardD * fovTan));
+    return vec3(ndcX * 0.5 + 0.5, ndcY * 0.5 + 0.5, 1.0);
+}
 //#import "intersection.glsl"
 //#import "wrs.glsl"
 //#import "hash.glsl"
@@ -41,6 +66,11 @@ void main() {
         return;
     }
     uint pidx = gid.y * width + gid.x;
-    float aspect=float(width)/float(height);
+    GBufferPixel px = gbuffer[pidx];
+    Reservoir cur =reservoir_a[pidx];
+    if (px.valid == -1) {
+        reservoir_b[pidx] = cur;
+        return;
+    }
     // imageStore(outImage, ivec2(gid), vec4(color, 1.0));
 }

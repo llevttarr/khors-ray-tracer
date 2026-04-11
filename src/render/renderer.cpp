@@ -146,6 +146,12 @@ void Renderer::run_rs(){
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     // - stage 2:= reservoir_a write, reservoir_b read, reservoir_h read -
     bind_unif(cs_temp_reuse); // todo: prev view proj
+    cs_temp_reuse.set_vec3("prevCamPos",prev_camera.pos);
+    cs_temp_reuse.set_vec3("prevCamForward",prev_camera.forward);
+    cs_temp_reuse.set_vec3("prevCamRight",prev_camera.right);
+    cs_temp_reuse.set_vec3("prevCamUp",prev_camera.up);
+    cs_temp_reuse.set_float("prevCamFov",prev_camera.fov);
+    cs_temp_reuse.set_float("prevAspect",prev_camera.aspect);
     glDispatchCompute(dx, dy, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     // - stage 3:= reservoir_a read, reservoir_b write -
@@ -159,6 +165,7 @@ void Renderer::run_rs(){
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     // postprocess
     framec++;
+    prev_camera = { camera.get_pos(), camera.get_forward(),camera.get_right(), camera.get_up(),camera.get_fov(), float(w)/float(h)};
     // todo: prev proj view
     std::swap(reservoir_a, reservoir_h);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, reservoir_a);

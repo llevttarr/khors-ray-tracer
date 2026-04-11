@@ -10,6 +10,14 @@
 
 constexpr uint16_t MOVE_TICKS_CAP = 100;
 constexpr float SPEED_BASE = 0.5;
+struct CameraSnapshot {
+    Vec3<float> pos;
+    Vec3<float> forward;
+    Vec3<float> right;
+    Vec3<float> up;
+    float fov;
+    float aspect;
+};
 class EulerCamera {
 public:
     EulerCamera(int wi,int hi);
