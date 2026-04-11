@@ -26,7 +26,6 @@ layout(std430,binding=6) readonly buffer LightBuf {
 
 //#import "intersection.glsl"
 //#import "shading.glsl"
-//#import "pathtracing.glsl"
 //#import "tracingres.glsl"
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;

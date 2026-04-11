@@ -9,8 +9,8 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
 
   : w(width), h(height),camera(cam),
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
-    comp_shader("assets/shaders/", "assets/shaders/cs.comp")/*,
-    cs_res_sampling("assets/shaders/", "assets/shaders/res_sampling.comp"),
+    comp_shader("assets/shaders/", "assets/shaders/cs.comp"),
+    cs_res_sampling("assets/shaders/", "assets/shaders/res_sampling.comp")/*,
     cs_temp_reuse("assets/shaders/", "assets/shaders/temp_reuse.comp"),
     cs_spat_reuse("assets/shaders/", "assets/shaders/spat_reuse.comp"),
     cs_res_shade("assets/shaders/", "assets/shaders/res_shade.comp")*/
@@ -128,6 +128,34 @@ GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
     return tex;
 }
 void Renderer::run(){
+    run_di();
+}
+void Renderer::run_rs(){
+    if (camera.get_w()!=w || camera.get_h()!=h){
+        resize(camera.get_w(),camera.get_h());
+    }
+    bind_unif(comp_shader);
+    glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
+    const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
+    glDispatchCompute(dx, dy, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glViewport(0, 0, w, h);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    shader.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cbuff);
+
+    shader.set_int("tex",0);
+
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+    get_fps();
+}
+void Renderer::run_di(){
     if (camera.get_w()!=w || camera.get_h()!=h){
         resize(camera.get_w(),camera.get_h());
     }

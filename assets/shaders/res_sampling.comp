@@ -1,6 +1,7 @@
 #version 430 core
 layout(local_size_x = 16,local_size_y = 4) in;
 
+// TODO: refactor old code !!!
 //#import "structs.glsl"
 //#import "uniforms.glsl"
 
@@ -23,18 +24,15 @@ layout(std430,binding=6) readonly buffer LightBuf {
     Light light_v[];
 };
 
-layout(std430,binding=7) readonly buffer ReservoirBuf {
+layout(std430,binding=7) writeonly buffer ReservoirBuf {
     Reservoir reser_v[];
 };
-layout(std430,binding=10) readonly buffer GBuf {
-    GBufferPixel reser_v[];
+layout(std430,binding=10) writeonly buffer GBuf {
+    GBufferPixel gbuffer[];
 };
 
 //#import "intersection.glsl"
-//#import "shading.glsl"
 //#import "wrs.glsl"
-//#import "pathtracing.glsl"
-
 void main() {
     uvec2 gid = gl_GlobalInvocationID.xy;
 
@@ -50,10 +48,8 @@ void main() {
     vec2 ndc=2.0*uv-1.0;
     ndc.x*=aspect;
     float fovTan=tan(0.5*camFov);
+
     rayVector=normalize(camForward+ndc.x*fovTan*camRight+ndc.y*fovTan*camUp);
-
-    RayHit hit=trace(rayOrigin,rayVector);
     // TODO
-
     imageStore(outImage, ivec2(gid), vec4(color, 1.0));
 }

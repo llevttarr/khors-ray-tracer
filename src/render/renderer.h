@@ -33,6 +33,8 @@ public:
     explicit Renderer(int width, int height,EulerCamera& camera);
     ~Renderer();
     void run();
+    void run_di();
+    void run_rs();
     void get_fps();
     void bind_unif(ComputeShader& cs);
     void bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat);
