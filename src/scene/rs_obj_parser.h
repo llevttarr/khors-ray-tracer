@@ -1,11 +1,13 @@
 #ifndef RS_OBJ_PARSER_H
 #define RS_OBJ_PARSER_H
 #include <unordered_map> 
+#include <map> 
 #include <string> 
 #include <iostream> 
 #include <sstream> 
 #include <fstream> 
-#include <scene.h> 
+#include "scene.h" 
+#include "object.h"
 struct LocalMesh{
     std::vector<Vec3<float>> pos;
     std::vector<Vec3<float>> norm_v;

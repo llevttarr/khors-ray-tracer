@@ -43,7 +43,7 @@ namespace obj_util{
 
         return res;
     }
-    static uint32_t parse_face_ind(const std::string& t, size_t n){
+    uint32_t parse_face_ind(const std::string& t, size_t n){
         size_t s=t.find("/");
         std::string res=t;
         if (s!=std::string::npos){

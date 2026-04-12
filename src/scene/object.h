@@ -27,7 +27,7 @@ struct Object{
 };
 namespace obj_util{
     Mesh create_sphere_tri(float radius,uint16_t detail_lvl);
-    static uint32_t parse_face_ind(const std::string& t, size_t n);
+    uint32_t parse_face_ind(const std::string& t, size_t n);
     
     [[deprecated("use renderscene utility instead")]]
     Mesh load_mesh_obj(const std::string& file_path);
