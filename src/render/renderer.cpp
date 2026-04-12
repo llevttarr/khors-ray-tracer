@@ -263,6 +263,7 @@ void Renderer::get_fps(){
     }
 }
 void Renderer::resize(int nw, int nh){
+    framec=0;
     h=nh;
     w=nw;
 
