@@ -8,11 +8,18 @@ struct Mat{
     ivec4 tex;
 };
 struct Light{
-    vec4 pos;
-    vec4 ambient;
-    vec4 diffuse;
-    vec4 specular;
-    // strength - pos.w
+    vec3 pos;
+    // vec4 ambient;
+    vec3 diffuse;
+    // vec4 specular;
+    uint type;
+    float range;
+    vec3 dir;
+    float cosOuter;
+    vec3 tangent;
+    float halfWidth;
+    vec3 bitangent;
+    float halfHeight;
 };
 struct Tri{
     vec4 v0;

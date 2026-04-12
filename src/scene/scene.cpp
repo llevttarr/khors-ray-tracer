@@ -241,27 +241,33 @@ void Scene::test_scene_init(){
     //     uint32_t matid=mat_dist(engine);
     //     obj=add_object(Object{tri_sphere_id,temp,matid});
     // }
-    Sphr sp;
+    Sphr sp=Sphr{};
+    sp.cx=100.0;
+    sp.cy=100.0;
+    sp.cz=100.0;
+    sp.r=1.25f;
+    sp.matid=mat_dist(engine);
+    add_sphere(sp);
     sphere_v.reserve(100);
 
     int n_spheres = 32;
     float eps=0.001f;
     int spheres_per_side = static_cast<int>(std::ceil(std::sqrt(n_spheres)));
 
-    for(size_t i=0;i<spheres_per_side;++i){
-        for (size_t j=0;j<spheres_per_side;++j){
-            if (i ==spheres_per_side/2&& j==spheres_per_side/2){
-                continue;
-            }
-            sp=Sphr{};
-            sp.cx=4.0*(i-spheres_per_side/2.0);
-            sp.cy=-2.5f;
-            sp.cz=4.0*(j-spheres_per_side/2.0);
-            sp.r=1.25f;
-            sp.matid=mat_dist(engine);
-            add_sphere(sp);
-        }
-    }
+    // for(size_t i=0;i<spheres_per_side;++i){
+    //     for (size_t j=0;j<spheres_per_side;++j){
+    //         if (i ==spheres_per_side/2&& j==spheres_per_side/2){
+    //             continue;
+    //         }
+    //         sp=Sphr{};
+    //         sp.cx=4.0*(i-spheres_per_side/2.0);
+    //         sp.cy=-2.5f;
+    //         sp.cz=4.0*(j-spheres_per_side/2.0);
+    //         sp.r=1.25f;
+    //         sp.matid=mat_dist(engine);
+    //         add_sphere(sp);
+    //     }
+    // }
 
     // for (size_t i=0;i<128;++i){
     //     sp=Sphr{};

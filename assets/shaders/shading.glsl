@@ -85,11 +85,11 @@ vec3 brdfShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
         }else{
             specStr =blinnPhongSpecStr(v,ptol,n,sh);
         }
-        vec3 spec = mat.specular.rgb*l.specular.rgb*specStr;
+        vec3 spec = mat.specular.rgb*l.diffuse.rgb*specStr;
         if (hit.matId!=1){
             spec*=specMap;
         }
-        vec3 amb = mat.ambient.rgb * l.ambient.rgb*hemi;
+        vec3 amb = mat.ambient.rgb * l.diffuse.rgb*hemi;
 
         col += amb+diff+spec;
     }

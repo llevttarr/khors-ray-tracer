@@ -9,6 +9,7 @@
 #include "../core/math/vec4.h"
 #include "../core/math/vec3.h"
 #include "../core/math/vec2.h"
+#include "light.h"
 struct RenderTri{
     Vec4<float> v0;
     Vec4<float> v1;
@@ -25,12 +26,6 @@ struct RenderTri{
 struct BVH{
     Vec4<float> mindat;
     Vec4<float> maxdat;
-};
-struct Light{
-    Vec4<float> pos;
-    Vec4<float> ambient;
-    Vec4<float> diffuse;
-    Vec4<float> specular;
 };
 struct AABB{
     Vec3<float> minv;

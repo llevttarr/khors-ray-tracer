@@ -46,7 +46,7 @@ public:
             renderer.switch_tt();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Switch brdf type (only for tracing type 0)")) {
+        if (ImGui::Button("Switch brdf type")) {
             renderer.switch_brdf();
         }
         if (!status_msg.empty()) {

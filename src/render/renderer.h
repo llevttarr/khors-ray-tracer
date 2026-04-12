@@ -6,6 +6,7 @@
 #include "shader.h"
 #include "comp_shader.h"
 #include "../scene/scene.h"
+#include "../scene/light.h"
 #include "../scene/camera.h"
 #include "../scene/textures.h"
 #include "../util/benchmark.h"
@@ -88,7 +89,7 @@ private:
     uint32_t matc=0;
 
     uint32_t brdf_type=0;
-    uint8_t tracing_type=0;
+    uint8_t tracing_type=1;
     uint32_t frame_last_sec=0;
     std::chrono::time_point<std::chrono::steady_clock> time_prev_sec;
 
