@@ -1,0 +1,16 @@
+#ifndef RS_OBJ_PARSER_H
+#define RS_OBJ_PARSER_H
+#include <unordered_map> 
+#include <string> 
+#include <iostream> 
+#include <sstream> 
+#include <fstream> 
+#include <scene.h> 
+
+namespace rs_obj_parser{
+    void load_obj_into_rs(const std::string& objpath,const std::string& mtlpath,RenderScene& rs);
+    void load_mtl_into_rs(const std::string& mtlpath,RenderScene& rs);
+    std::unordered_map<std::string, uint32_t> parse_mtl_names(const std::string& mtlpath, uint32_t base);
+};
+
+#endif

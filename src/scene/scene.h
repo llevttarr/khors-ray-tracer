@@ -66,6 +66,10 @@ struct RenderScene{
     std::vector<Light> light_v;
     TextureManager tex_manager; 
 };
+
+struct SceneUtilException: public std::runtime_error{
+    using std::runtime_error::runtime_error;
+};
 namespace scene_util{
     Vec4<float> rand_vec(std::mt19937& engine, std::uniform_real_distribution<float>& dist);
     uint32_t get_type_id(uint32_t type, uint32_t id);
@@ -89,7 +93,9 @@ public:
     uint32_t add_sphere(Sphr s);
     void change_mat(Mat& m, uint32_t matid);
     void gen_random_mats(size_t n,int basei,int normali,int speculari);
+    [[deprecated("use renderscene utility instead")]]
     void load_obj(const std::string& fpath);
+    [[deprecated("use renderscene utility instead")]]
     void load_obj_mtl(const std::string& fpath);
     std::vector<Mat> get_mats(){return mat_v;}
 private:
