@@ -16,19 +16,19 @@ public:
         ImGui::Text("Object management");
         ImGui::InputText("File name", filename_buf,sizeof(filename_buf));
         if (ImGui::Button("Import")) {
-            try {
-                scene.load_obj(std::string(filename_buf),matid);
-                RenderScene newrs=scene.to_render_scene();
-                rs =std::move(newrs);
-                renderer.update_scene(rs);
-                std::cout<<"tri_v size"<<rs.tri_v.size()<<std::endl;
-                std::cout<<"sphr_v size"<<rs.sphr_v.size()<<std::endl;
-                status_msg = "Loaded: " + std::string(filename_buf) + ".obj";
-                status  = true;
-            } catch (const std::exception& e) {
-                status_msg = std::string("Load failed: ") + e.what();
-                status  = false;
-            }
+            // try {
+            //     scene.load_obj(std::string(filename_buf),matid);
+            //     RenderScene newrs=scene.to_render_scene();
+            //     rs =std::move(newrs);
+            //     renderer.update_scene(rs);
+            //     std::cout<<"tri_v size"<<rs.tri_v.size()<<std::endl;
+            //     std::cout<<"sphr_v size"<<rs.sphr_v.size()<<std::endl;
+            //     status_msg = "Loaded: " + std::string(filename_buf) + ".obj";
+            //     status  = true;
+            // } catch (const std::exception& e) {
+            //     status_msg = std::string("Load failed: ") + e.what();
+            //     status  = false;
+            // }
         }
         ImGui::SameLine();
         if (ImGui::Button("Translate")) {

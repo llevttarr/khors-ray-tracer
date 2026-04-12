@@ -1,5 +1,4 @@
 
-layout(rgba32f,binding = 0) uniform image2D outImage;
 layout(binding = 1) uniform sampler2DArray baseTexArr;
 layout(binding =2) uniform sampler2DArray normalTexArr;
 layout(binding =3) uniform sampler2DArray specularTexArr;

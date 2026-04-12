@@ -36,6 +36,7 @@ public:
     void switch_brdf();
     void switch_tt();
     void get_fps();
+    bool camera_moved();
     void bind_unif(ComputeShader& cs);
     void bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat);
     void resize(int nw, int nh);
@@ -61,6 +62,7 @@ private:
 
     GLuint vao = 0;
     GLuint cbuff = 0;
+    GLuint accum_tex = 0;
     GLuint tri_ssbo = 0;
     GLuint sphr_ssbo = 0;
     GLuint bvh_ssbo = 0;

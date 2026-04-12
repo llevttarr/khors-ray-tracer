@@ -29,7 +29,14 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glGenVertexArrays(1, &vao);
     glGenTextures(1, &cbuff);
     glBindTexture(GL_TEXTURE_2D, cbuff);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w,h,0, GL_RGBA, GL_FLOAT, nullptr);
 
+    glGenTextures(1, &accum_tex);
+    glBindTexture(GL_TEXTURE_2D, accum_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -53,6 +60,10 @@ Renderer::~Renderer() {
     glDeleteBuffers(1,&gbuffer);
     glDeleteBuffers(1,&gbuffer_h);
     glDeleteTextures(1,&cbuff);
+    glDeleteTextures(1,&accum_tex);
+}
+bool Renderer::camera_moved() {
+    return prev_camera.pos!= camera.get_pos()||prev_camera.forward != camera.get_forward()||prev_camera.fov != camera.get_fov();
 }
 void Renderer::update_scene(RenderScene& render_scene){
     glDeleteTextures(1, &base_tex_arr);
@@ -141,6 +152,10 @@ void Renderer::run_rs(){
     if (camera.get_w()!=w || camera.get_h()!=h){
         resize(camera.get_w(),camera.get_h());
     }
+    if (camera_moved()){
+        // std::cout<<"camera moved"<<std::endl;
+        framec = 0;
+    }
     const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
     const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
     // - stage 1:= reservoir_a, gbuffer -
@@ -169,6 +184,7 @@ void Renderer::run_rs(){
     // - stage 4:= reservoir_a read, reservoir_b write -
     bind_unif(cs_res_shade);
     glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     glDispatchCompute(dx, dy, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     // postprocess
@@ -251,6 +267,8 @@ void Renderer::resize(int nw, int nh){
     w=nw;
 
     glBindTexture(GL_TEXTURE_2D, cbuff);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, nw,nh,0, GL_RGBA, GL_FLOAT, nullptr);
+    glBindTexture(GL_TEXTURE_2D, accum_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, nw,nh,0, GL_RGBA, GL_FLOAT, nullptr);
 
     comp_shader.set_uint("width",nw);
