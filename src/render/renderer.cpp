@@ -43,6 +43,15 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w,h,0, GL_RGBA, GL_FLOAT, nullptr);
+
+    glGenTextures(1, &refl_accum_tex);
+    glBindTexture(GL_TEXTURE_2D, refl_accum_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w,h,0, GL_RGBA, GL_FLOAT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
     time_prev_sec=std::chrono::steady_clock::now();
 }
@@ -61,6 +70,7 @@ Renderer::~Renderer() {
     glDeleteBuffers(1,&gbuffer_h);
     glDeleteTextures(1,&cbuff);
     glDeleteTextures(1,&accum_tex);
+    glDeleteTextures(1,&refl_accum_tex);
 }
 bool Renderer::camera_moved() {
     return prev_camera.pos!= camera.get_pos()||prev_camera.forward != camera.get_forward()||prev_camera.fov != camera.get_fov();
@@ -109,9 +119,17 @@ void Renderer::bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const vo
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,i, buff);
 }
 void Renderer::update_mats(RenderScene& render_scene){
+    framec=0;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, mat_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.mat_v.size()*sizeof(Mat),render_scene.mat_v.data(),GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, mat_ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+void Renderer::update_lights(RenderScene& render_scene){
+    framec=0;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.light_v.size()*sizeof(Light),render_scene.light_v.data(),GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, light_ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
@@ -185,6 +203,7 @@ void Renderer::run_rs(){
     bind_unif(cs_res_shade);
     glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glBindImageTexture(1, accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, refl_accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     glDispatchCompute(dx, dy, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     // postprocess
@@ -270,6 +289,8 @@ void Renderer::resize(int nw, int nh){
     glBindTexture(GL_TEXTURE_2D, cbuff);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, nw,nh,0, GL_RGBA, GL_FLOAT, nullptr);
     glBindTexture(GL_TEXTURE_2D, accum_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, nw,nh,0, GL_RGBA, GL_FLOAT, nullptr);
+    glBindTexture(GL_TEXTURE_2D, refl_accum_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, nw,nh,0, GL_RGBA, GL_FLOAT, nullptr);
 
     comp_shader.set_uint("width",nw);

@@ -43,6 +43,7 @@ public:
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
     void update_mats(RenderScene& render_scene);
+    void update_lights(RenderScene& render_scene);
     GLuint create_texture_arr(const std::vector<Image>& img_v);
 private:
     int w;
@@ -64,6 +65,7 @@ private:
     GLuint vao = 0;
     GLuint cbuff = 0;
     GLuint accum_tex = 0;
+    GLuint refl_accum_tex = 0;
     GLuint tri_ssbo = 0;
     GLuint sphr_ssbo = 0;
     GLuint bvh_ssbo = 0;

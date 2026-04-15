@@ -178,6 +178,10 @@ uint32_t Scene::add_mat(Mat m){
     mat_v.push_back(std::move(m));
     return (uint32_t)(mat_v.size()-1);
 }
+uint32_t Scene::add_light(Light l){
+    light_v.push_back(std::move(l));
+    return (uint32_t)(light_v.size()-1);
+}
 uint32_t Scene::add_mesh(Mesh m){
     mesh_v.push_back(std::move(m));
     return (uint32_t)(mesh_v.size()-1);
@@ -291,24 +295,25 @@ void Scene::test_scene_init(){
     //     light_v.push_back(l);
     // }
     Light dirl{};
-    dirl.type = LIGHT_DIRECTION;
-
-    dirl.dir = Vec3<float>::normalize(Vec3<float>{-0.5f, -1.0f, -0.3f});
-    dirl.diffuse = {20.0f, 20.0f, 20.0f};
-    dirl.pos = {0.0f, 0.0f, 0.0f};
-    dirl.range = 0.0f;
+    dirl.pos = {0.0f, 0.0f, 0.0f, 0.0f};
+    dirl.diffuse = {0.7f, 0.7f, 0.7f, 0.0f};
+    Vec3<float> dir = Vec3<float>::normalize(Vec3<float>{-0.5f, -1.0f, -0.3f});
+    light_util::set_dir(dirl, dir);
+    light_util::set_type(dirl, LIGHT_DIRECTION);
+    dirl.params1 = {0.0f, 0.0f, 0.0f, 0.0f};
     light_v.push_back(dirl);
 
     Light areal{};
-    areal.type = LIGHT_AREA;
-    areal.pos = {0.0f, 5.0f, 0.0f};
-    areal.dir = Vec3<float>::normalize(Vec3<float>{0.0f, -1.0f, 0.0f});
-    areal.tangent   = Vec3<float>::normalize(Vec3<float>{1.0f, 0.0f, 0.0f});
-    areal.bitangent = Vec3<float>::normalize(Vec3<float>{0.0f, 0.0f, 1.0f});
-    areal.half_width  = 1.5f;
-    areal.half_height = 1.0f;
-    areal.diffuse = {14.0f, 14.0f, 14.0f};
-    areal.range = 30.0f;
+    areal.pos = {0.0f, 5.0f, 0.0f, 0.0f};
+    areal.diffuse = {3.0f,3.0f,3.0f, 0.0f};
+    Vec3<float> area_dir = Vec3<float>::normalize(Vec3<float>{0.0f, -1.0f, 0.0f});
+    light_util::set_dir(areal, area_dir);
+    light_util::set_type(areal, LIGHT_AREA);
+    Vec3<float> tangent = Vec3<float>::normalize(Vec3<float>{1.0f, 0.0f, 0.0f});
+    Vec3<float> bitangent = Vec3<float>::normalize(Vec3<float>{0.0f, 0.0f, 1.0f});
+    areal.tangent = {tangent.x, tangent.y, tangent.z, 0.0f};
+    areal.bitangent = {bitangent.x, bitangent.y, bitangent.z, 0.0f};
+    areal.params1 = {30.0f, 0.0f, 1.5f, 1.0f}; 
 
     light_v.push_back(areal);
     TextureManager texman;
@@ -387,4 +392,7 @@ void Scene::load_obj_mtl(const std::string& fpath){
 }
 void Scene::change_mat(Mat& m, uint32_t matid){
     mat_v[matid]=m;
+}
+void Scene::change_light(Light& l, uint32_t lightid){
+    light_v[lightid]=l;
 }

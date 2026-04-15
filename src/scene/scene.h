@@ -84,15 +84,18 @@ public:
     RenderScene to_render_scene() const;
     uint32_t add_mesh(Mesh m);
     uint32_t add_mat(Mat m);
+    uint32_t add_light(Light m);
     uint32_t add_object(Object o);
     uint32_t add_sphere(Sphr s);
     void change_mat(Mat& m, uint32_t matid);
+    void change_light(Light& l, uint32_t lightid);
     void gen_random_mats(size_t n,int basei,int normali,int speculari);
     [[deprecated("use renderscene utility instead")]]
     void load_obj(const std::string& fpath);
     [[deprecated("use renderscene utility instead")]]
     void load_obj_mtl(const std::string& fpath);
     std::vector<Mat> get_mats(){return mat_v;}
+    std::vector<Light> get_lights(){return light_v;}
 private:
     std::vector<Sphr> sphere_v;
     std::vector<Mesh> mesh_v;

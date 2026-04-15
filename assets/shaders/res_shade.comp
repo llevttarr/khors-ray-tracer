@@ -3,6 +3,8 @@ layout(local_size_x = 16,local_size_y = 4) in;
 
 layout(rgba32f,binding = 0) uniform image2D outImage;
 layout(rgba32f,binding = 1) uniform image2D accumImage;
+layout(rgba32f,binding = 2) uniform image2D reflAccumImage;
+
 //#import "structs.glsl"
 //#import "uniforms.glsl"
 
@@ -43,11 +45,12 @@ void main() {
         return;
     }
     uint pidx = gid.y * width + gid.x;
+    vec2 uv = vec2((gid.x + 0.5) / float(width),(gid.y + 0.5) / float(height));
+    float ndy = 2.0 * uv.y - 1.0;
+    vec3 sky = getSky(ndy);
     GBufferPixel px = gbuffer[pidx];
     if (px.valid == -1) {
-        vec2 uv = vec2((gid.x + 0.5) / float(width),(gid.y + 0.5) / float(height));
-        float ndy = 2.0 * uv.y - 1.0;
-        imageStore(outImage, ivec2(gid), vec4(getSky(ndy), 1.0));
+        imageStore(outImage, ivec2(gid), vec4(sky, 1.0));
         return;
     }
     vec3 pos = px.pos.xyz;
@@ -82,6 +85,23 @@ void main() {
         }
     }
     col += mat.emission.rgb * mat.emission.w;
+    float reflStr = mat.specular.w;
+    vec3 reflCol = vec3(0.0);
+
+    if (reflStr > 0.01) {
+        if (framec == 0) {
+            vec3 v= normalize(camPos - pos);
+            vec3 reflDir = normalize(reflect(-v, n));
+            vec3 reflO= pos + n * 0.001;
+
+            RayHit reflHit = trace(reflO, reflDir);
+            reflCol = reflHit.isValid? brdfShading(reflO, reflDir, reflHit): sky;
+            imageStore(reflAccumImage, ivec2(gid), vec4(reflCol, 1.0));
+        } else {
+            reflCol = imageLoad(reflAccumImage, ivec2(gid)).rgb;
+        }
+        col = mix(col, reflCol, reflStr);
+    }
     vec4 accum;
     if (framec == 0) {
         accum = vec4(col, 1.0);
