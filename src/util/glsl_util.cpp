@@ -1,23 +1,25 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
+#include <vector>
 #include "glsl_util.h"
 void GLSLUniformCache::set_program(GLuint program) {
     progr = program;
     loc_map.clear();
 }
 GLint GLSLUniformCache::get_location(const std::string& name) {
-        if (progr==0){
-            throw GLSLUtilException("no progr");
-        }
-        auto it = loc_map.find(name);
-        if (it != loc_map.end()){
-            return it->second;
-        }
-        GLint l = glGetUniformLocation(progr, name.c_str());
-        loc_map.emplace(name, l);
-        return l;
+    if (progr==0){
+        throw GLSLUtilException("no progr");
     }
+    auto it = loc_map.find(name);
+    if (it != loc_map.end()){
+        return it->second;
+    }
+    GLint l = glGetUniformLocation(progr, name.c_str());
+    loc_map.emplace(name, l);
+    return l;
+}
 
 namespace glsl_util{
     void out_csv(const std::string& firstline,const std::string& filename, const std::vector<std::string>& outp){
@@ -53,8 +55,22 @@ namespace glsl_util{
         glCompileShader(shader);
         GLint status=0;
         glGetShaderiv(shader,GL_COMPILE_STATUS,&status);
-        if(status==0){
-            throw GLSLUtilException("could not create shader ");
+        if(status==0){GLint log_len = 0;
+            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_len);
+            std::vector<char> log(log_len);
+            glGetShaderInfoLog(shader, log_len, nullptr, log.data());
+            std::cerr << "\n--- Shader source code ---\n";
+            std::stringstream ss(s);
+            std::string line;
+            int line_n = 1;
+            while (std::getline(ss, line)) {
+                std::cerr << line_n++ << ": " << line << "\n";
+            }
+            std::cerr << "---------------------------------------\n";
+
+            std::string err_msg = std::string("Shader compilation failed:\n") + log.data();
+            glDeleteShader(shader);
+            throw GLSLUtilException(err_msg);
         }
         return shader;
     }
@@ -77,7 +93,14 @@ namespace glsl_util{
         GLint status=0;
         glGetProgramiv(program, GL_LINK_STATUS, &status);
         if(status==0){
-            throw GLSLUtilException("could not link comp shader");
+            GLint log_len = 0;
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
+            std::vector<char> log(log_len);
+            glGetProgramInfoLog(program, log_len, nullptr, log.data());
+    
+            std::string err_msg = std::string("Compute shader linking failed:\n") + log.data();
+            glDeleteProgram(program);
+            throw GLSLUtilException(err_msg);
         }
         return program;
     }
