@@ -2,8 +2,9 @@
 > UCU-CS: Architectures of Computer Systems project
 - Taras Levytskyi
 
-![Demo](static/alpha4_demo.jpg)
-![Demo2](static/alpha4_demo2.png)
+![Demo1](static/demo1_res.jpg)
+![Spheres_demo_0](static/alpha4_demo.jpg)
+![Spheres_demo_1](static/alpha4_demo2.png)
 
 <img align="center" src="static/logo_khors.svg" alt="KHORS" width="128" height="128">
 

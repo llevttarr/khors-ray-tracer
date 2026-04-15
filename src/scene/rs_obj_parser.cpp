@@ -1,5 +1,5 @@
 #include "rs_obj_parser.h"
-
+#include <iostream>
 /* - - - - */
 std::unordered_map<std::string, uint32_t> rs_obj_parser::parse_mtl_names(const std::string& mtlpath, uint32_t base){
     std::unordered_map<std::string, uint32_t> map;
@@ -191,7 +191,7 @@ void rs_obj_parser::load_obj_into_rs(const std::string& objpath,const std::strin
             rt.uv0 = mesh.uv[i0];
             rt.uv1 = mesh.uv[i1];
             rt.uv2 = mesh.uv[i2];
-            rt.matid = mesh.mat_id;
+            rt.matid = mesh.mat_id+1;
             rt.pad0  = 0;
 
             rs.tri_v.push_back(rt);
