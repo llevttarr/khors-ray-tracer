@@ -59,6 +59,7 @@ vec3 reprojectToPrevFrame(vec3 worldPos) {
     return vec3(ndcX * 0.5 + 0.5, ndcY * 0.5 + 0.5, 1.0);
 }
 //#import "intersection.glsl"
+//#import "light_sample.glsl"
 //#import "wrs.glsl"
 //#import "hash.glsl"
 //#import "shading.glsl"

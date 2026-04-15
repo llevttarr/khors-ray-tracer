@@ -32,6 +32,7 @@ layout(std430,binding=10) readonly buffer GBuf {
     GBufferPixel gbuffer[];
 };
 //#import "intersection.glsl"
+//#import "light_sample.glsl"
 //#import "wrs.glsl"
 //#import "hash.glsl"
 //#import "shading.glsl"
@@ -58,30 +59,26 @@ void main() {
     Reservoir r = reservoir_a[pidx];
     if (r.sampledLight >= 0 && r.W > 0.0) {
         Light l = light_v[r.sampledLight];
-        vec3  ptol = l.pos.xyz - pos;
-        float distSq = max(dot(ptol, ptol), 0.001);
-        float dist = sqrt(distSq);
-        vec3  ldir = ptol / dist;
+        LightSample s = sampleLight(l, pos);
 
-        if (!traceAny(pos + n * 0.001, ldir, dist)) {
-            float ndotl = max(0.0, dot(n, ldir));
-            vec3 diff  =(diffuse * l.diffuse.rgb * ndotl) /*/ distSq*/;
+        if (!traceAny(pos + n * 0.001, s.dir, s.dist)) {
+            float ndotl = max(0.0, dot(n, s.dir));
+            vec3 diff  =diffuse * s.radiance.rgb * ndotl/*/ distSq*/;
 
             vec3 v = normalize(camPos - pos);
             float sh  = max(1.0, mat.ambient.w);
             float specStr = 0.0;
             if (brdf_type == 0){
-                specStr = phongSpecStr(v, ldir, n, sh);
+                specStr = phongSpecStr(v, s.dir, n, sh);
             }else{
-                specStr = blinnPhongSpecStr(v, ldir, n, sh);
+                specStr = blinnPhongSpecStr(v, s.dir, n, sh);
             }
-            vec3 spec =(mat.specular.rgb * l.specular.rgb * specStr) /*/ distSq*/;
+            vec3 spec =mat.specular.rgb * s.radiance.rgb * specStr /*/ distSq*/;
             if (px.matId != 1 && mat.tex.z != -1) {
                 vec3 specMap = texture(specularTexArr, vec3(px.uv, mat.tex.z)).rgb;
                 spec *= specMap;
             }
             col += (diff + spec) * r.W;
-            col += mat.ambient.rgb * l.ambient.rgb * hemi;
         }
     }
     col += mat.emission.rgb * mat.emission.w;

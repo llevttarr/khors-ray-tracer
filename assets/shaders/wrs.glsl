@@ -1,4 +1,5 @@
 const vec3 LUMINANCE=vec3(0.2126, 0.7152, 0.0722); 
+
 void wrs_update(inout Reservoir r, int candidate, float w, float xi) {
     r.wSum += w;
     r.M += 1;
@@ -7,11 +8,8 @@ void wrs_update(inout Reservoir r, int candidate, float w, float xi) {
 }
 float targetPDF(int lightIdx, vec3 pos, vec3 n, vec3 diffuse) {
     Light l = light_v[lightIdx];
-    vec3  ptol = l.pos.xyz - pos;
-    float distSq = dot(ptol, ptol);
-    distSq = max(distSq, 0.001); 
-    float dist = sqrt(distSq);
-    float ndotl = max(0.0, dot(n, ptol / dist));
+    LightSample s = sampleLight(l, pos);
+    float ndotl = max(0.0, dot(n, s.dir));
     vec3 contrib = (diffuse + vec3(0.05)) * l.diffuse.rgb * ndotl /*/ distSq*/;
     return dot(contrib,LUMINANCE);
 }

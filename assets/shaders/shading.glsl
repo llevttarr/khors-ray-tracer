@@ -69,29 +69,24 @@ vec3 brdfShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     float sh=max(1.0,mat.ambient.w);
     for (uint i=0;i<lightc;++i){
         Light l= light_v[i];
-
-        vec3 ptol=l.pos.xyz-point;
-        float dist=length(ptol);
-        ptol=ptol/dist;
-        float nDotPtol=max(0.0,dot(n,ptol));
-        vec3 diff=base*l.diffuse.rgb*nDotPtol;
+        LightSample s = sampleLight(l, point);
         // vec3 diff=base;
-        if(traceAny(point,ptol,dist)){
+        if (traceAny(point,s.dir,s.dist)){
             continue;
         }
+        float nDot = max(0.0, dot(n, s.dir));
+        vec3 diff = base * s.radiance * nDot;
         float specStr;
         if (brdf_type==0){
-            specStr =phongSpecStr(v,ptol,n,sh);
+            specStr =phongSpecStr(v,s.dir, n, sh);
         }else{
-            specStr =blinnPhongSpecStr(v,ptol,n,sh);
+            specStr =blinnPhongSpecStr(v,s.dir,n,sh);
         }
-        vec3 spec = mat.specular.rgb*l.diffuse.rgb*specStr;
+        vec3 spec = mat.specular.rgb*s.radiance * specStr;
         if (hit.matId!=1){
             spec*=specMap;
         }
-        vec3 amb = mat.ambient.rgb * l.diffuse.rgb*hemi;
-
-        col += amb+diff+spec;
+        col += diff+spec;
     }
     return col;
 }

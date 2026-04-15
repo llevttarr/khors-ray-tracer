@@ -5,9 +5,11 @@
 #include <cstdint>
 
 enum LightType: uint32_t{
+    LIGHT_POINT =0,
     LIGHT_SPOT =1,
     LIGHT_AREA =2,
     LIGHT_DIRECTION =3,
+    LIGHT_TRIANGLE =4,
 };
 struct Light{
     Vec3<float> pos;

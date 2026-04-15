@@ -250,24 +250,24 @@ void Scene::test_scene_init(){
     add_sphere(sp);
     sphere_v.reserve(100);
 
-    int n_spheres = 32;
+    int n_spheres = 1028;
     float eps=0.001f;
     int spheres_per_side = static_cast<int>(std::ceil(std::sqrt(n_spheres)));
 
-    // for(size_t i=0;i<spheres_per_side;++i){
-    //     for (size_t j=0;j<spheres_per_side;++j){
-    //         if (i ==spheres_per_side/2&& j==spheres_per_side/2){
-    //             continue;
-    //         }
-    //         sp=Sphr{};
-    //         sp.cx=4.0*(i-spheres_per_side/2.0);
-    //         sp.cy=-2.5f;
-    //         sp.cz=4.0*(j-spheres_per_side/2.0);
-    //         sp.r=1.25f;
-    //         sp.matid=mat_dist(engine);
-    //         add_sphere(sp);
-    //     }
-    // }
+    for(size_t i=0;i<spheres_per_side;++i){
+        for (size_t j=0;j<spheres_per_side;++j){
+            if (i ==spheres_per_side/2&& j==spheres_per_side/2){
+                continue;
+            }
+            sp=Sphr{};
+            sp.cx=4.0*(i-spheres_per_side/2.0);
+            sp.cy=-2.5f;
+            sp.cz=4.0*(j-spheres_per_side/2.0);
+            sp.r=1.25f;
+            sp.matid=mat_dist(engine);
+            add_sphere(sp);
+        }
+    }
 
     // for (size_t i=0;i<128;++i){
     //     sp=Sphr{};
@@ -290,12 +290,27 @@ void Scene::test_scene_init(){
     //     Light l{pos,amb,diff,spec};
     //     light_v.push_back(l);
     // }
-    Light l;
-    l.pos = {0.2f,30.f,0.2f,200.f};
-    l.ambient = {0.02f,0.02f,0.02f,1.f};
-    l.diffuse = {0.7f,0.7f,0.7f,0.6f};
-    l.specular = {0.8f,0.8f,0.7f,0.7f};
-    light_v.push_back(l);
+    Light dirl{};
+    dirl.type = LIGHT_DIRECTION;
+
+    dirl.dir = Vec3<float>::normalize(Vec3<float>{-0.5f, -1.0f, -0.3f});
+    dirl.diffuse = {20.0f, 20.0f, 20.0f};
+    dirl.pos = {0.0f, 0.0f, 0.0f};
+    dirl.range = 0.0f;
+    light_v.push_back(dirl);
+
+    Light areal{};
+    areal.type = LIGHT_AREA;
+    areal.pos = {0.0f, 5.0f, 0.0f};
+    areal.dir = Vec3<float>::normalize(Vec3<float>{0.0f, -1.0f, 0.0f});
+    areal.tangent   = Vec3<float>::normalize(Vec3<float>{1.0f, 0.0f, 0.0f});
+    areal.bitangent = Vec3<float>::normalize(Vec3<float>{0.0f, 0.0f, 1.0f});
+    areal.half_width  = 1.5f;
+    areal.half_height = 1.0f;
+    areal.diffuse = {14.0f, 14.0f, 14.0f};
+    areal.range = 30.0f;
+
+    light_v.push_back(areal);
     TextureManager texman;
     std::uniform_real_distribution<float> light_diff_small(0.02f,0.15f);
     Vec4<float> gamb=Vec4<float>{0.4f,0.6f,0.6f,0.1f};
