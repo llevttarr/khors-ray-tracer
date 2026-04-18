@@ -75,6 +75,14 @@ Renderer::~Renderer() {
 bool Renderer::camera_moved() {
     return prev_camera.pos!= camera.get_pos()||prev_camera.forward != camera.get_forward()||prev_camera.fov != camera.get_fov();
 }
+void Renderer::cout_data(){
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+    const GLubyte* vendor = glGetString(GL_VENDOR);
+    const GLubyte* version = glGetString(GL_VERSION);
+    std::cout << "GPU Vendor: " << vendor << std::endl;
+    std::cout << "GPU Renderer: " << renderer << std::endl;
+    std::cout << "OpenGL Version: " << version << std::endl;
+}
 void Renderer::update_scene(RenderScene& render_scene){
     glDeleteTextures(1, &base_tex_arr);
     glDeleteTextures(1, &normal_tex_arr);

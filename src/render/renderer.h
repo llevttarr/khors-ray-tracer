@@ -34,6 +34,8 @@ public:
     void run_di();
     void run_rs();
 
+    void cout_data();
+
     void switch_brdf();
     void switch_tt();
     void get_fps();

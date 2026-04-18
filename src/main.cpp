@@ -28,11 +28,14 @@ uint16_t get_status_movement(ProgramState& p, int f, int b){
     }
     return 2;
 }
-
+void glfwErrorCallback(int error, const char* description) {
+    std::cerr << "GLFW Error (" << error << "): " << description << std::endl;
+}
 int main(int argc, char* argv[]) {
     int h=720;
     int w=1280;
     ProgramState p{};
+    glfwSetErrorCallback(glfwErrorCallback);
 
     EulerCamera camera{w,h};
     bool using_vsync=true;
@@ -48,6 +51,7 @@ int main(int argc, char* argv[]) {
     uim.add_widget(std::make_unique<ObjWidget>(scene,renderer,r));
     uim.add_widget(std::make_unique<LightWidget>(scene,renderer,r));
     renderer.update_scene(r);
+    renderer.cout_data();
     while (!window.should_close()){
         window.poll_events();
         uint16_t fwd=get_status_movement(p,GLFW_KEY_W,GLFW_KEY_S);
