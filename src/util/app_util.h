@@ -1,6 +1,6 @@
 #ifndef APP_UTIL_H
 #define APP_UTIL_H
-#include "../scene/camera.h"
+#include "camera.h"
 #include <vector>
 
 struct ProgramState{

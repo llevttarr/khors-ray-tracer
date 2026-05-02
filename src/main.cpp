@@ -3,19 +3,21 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include <glad/gl.h>
+#include <volk.h>
 #include <GLFW/glfw3.h>
-#include "./app/window.h"
-#include "./app/ui_manager.h"
-#include "./app/widget.h"
-#include "./app/mat_widget.h"
-#include "./app/obj_widget.h"
-#include "./app/light_widget.h"
-#include "./app/scene_widget.h"
-#include "./render/renderer.h"
-#include "./scene/camera.h"
-#include "./scene/light.h"
-#include "./scene/scene_parser.h"
-#include "./util/app_util.h"
+
+#include "window.h"
+#include "ui_manager.h"
+#include "widget.h"
+#include "mat_widget.h"
+#include "obj_widget.h"
+#include "light_widget.h"
+#include "scene_widget.h"
+#include "renderer.h"
+#include "camera.h"
+#include "light.h"
+#include "scene_parser.h"
+#include "app_util.h"
 
 uint16_t get_status_movement(ProgramState& p, int f, int b){
     std::vector<int> inp = p.active_input;

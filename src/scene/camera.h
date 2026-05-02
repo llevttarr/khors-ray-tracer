@@ -5,8 +5,8 @@
 #include <cmath>
 #include <chrono>
 // #include <numbers>
-#include "../core/math/vec3.h"
-#include "../core/math/mat4.h"
+#include "vec3.h"
+#include "mat4.h"
 
 constexpr uint16_t MOVE_TICKS_CAP = 100;
 constexpr float SPEED_BASE = 0.5;

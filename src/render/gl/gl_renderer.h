@@ -6,12 +6,13 @@
 #include "shader.h"
 #include "comp_shader.h"
 #include "gpu_timer.h"
-#include "../scene/scene.h"
-#include "../scene/light.h"
-#include "../scene/camera.h"
-#include "../scene/textures.h"
-#include "../util/benchmark.h"
-#include "../core/math/vec3.h"
+
+#include "scene.h"
+#include "light.h"
+#include "camera.h"
+#include "textures.h"
+#include "benchmark.h"
+#include "vec3.h"
 
 struct Reservoir{
     int y;

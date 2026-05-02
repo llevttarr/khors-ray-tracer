@@ -1,7 +1,7 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include "../core/math/vec4.h"
+#include "vec4.h"
 #include <cstdint>
 
 enum LightType: int32_t{

@@ -4,7 +4,8 @@
 #include <string>
 #include <glad/gl.h>
 #include <stdexcept>
-#include "../util/glsl_util.h"
+
+#include "glsl_util.h"
 
 struct ShaderUseException: public std::runtime_error{
     using std::runtime_error::runtime_error;

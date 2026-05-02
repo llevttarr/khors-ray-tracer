@@ -7,10 +7,11 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
-#include "../core/math/mat3.h"
-#include "../core/math/mat4.h"
-#include "../core/math/vec4.h"
-#include "../core/math/vec3.h"
+
+#include "mat3.h"
+#include "mat4.h"
+#include "vec4.h"
+#include "vec3.h"
 
 struct GLSLUtilException: public std::runtime_error{
     using std::runtime_error::runtime_error;

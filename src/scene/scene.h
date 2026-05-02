@@ -6,9 +6,11 @@
 
 #include "object.h"
 #include "textures.h"
-#include "../core/math/vec4.h"
-#include "../core/math/vec3.h"
-#include "../core/math/vec2.h"
+
+#include "vec4.h"
+#include "vec3.h"
+#include "vec2.h"
+
 #include "light.h"
 struct RenderTri{
     Vec4<float> v0;

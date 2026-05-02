@@ -5,9 +5,10 @@
 #include <vector>
 #include <numbers>
 #include <stdexcept>
-#include "../core/math/mat4.h"
-#include "../core/math/vec3.h"
-#include "../core/math/vec2.h"
+
+#include "mat4.h"
+#include "vec3.h"
+#include "vec2.h"
 
 struct MeshLoadException: public std::runtime_error{
     using std::runtime_error::runtime_error;

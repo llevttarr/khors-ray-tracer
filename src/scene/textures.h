@@ -1,6 +1,6 @@
 #ifndef TEXTURES_H
 #define TEXTURES_H
-#include "../util/image_util.h"
+#include "image_util.h"
 #include <vector>
 #include <string>
 
