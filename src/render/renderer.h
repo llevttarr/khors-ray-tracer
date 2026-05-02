@@ -5,12 +5,14 @@
 #include <chrono>
 #include "shader.h"
 #include "comp_shader.h"
+#include "gpu_timer.h"
 #include "../scene/scene.h"
 #include "../scene/light.h"
 #include "../scene/camera.h"
 #include "../scene/textures.h"
 #include "../util/benchmark.h"
 #include "../core/math/vec3.h"
+
 struct Reservoir{
     int y;
     float w_sum;
@@ -31,25 +33,44 @@ public:
     explicit Renderer(int width, int height,EulerCamera& camera);
     ~Renderer();
     void run();
+    /**
+     * Runs the direct illumination shaders
+     */
     void run_di();
+    /**
+     * Runs the reservoir resampling shaders
+     */
     void run_rs();
 
     void cout_data();
-
     void switch_brdf();
     void switch_tt();
     void get_fps();
     bool camera_moved();
+    /**
+     * Runs a single instance of a compute shader
+     */
     void bind_unif(ComputeShader& cs);
+    /**
+     * binds a buffer
+     */
     void bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat);
     void resize(int nw, int nh);
     void update_scene(RenderScene& render_scene);
     void update_mats(RenderScene& render_scene);
     void update_lights(RenderScene& render_scene);
     GLuint create_texture_arr(const std::vector<Image>& img_v);
+
+    /**
+     * prints the query results of restir_timers
+     * 
+     */
+    void get_timer_results();
 private:
     int w;
     int h;
+
+    /* shaders */
     Shader shader;
     
     ComputeShader comp_shader;
@@ -64,6 +85,7 @@ private:
     Benchmark benchmark;
     TextureManager tex_manager;
 
+    /* buffers */
     GLuint vao = 0;
     GLuint cbuff = 0;
     GLuint accum_tex = 0;
@@ -78,12 +100,14 @@ private:
     GLuint normal_tex_arr=0;
     GLuint specular_tex_arr=0;
 
+    /* reservoir buffers */
     GLuint reservoir_a=0;
     GLuint reservoir_b=0;
     GLuint reservoir_h=0;
     GLuint gbuffer=0;
     GLuint gbuffer_h=0;
     
+    /* uniforms */
     uint32_t tric = 0;
     uint32_t spherec = 0;
     uint32_t lightc = 0;
@@ -95,6 +119,10 @@ private:
     uint32_t brdf_type=0;
     uint8_t tracing_type=1;
     uint32_t frame_last_sec=0;
+
+    /* debugging */
+    std::vector<GpuTimer> restir_timers;
+    uint32_t timerc = 0;
     std::chrono::time_point<std::chrono::steady_clock> time_prev_sec;
 
     // GLuint vbo = 0;

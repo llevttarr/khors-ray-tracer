@@ -13,7 +13,8 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     cs_res_sampling("assets/shaders/", "assets/shaders/res_sampling.comp"),
     cs_temp_reuse("assets/shaders/", "assets/shaders/temp_reuse.comp"),
     cs_spat_reuse("assets/shaders/", "assets/shaders/spat_reuse.comp"),
-    cs_res_shade("assets/shaders/", "assets/shaders/res_shade.comp")
+    cs_res_shade("assets/shaders/", "assets/shaders/res_shade.comp"),
+    restir_timers(4)
 {
     glGenBuffers(1, &tri_ssbo);
     glGenBuffers(1, &sphr_ssbo);
@@ -54,6 +55,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w,h,0, GL_RGBA, GL_FLOAT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
     time_prev_sec=std::chrono::steady_clock::now();
+
 }
 Renderer::~Renderer() {
     glDeleteVertexArrays(1, &vao);
@@ -184,36 +186,50 @@ void Renderer::run_rs(){
     }
     const int dx=(w+LOCAL_SIZE_X-1)/LOCAL_SIZE_X;
     const int dy=(h+LOCAL_SIZE_Y-1)/LOCAL_SIZE_Y;
-    // - stage 1:= reservoir_a, gbuffer -
-    bind_unif(cs_res_sampling);
-    glDispatchCompute(dx, dy, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    // - stage 2:= reservoir_a write, reservoir_b read, reservoir_h read -
-    if (framec == 0) {
-        glBindBuffer(GL_COPY_READ_BUFFER, gbuffer);
-        glBindBuffer(GL_COPY_WRITE_BUFFER, gbuffer_h);
-        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, w * h * sizeof(GBufferPixel));
+    {
+        // - stage 1:= reservoir_a, gbuffer -
+        GpuTimerScope scope(restir_timers[0].get_id());
+
+        bind_unif(cs_res_sampling);
+        glDispatchCompute(dx, dy, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
-    bind_unif(cs_temp_reuse); // todo: prev view proj
-    cs_temp_reuse.set_vec3("prevCamPos",prev_camera.pos);
-    cs_temp_reuse.set_vec3("prevCamForward",prev_camera.forward);
-    cs_temp_reuse.set_vec3("prevCamRight",prev_camera.right);
-    cs_temp_reuse.set_vec3("prevCamUp",prev_camera.up);
-    cs_temp_reuse.set_float("prevCamFov",prev_camera.fov);
-    cs_temp_reuse.set_float("prevAspect",prev_camera.aspect);
-    glDispatchCompute(dx, dy, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    // - stage 3:= reservoir_a read, reservoir_b write -
-    bind_unif(cs_spat_reuse);
-    glDispatchCompute(dx, dy, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    // - stage 4:= reservoir_a read, reservoir_b write -
-    bind_unif(cs_res_shade);
-    glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    glBindImageTexture(1, accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    glBindImageTexture(2, refl_accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    glDispatchCompute(dx, dy, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    {
+    // - stage 2:= reservoir_a write, reservoir_b read, reservoir_h read -
+        GpuTimerScope scope(restir_timers[1].get_id());
+    
+        if (framec == 0) {
+            glBindBuffer(GL_COPY_READ_BUFFER, gbuffer);
+            glBindBuffer(GL_COPY_WRITE_BUFFER, gbuffer_h);
+            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, w * h * sizeof(GBufferPixel));
+        }
+        bind_unif(cs_temp_reuse); // todo: prev view proj
+        cs_temp_reuse.set_vec3("prevCamPos",prev_camera.pos);
+        cs_temp_reuse.set_vec3("prevCamForward",prev_camera.forward);
+        cs_temp_reuse.set_vec3("prevCamRight",prev_camera.right);
+        cs_temp_reuse.set_vec3("prevCamUp",prev_camera.up);
+        cs_temp_reuse.set_float("prevCamFov",prev_camera.fov);
+        cs_temp_reuse.set_float("prevAspect",prev_camera.aspect);
+        glDispatchCompute(dx, dy, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+    {
+        // - stage 3:= reservoir_a read, reservoir_b write -
+        GpuTimerScope scope(restir_timers[2].get_id());
+        bind_unif(cs_spat_reuse);
+        glDispatchCompute(dx, dy, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+    {
+        // - stage 4:= reservoir_a read, reservoir_b write -
+        GpuTimerScope scope(restir_timers[3].get_id());
+        bind_unif(cs_res_shade);
+        glBindImageTexture(0, cbuff, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        glBindImageTexture(1, accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(2, refl_accum_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glDispatchCompute(dx, dy, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
     // postprocess
     framec++;
     prev_camera = { camera.get_pos(), camera.get_forward(),camera.get_right(), camera.get_up(),camera.get_fov(), float(w)/float(h)};
@@ -235,7 +251,29 @@ void Renderer::run_rs(){
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
+
     get_fps();
+    glFinish();
+    get_timer_results();
+}
+void Renderer::get_timer_results(){
+    if (timerc < 60){
+        ++timerc;
+        return;
+    }
+    timerc = 0;
+
+    for (size_t i = 0; i < restir_timers.size(); ++i) {
+        GLuint available = 0;
+        glGetQueryObjectuiv(restir_timers[i].get_id(), GL_QUERY_RESULT_AVAILABLE, &available);
+        
+        if (available) {
+            GLuint64 time_elapsed = 0;
+            glGetQueryObjectui64v(restir_timers[i].get_id(), GL_QUERY_RESULT, &time_elapsed);
+            double ms = time_elapsed / 1000000.0;
+            std::cout << "Compute Shader " << i + 1 << " took: " << ms << " ms"<<std::endl;
+        }
+    }
 }
 void Renderer::run_di(){
     if (camera.get_w()!=w || camera.get_h()!=h){

@@ -9,6 +9,7 @@ struct Config{
     int h=720;
     int w=1080;
     bool using_vsync=true;
+    bool debug_mode = true;
     // - TRACING - 
     uint8_t tracing_type=0; // 0 - direct illumination, 1 - reservoir sampling
     uint8_t local_size_x=16; // *note: warp - 32px; wavefront - 64/32px
