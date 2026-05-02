@@ -1,5 +1,5 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef GL_RENDERER_H
+#define GL_RENDERER_H
 
 #include <cstdint>
 #include <chrono>
@@ -127,4 +127,4 @@ private:
 
     // GLuint vbo = 0;
 };
-#endif //RENDERER_H
+#endif //GL_RENDERER_H

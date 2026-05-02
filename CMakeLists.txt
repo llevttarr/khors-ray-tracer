@@ -33,6 +33,18 @@ set(IMGUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(imgui ...)
 FetchContent_MakeAvailable(imgui)
+
+FetchContent_Declare(volk
+    GIT_REPOSITORY https://github.com/zeux/volk.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(volk)
+FetchContent_Declare(vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(vma)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_executable(KHORS_RayTracer ${SOURCES}
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -59,10 +71,14 @@ target_include_directories(glad PUBLIC external/glad/include)
 target_include_directories(stb_image PUBLIC external/stb/include)
 # find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(Vulkan REQUIRED)
 target_link_libraries(KHORS_RayTracer
     PRIVATE
         glfw
         OpenGL::GL
+        Vulkan::Vulkan 
+        volk::volk_headers
+        Vulkan::shaderc_combined
         glad
         stb_image
 )
