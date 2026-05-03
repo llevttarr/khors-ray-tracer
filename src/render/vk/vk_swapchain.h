@@ -5,6 +5,7 @@
 #include <volk.h>
 #include "vk_mem_alloc.h"
 
+#include "app_util.h"
 #include "vk_device.h"
 /**
  * Manages images to the screen
@@ -18,10 +19,12 @@ private:
     VkFormat img_format;
     VkExtent2D extent;
 public:
-    VKSwapchain();
+    VKSwapchain(VKDevice* vkd,ProgramState& ps);
     ~VKSwapchain();
 
-    void recreate(int w, int h);
+    void recreate(ProgramState& ps);
+    void init(int w,int h);
+    void create_image_views();
     VkResult present(uint32_t img_i, VkSemaphore rc_semaphore);
     VkResult get_next_img(uint32_t* img_i, VkSemaphore pc_semaphore);
 };

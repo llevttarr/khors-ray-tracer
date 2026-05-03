@@ -23,7 +23,7 @@ private:
     VkDevice device;
     
     VkQueue graphicsq;
-    VkQueue computeq;
+    // VkQueue computeq;
     VkQueue presentq;
 
     VmaAllocator allocator;
@@ -40,6 +40,8 @@ public:
     VkDevice get_logic_device() const { return device; }
     VkPhysicalDevice get_phys_device() const { return physical_device; }
     VkQueue get_graphicsq() const { return graphicsq; }
+    VkQueue get_presentq() const { return presentq; }
     VmaAllocator get_allocator() const { return allocator; }
+    VkSurfaceKHR get_surface() const { return surface;}
 };
 #endif // VK_DEVICE_H

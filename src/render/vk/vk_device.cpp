@@ -176,7 +176,7 @@ VKDevice::VKDevice(Window& w){
     
     vmaCreateAllocator(&allocator_info, &allocator);
 
-    has_rt = true;
+    has_rt = true; // FIXME
 }
 VKDevice::~VKDevice(){
     if (allocator != VK_NULL_HANDLE) {
