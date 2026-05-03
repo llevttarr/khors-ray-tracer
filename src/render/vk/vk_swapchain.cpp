@@ -5,7 +5,18 @@ VKSwapchain::VKSwapchain(VKDevice* vkd, ProgramState& ps){
     init(ps.w,ps.h);
 }
 VKSwapchain::~VKSwapchain(){
-    // TODO
+    VkDevice dev = device->get_logic_device();
+    for (auto imgv : imgview_v) {
+        if (imgv != VK_NULL_HANDLE) {
+            vkDestroyImageView(dev, imgv, nullptr);
+        }
+    }
+    imgview_v.clear();
+
+    if (swapchain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(dev, swapchain, nullptr);
+        swapchain = VK_NULL_HANDLE;
+    }
 }
 void VKSwapchain::init(int w,int h){
     VkPhysicalDevice phys_device = device->get_phys_device();
