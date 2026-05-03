@@ -9,4 +9,12 @@ private:
 public:
 
 };
+
+/**
+ * 
+ */
+class PipelineBuilder{
+private:
+public:
+};
 #endif // VK_PIPELINE_H
