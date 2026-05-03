@@ -29,6 +29,11 @@ private:
 public:
     VKCmanager(std::shared_ptr<VKDevice> dev, std::shared_ptr<VKSwapchain> swap);
     ~VKCmanager();
+
+    VKCmanager(const VKCmanager&) = delete;
+    VKCmanager& operator=(const VKCmanager&) = delete;
+    VKCmanager(VKCmanager&&) = delete;
+    VKCmanager& operator=(VKCmanager&&) = delete;
     /**
      * Get next swapchain image, then begin adding to the command buffer
      */

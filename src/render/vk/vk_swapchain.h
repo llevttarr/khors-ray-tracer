@@ -22,6 +22,11 @@ public:
     VKSwapchain(std::shared_ptr<VKDevice> vkd,ProgramState& ps);
     ~VKSwapchain();
 
+    VKSwapchain(const VKSwapchain&) = delete;
+    VKSwapchain& operator=(const VKSwapchain&) = delete;
+    VKSwapchain(VKSwapchain&&) = delete;
+    VKSwapchain& operator=(VKSwapchain&&) = delete;
+
     void recreate(ProgramState& ps);
     void init(int w,int h);
     void create_image_views();

@@ -21,6 +21,11 @@ class VKRTPipeline{
 public:
     ~VKRTPipeline();
 
+    VKRTPipeline(const VKRTPipeline&) = delete;
+    VKRTPipeline& operator=(const VKRTPipeline&) = delete;
+    VKRTPipeline(VKRTPipeline&&) = delete;
+    VKRTPipeline& operator=(VKRTPipeline&&) = delete;
+
     void bind (VkCommandBuffer cmd) const;
     void trace(VkCommandBuffer cmd, uint32_t width, uint32_t height) const;
 

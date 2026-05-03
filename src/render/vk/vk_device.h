@@ -40,6 +40,11 @@ public:
     VKDevice(Window& w);
     ~VKDevice();
 
+    VKDevice(const VKDevice&) = delete;
+    VKDevice& operator=(const VKDevice&) = delete;
+    VKDevice(VKDevice&&) = delete;
+    VKDevice& operator=(VKDevice&&) = delete;
+
     VkDevice get_logic_device() const { return device; }
     VkPhysicalDevice get_phys_device() const { return physical_device; }
 

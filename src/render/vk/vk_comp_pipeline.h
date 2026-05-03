@@ -20,6 +20,11 @@ public:
                       std::vector<VkDescriptorSetLayout> layouts = {},std::vector<VkPushConstantRange> push_ranges = {});
     ~VKComputePipeline();
 
+    VKComputePipeline(const VKComputePipeline&) = delete;
+    VKComputePipeline& operator=(const VKComputePipeline&) = delete;
+    VKComputePipeline(VKComputePipeline&&) = delete;
+    VKComputePipeline& operator=(VKComputePipeline&&) = delete;
+
     void bind(VkCommandBuffer cmd) const;
     void dispatch(VkCommandBuffer cmd, uint32_t gx, uint32_t gy, uint32_t gz = 1) const;
 
