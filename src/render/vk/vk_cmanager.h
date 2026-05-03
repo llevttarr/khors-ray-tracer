@@ -27,7 +27,7 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 public:
-    VKCmanager(VKDevice* dev, VKSwapchain* swap);
+    VKCmanager(std::shared_ptr<VKDevice> dev, std::shared_ptr<VKSwapchain> swap);
     ~VKCmanager();
     /**
      * Get next swapchain image, then begin adding to the command buffer

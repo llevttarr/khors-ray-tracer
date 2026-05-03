@@ -1,7 +1,6 @@
 #include "vk_swapchain.h"
 
-VKSwapchain::VKSwapchain(VKDevice* vkd, ProgramState& ps){
-    device = std::make_shared<VKDevice>(vkd);
+VKSwapchain::VKSwapchain(std::shared_ptr<VKDevice> vkd, ProgramState& ps) : device(vkd){
     init(ps.w,ps.h);
 }
 VKSwapchain::~VKSwapchain(){

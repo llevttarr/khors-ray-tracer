@@ -1,8 +1,7 @@
 #include "vk_cmanager.h"
-VKCmanager::VKCmanager(VKDevice* dev, VKSwapchain* swap)
+
+VKCmanager::VKCmanager(std::shared_ptr<VKDevice> dev, std::shared_ptr<VKSwapchain> swap):device(dev),swapchain(swap)
 {
-    device = std::make_shared<VKDevice>(dev);
-    swapchain = std::make_shared<VKSwapchain>(swap);
 
     /** 1: create the pool */
     

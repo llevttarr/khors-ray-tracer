@@ -19,7 +19,7 @@ private:
     VkFormat img_format;
     VkExtent2D extent;
 public:
-    VKSwapchain(VKDevice* vkd,ProgramState& ps);
+    VKSwapchain(std::shared_ptr<VKDevice> vkd,ProgramState& ps);
     ~VKSwapchain();
 
     void recreate(ProgramState& ps);

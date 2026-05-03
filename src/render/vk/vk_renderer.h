@@ -23,7 +23,7 @@ private:
     std::shared_ptr<VKCmanager> cmanager;
     EulerCamera& camera;
 public:
-    VKRenderer(VKDevice* device, VKSwapchain* swapchain,VKCmanager* cmanager, EulerCamera& camera);
+    VKRenderer(std::shared_ptr<VKDevice> device, std::shared_ptr<VKSwapchain> swapchain,std::shared_ptr<VKCmanager> cmanager, EulerCamera& camera);
     ~VKRenderer();
     VKRenderer(const VKRenderer&) = delete;
     VKRenderer& operator=(const VKRenderer&) = delete;
