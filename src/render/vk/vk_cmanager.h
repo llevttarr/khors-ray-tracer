@@ -27,12 +27,24 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 public:
-    VKCmanager(std::shared_ptr<VKDevice> dev, std::shared_ptr<VKSwapchain> swap);
+    VKCmanager(VKDevice* dev, VKSwapchain* swap);
     ~VKCmanager();
-
+    /**
+     * Get next swapchain image, then begin adding to the command buffer
+     */
     VkCommandBuffer begin_frame(uint32_t& image_index);
-    void begin_rendering(VkCommandBuffer cmd, VkImageView target_image_view, VkExtent2D extent);
-    void end_rendering(VkCommandBuffer cmd);
+    /**
+     * Transitions the swapchain image to COLOR_ATTACHMENT_OPTIMAL, then opens a dynamic render pass
+     */
+    void begin_rendering(VkCommandBuffer cmd, VkImageView target_image_view, VkExtent2D extent,uint32_t image_index);
+    /**
+     * Closes the dynamic render pass; swapchain can display the image
+     */
+    void end_rendering(VkCommandBuffer cmd,uint32_t image_index);
+
+    /**
+     * ends and submits via Synchronization2
+     */
     void end_frame_and_submit(VkCommandBuffer cmd, uint32_t image_index);
 };
 

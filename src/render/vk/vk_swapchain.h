@@ -27,6 +27,8 @@ public:
     void create_image_views();
     VkResult present(uint32_t img_i, VkSemaphore rc_semaphore);
     VkResult get_next_img(uint32_t* img_i, VkSemaphore pc_semaphore);
+
+    VkImage get_image(uint32_t i) const {return img_v[i]; }
 };
 
 #endif // VK_SWAPCHAIN_H

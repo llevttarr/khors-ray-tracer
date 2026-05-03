@@ -22,6 +22,9 @@ private:
     VkPhysicalDevice physical_device;
     VkDevice device;
     
+    uint32_t graphics_family;
+    uint32_t present_family;
+
     VkQueue graphicsq;
     // VkQueue computeq;
     VkQueue presentq;
@@ -39,8 +42,12 @@ public:
 
     VkDevice get_logic_device() const { return device; }
     VkPhysicalDevice get_phys_device() const { return physical_device; }
+
+    uint32_t get_graphics_family() const { return graphics_family; }
+    uint32_t get_present_family() const { return present_family; }
     VkQueue get_graphicsq() const { return graphicsq; }
     VkQueue get_presentq() const { return presentq; }
+    
     VmaAllocator get_allocator() const { return allocator; }
     VkSurfaceKHR get_surface() const { return surface;}
 };

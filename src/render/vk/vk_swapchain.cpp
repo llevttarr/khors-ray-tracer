@@ -5,7 +5,7 @@ VKSwapchain::VKSwapchain(VKDevice* vkd, ProgramState& ps){
     init(ps.w,ps.h);
 }
 VKSwapchain::~VKSwapchain(){
-
+    // TODO
 }
 void VKSwapchain::init(int w,int h){
     VkPhysicalDevice phys_device = device->get_phys_device();

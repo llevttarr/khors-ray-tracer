@@ -71,8 +71,8 @@ VKDevice::VKDevice(Window& w){
     std::vector<VkQueueFamilyProperties> q_families(q_family_c);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &q_family_c, q_families.data());
 
-    uint32_t graphics_family = -1;
-    uint32_t present_family = -1;
+    graphics_family = -1;
+    present_family = -1;
     // uint32_t compute_family = -1; might be needed later (?)
     
     for (uint32_t i = 0; i < q_family_c; ++i) {
