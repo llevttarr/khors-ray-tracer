@@ -1,6 +1,12 @@
 #ifndef VK_DEVICE_H
 #define VK_DEVICE_H
 
+#include <vector>
+#include <stdexcept>
+#include <iostream>
+#include <string>
+#include <set>
+
 #include <volk.h>
 #include "vk_mem_alloc.h"
 
@@ -17,11 +23,16 @@ private:
     VkDevice device;
     
     VkQueue graphicsq;
+    VkQueue computeq;
     VkQueue presentq;
 
     VmaAllocator allocator;
-    
+    VkSurfaceKHR surface;
+
     bool has_rt;
+
+    bool has_required_extensions(VkPhysicalDevice device);
+    bool has_required_features(VkPhysicalDevice device);
 public:
     VKDevice(Window& w);
     ~VKDevice();
