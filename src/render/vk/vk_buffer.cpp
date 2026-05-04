@@ -9,17 +9,17 @@ VmaAllocator VKBuffer::get_allocator() const {
 void VKBuffer::create(VkDeviceSize bufferSize, VkBufferUsageFlags usage,VmaMemoryUsage memory_usage, VmaAllocationCreateFlags flags) {
     size = bufferSize;
 
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = bufferSize;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBufferCreateInfo buffer_info{};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = bufferSize;
+    buffer_info.usage = usage;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VmaAllocationCreateInfo allocCreateInfo{};
-    allocCreateInfo.usage = memory_usage;
-    allocCreateInfo.flags = flags;
+    VmaAllocationCreateInfo alloc_cinfo{};
+    alloc_cinfo.usage = memory_usage;
+    alloc_cinfo.flags = flags;
 
-    if (vmaCreateBuffer(get_allocator(),&bufferInfo,&allocCreateInfo,&buffer,&allocation,&alloc_info) != VK_SUCCESS) {
+    if (vmaCreateBuffer(get_allocator(),&buffer_info,&alloc_cinfo,&buffer,&allocation,&alloc_info) != VK_SUCCESS) {
         throw std::runtime_error("VMA buffer init FAIL");
     }
 }

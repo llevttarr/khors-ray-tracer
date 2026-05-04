@@ -10,7 +10,6 @@
 #include "vk_swapchain.h"
 
 class VKComputePipeline{
-    friend class PipelineBuilder;
 private:
     std::shared_ptr<VKDevice> device;
     VkPipeline pipeline = VK_NULL_HANDLE;
