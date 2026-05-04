@@ -4,7 +4,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <string>
-#include "../util/app_util.h"
+#include "app_util.h"
 
 // TODO: give config to constructor instead 
 class Window {

@@ -4,9 +4,9 @@
 #include <iostream>
 #include <string>
 #include "widget.h"
-#include "../render/renderer.h"
-#include "../scene/scene.h"
-#include "../scene/rs_obj_parser.h"
+#include "renderer.h"
+#include "scene.h"
+#include "rs_obj_parser.h"
 
 class ObjWidget : public Widget{
 public:

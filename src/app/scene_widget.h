@@ -2,9 +2,9 @@
 #define SCENE_WIDGET_H
 
 #include "widget.h"
-#include "../render/renderer.h"
-#include "../scene/scene.h"
-#include "../scene/scene_parser.h"
+#include "renderer.h"
+#include "scene.h"
+#include "scene_parser.h"
 
 class SceneWidget : public Widget{
 public:

@@ -1,8 +1,8 @@
 #ifndef MAT_WIDGET_H
 #define MAT_WIDGET_H
 #include "widget.h"
-#include "../render/renderer.h"
-#include "../scene/scene.h"
+#include "renderer.h"
+#include "scene.h"
 struct TexBuffs {
     char base[256]{};
     char normal[256]{};

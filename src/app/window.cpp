@@ -1,5 +1,5 @@
 #include "window.h"
-#include "../util/image_util.h"
+#include "image_util.h"
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>

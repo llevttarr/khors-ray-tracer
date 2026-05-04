@@ -2,9 +2,9 @@
 #define LIGHT_WIDGET_H
 
 #include "widget.h"
-#include "../render/renderer.h"
-#include "../scene/scene.h"
-#include "../scene/light.h"
+#include "renderer.h"
+#include "scene.h"
+#include "light.h"
 // #include "../scene/scene_parser.h"
 
 class LightWidget : public Widget{
