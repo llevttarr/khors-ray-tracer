@@ -24,7 +24,7 @@ VKCmanager::VKCmanager(std::shared_ptr<VKDevice> dev, std::shared_ptr<VKSwapchai
     if (vkAllocateCommandBuffers(device->get_logic_device(),&alloc_info, command_buffers.data()) != VK_SUCCESS)
         throw std::runtime_error("command buffers allocation fail");
 
-    /** 3: sephamores/fences */
+    /** 3: semaphores/fences */
 
     image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
     render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);

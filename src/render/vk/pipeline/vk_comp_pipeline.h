@@ -7,28 +7,21 @@
 
 #include "app_util.h"
 #include "vk_device.h"
-#include "vk_swapchain.h"
+#include "vk_pipeline.h"
 
-class VKComputePipeline{
+class VKComputePipeline : public VKPipeline{
+    friend class VKComputePipelineBuilder;
 private:
-    std::shared_ptr<VKDevice> device;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout layout   = VK_NULL_HANDLE;
+    VKComputePipeline(std::shared_ptr<VKDevice> dev, VkPipeline p, VkPipelineLayout l)
+        : VKPipeline(dev, p, l, VK_PIPELINE_BIND_POINT_COMPUTE) {}
+    // void dispatch(VkCommandBuffer cmd, uint32_t gx, uint32_t gy, uint32_t gz = 1) const; - CManager ??
+};
+class VKComputePipelineBuilder : public VKPipelineBuilder{
+private:
+    std::string shader_path;
 public:
-    VKComputePipeline(std::shared_ptr<VKDevice> dev, const std::string& spv_path,
-                      std::vector<VkDescriptorSetLayout> layouts = {},std::vector<VkPushConstantRange> push_ranges = {});
-    ~VKComputePipeline();
-
-    VKComputePipeline(const VKComputePipeline&) = delete;
-    VKComputePipeline& operator=(const VKComputePipeline&) = delete;
-    VKComputePipeline(VKComputePipeline&&) = delete;
-    VKComputePipeline& operator=(VKComputePipeline&&) = delete;
-
-    void bind(VkCommandBuffer cmd) const;
-    void dispatch(VkCommandBuffer cmd, uint32_t gx, uint32_t gy, uint32_t gz = 1) const;
-
-    VkPipeline get() const {return pipeline; }
-    VkPipelineLayout get_layout() const { return layout; }
-
+    VKComputePipelineBuilder(std::shared_ptr<VKDevice> dev) : VKPipelineBuilder(dev) {}
+    VKComputePipelineBuilder& set_shader(const std::string& spv_path);
+    std::unique_ptr<VKComputePipeline> build();
 };
 #endif //VK_COMP_PIPELINE_H

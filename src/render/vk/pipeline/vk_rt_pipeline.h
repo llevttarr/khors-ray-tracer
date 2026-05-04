@@ -7,41 +7,37 @@
 
 #include "app_util.h"
 #include "vk_device.h"
-#include "vk_swapchain.h"
+#include "vk_pipeline.h"
 
-struct SBTRegions {
+struct SBTRegionsRT {
     VkStridedDeviceAddressRegionKHR raygen{};
     VkStridedDeviceAddressRegionKHR miss{};
     VkStridedDeviceAddressRegionKHR hit{};
     VkStridedDeviceAddressRegionKHR callable {};
 };
 
-class VKRTPipeline{
-    friend class PipelineBuilder;
-public:
-    ~VKRTPipeline();
-
-    VKRTPipeline(const VKRTPipeline&) = delete;
-    VKRTPipeline& operator=(const VKRTPipeline&) = delete;
-    VKRTPipeline(VKRTPipeline&&) = delete;
-    VKRTPipeline& operator=(VKRTPipeline&&) = delete;
-
-    void bind (VkCommandBuffer cmd) const;
-    void trace(VkCommandBuffer cmd, uint32_t width, uint32_t height) const;
-
-    VkPipeline get() const { return pipeline; }
-    VkPipelineLayout get_layout() const { return layout; }
-    const SBTRegions& get_sbt() const { return sbt; }
-
+class VKRTPipeline : public VKPipeline {
+    friend class VKRTPipelineBuilder;
 private:
-    VKRTPipeline() = default;
-    std::shared_ptr<VKDevice> device;
+    VKRTPipeline(std::shared_ptr<VKDevice> dev, VkPipeline p, VkPipelineLayout l)
+        : VKPipeline(dev, p, l, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {}
 
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout layout = VK_NULL_HANDLE;
-    VkBuffer sbt_buffer = VK_NULL_HANDLE;
-    VmaAllocation sbt_alloc = VK_NULL_HANDLE;
-    SBTRegions sbt{};
+    // void trace(VkCommandBuffer cmd, const SBTRegionsRT& regions,uint32_t width, uint32_t height, uint32_t depth = 1) const;
+};
+class VKRTPipelineBuilder: public VKPipelineBuilder{
+private:
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_groups;
+    uint32_t max_recursion_depth = 1;
+
+public:
+    VKRTPipelineBuilder(std::shared_ptr<VKDevice> dev) : VKPipelineBuilder(dev) {}
+    VKRTPipelineBuilder& add_raygen_shader(const std::string& spv_path);
+    VKRTPipelineBuilder& add_miss_shader(const std::string& spv_path);
+    VKRTPipelineBuilder& add_closest_hit_shader(const std::string& spv_path);
+    VKRTPipelineBuilder& set_max_recursion_depth(uint32_t depth);
+
+    std::unique_ptr<VKRTPipeline> build();
 };
 
 #endif //VK_RT_PIPELINE_H
