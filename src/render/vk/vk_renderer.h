@@ -16,6 +16,7 @@
 
 #include "vk_texture.h"
 #include "vk_buffer.h"
+#include "vk_accelstruct.h"
 
 #include "vk_g_pipeline.h"
 #include "vk_comp_pipeline.h"
@@ -163,6 +164,10 @@ private:
 
     void img_barrier(VkCommandBuffer cmd,VkImage img,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access,VkImageLayout old_layout,VkImageLayout new_layout);
 
+    /** ACCEL */
+    std::unique_ptr<VKAccelStructure> blas;
+    std::unique_ptr<VKAccelStructure> tlas;
+    std::unique_ptr<VKAccelBuilder> accel_builder;
 public:
     VKRenderer(std::shared_ptr<VKDevice> device, std::shared_ptr<VKSwapchain> swapchain,std::unique_ptr<VKCmanager> cmanager, EulerCamera& camera);
     ~VKRenderer() override;

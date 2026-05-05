@@ -1,5 +1,5 @@
-#version 460 core
-layout(local_size_x = 16,local_size_y = 4) in;
+#version 460
+#extension GL_EXT_ray_tracing : require
 
 layout(rgba32f,binding = 0) uniform image2D outImage;
 layout(rgba32f,binding = 1) uniform image2D accumImage;
@@ -8,22 +8,22 @@ layout(rgba32f,binding = 2) uniform image2D reflAccumImage;
 //#import "structs.glsl"
 //#import "vk_uniforms.glsl"
 
-layout(std430,set=1,binding=1) readonly buffer TriBuf {
+layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
 };
-layout(std430,set=1,binding=2) readonly buffer SphrBuf {
+layout(std430,set=1,binding=1) readonly buffer SphrBuf {
     Sphr spheres[];
 };
-layout(std430,set=1,binding=3) readonly buffer BVHBuf {
+layout(std430,set=1,binding=2) readonly buffer BVHBuf {
     BVH bvh_v[];
 };
-layout(std430,set=1,binding=4) readonly buffer MatBuf {
+layout(std430,set=1,binding=3) readonly buffer MatBuf {
     Mat mats[];
 };
-layout(std430,set=1,binding=5) readonly buffer PrimBuf {
+layout(std430,set=1,binding=4) readonly buffer PrimBuf {
     uint prims[];
 };
-layout(std430,set=1,binding=6) readonly buffer LightBuf {
+layout(std430,set=1,binding=5) readonly buffer LightBuf {
     Light light_v[];
 };
 layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;

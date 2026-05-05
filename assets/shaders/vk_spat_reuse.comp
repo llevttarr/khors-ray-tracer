@@ -1,30 +1,32 @@
-#version 460 core
+#version 460
+#extension GL_EXT_nonuniform_qualifier  : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int32 : enable
 layout(local_size_x = 16,local_size_y = 4) in;
 
 //#import "structs.glsl"
 //#import "vk_uniforms.glsl"
 
-layout(std430,set=1,binding=1) readonly buffer TriBuf {
+layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
 };
-layout(std430,set=1,binding=2) readonly buffer SphrBuf {
+layout(std430,set=1,binding=1) readonly buffer SphrBuf {
     Sphr spheres[];
 };
-layout(std430,set=1,binding=3) readonly buffer BVHBuf {
+layout(std430,set=1,binding=2) readonly buffer BVHBuf {
     BVH bvh_v[];
 };
-layout(std430,set=1,binding=4) readonly buffer MatBuf {
+layout(std430,set=1,binding=3) readonly buffer MatBuf {
     Mat mats[];
 };
-layout(std430,set=1,binding=5) readonly buffer PrimBuf {
+layout(std430,set=1,binding=4) readonly buffer PrimBuf {
     uint prims[];
 };
-layout(std430,set=1,binding=6) readonly buffer LightBuf {
+layout(std430,set=1,binding=5) readonly buffer LightBuf {
     Light light_v[];
 };
-layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;
-layout(set = 1, binding = 7) uniform sampler2DArray normalTexArr;
-layout(set = 1, binding = 8) uniform sampler2DArray specularTexArr;
+// layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;
+// layout(set = 1, binding = 7) uniform sampler2DArray normalTexArr;
+// layout(set = 1, binding = 8) uniform sampler2DArray specularTexArr;
 
 layout(std430, set = 2, binding = 0) buffer ResBufA {
     Reservoir reservoir_a[];
@@ -34,17 +36,17 @@ layout(std430, set = 2, binding = 1) buffer ResBufB {
     Reservoir reservoir_b[];
 };
 
-layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
-    Reservoir reservoir_history[];
-};
+// layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
+//     Reservoir reservoir_history[];
+// };
 
 layout(std430, set = 2, binding = 3) buffer GBuf {
     GBufferPixel gbuffer[];
 };
 
-layout(std430, set = 2, binding = 4) buffer GBufferHistory {
-    GBufferPixel gbuffer_history[];
-};
+// layout(std430, set = 2, binding = 4) buffer GBufferHistory {
+//     GBufferPixel gbuffer_history[];
+// };
 //#import "intersection.glsl"
 //#import "light_sample.glsl"
 //#import "wrs.glsl"
