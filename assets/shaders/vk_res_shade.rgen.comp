@@ -1,9 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
-
-layout(rgba32f,binding = 0) uniform image2D outImage;
-layout(rgba32f,binding = 1) uniform image2D accumImage;
-layout(rgba32f,binding = 2) uniform image2D reflAccumImage;
+#extension GL_EXT_nonuniform_qualifier : require
 
 //#import "structs.glsl"
 //#import "vk_uniforms.glsl"
@@ -34,88 +31,138 @@ layout(std430, set = 2, binding = 0) buffer ReservoirCurrent {
     Reservoir reservoir_a[];
 };
 
-layout(std430, set = 2, binding = 1) buffer ReservoirB {
-    Reservoir reservoir_b[];
-};
+// layout(std430, set = 2, binding = 1) buffer ReservoirB {
+//     Reservoir reservoir_b[];
+// };
 
-layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
-    Reservoir reservoir_history[];
-};
+// layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
+//     Reservoir reservoir_history[];
+// };
 
 layout(std430, set = 2, binding = 3) buffer GBuf {
     GBufferPixel gbuffer[];
 };
 
-layout(std430, set = 2, binding = 4) buffer GBufferHistory {
-    GBufferPixel gbuffer_history[];
-};
+// layout(std430, set = 2, binding = 4) buffer GBufferHistory {
+//     GBufferPixel gbuffer_history[];
+// };
+layout(set = 3, binding = 0, rgba32f) uniform image2D outImage;
+layout(set = 3, binding = 1, rgba32f) uniform image2D accumImage;
+layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
 //#import "intersection.glsl"
 //#import "light_sample.glsl"
 //#import "wrs.glsl"
 //#import "hash.glsl"
 //#import "shading.glsl"
-void main() {
-    uvec2 gid = gl_GlobalInvocationID.xy;
 
-    if (gid.x >= width||gid.y >= height){
-        return;
-    }
+layout(location = 0) rayPayloadEXT RayPayload refl_payload;
+layout(location = 1) rayPayloadEXT ShadowPayload shadow_payload;
+const uint SHADOW_FLAGS =gl_RayFlagsTerminateOnFirstHitEXT |gl_RayFlagsSkipClosestHitShaderEXT |gl_RayFlagsOpaqueEXT;
+
+bool trace_shadow(vec3 origin, vec3 dir, float dist) {
+    shadow_payload.shadowed = 1;
+    traceRayEXT(tlas,SHADOW_FLAGS,0xFF,0, 0,0,origin, 0.001,dir, dist - 0.001,1);
+    return shadow_payload.shadowed == 1;
+}
+bool trace_reflect(vec3 origin, vec3 dir) {
+    refl_payload.valid = -1;
+    traceRayEXT(tlas,RT_FLAGS,0xFF,1, 0,1,origin, 0.001,dir,1e30,0);
+    return refl_payload.valid >= 0;
+}
+void main() {
+    uvec2 gid = gl_LaunchIDEXT.xy;
     uint pidx = gid.y * width + gid.x;
-    vec2 uv = vec2((gid.x + 0.5) / float(width),(gid.y + 0.5) / float(height));
+    vec2 uv  = vec2((gid.x + 0.5) / float(width), (gid.y + 0.5) / float(height));
     float ndy = 2.0 * uv.y - 1.0;
     vec3 sky = getSky(ndy);
+
     GBufferPixel px = gbuffer[pidx];
     if (px.valid == -1) {
         imageStore(outImage, ivec2(gid), vec4(sky, 1.0));
         return;
     }
+
     vec3 pos = px.pos.xyz;
     vec3 n = normalize(px.norm.xyz);
     vec3 diffuse = px.diffuse.xyz;
-    Mat mat = mats[px.matId - 1];
+    uint matId = px.matId;
+    Mat mat = mats[matId - 1];
+
     float hemi = 0.5 + 0.5 * n.y;
-    vec3  col  = mat.ambient.rgb * hemi;
+    vec3 col = mat.ambient.rgb * hemi;
     vec3 v = normalize(camPos - pos);
     Reservoir r = reservoir_a[pidx];
     if (r.sampledLight >= 0 && r.W > 0.0) {
         Light l = light_v[r.sampledLight];
         LightSample s = sampleLight(l, pos);
-
-        if (!traceAny(pos + n * 0.001, s.dir, s.dist)) {
+        if (!trace_shadow(pos + n * 0.001, s.dir, s.dist)) {
             float ndotl = max(0.0, dot(n, s.dir));
-            vec3 diff  =diffuse * s.radiance.rgb * ndotl/*/ distSq*/;
+            vec3  diff = diffuse * s.radiance.rgb * ndotl;
+            float sh = max(1.0, mat.ambient.w);
+            float specStr = (brdf_type == 0)? phongSpecStr(v, s.dir, n, sh): blinnPhongSpecStr(v, s.dir, n, sh);
 
-            float sh  = max(1.0, mat.ambient.w);
-            float specStr = 0.0;
-            if (brdf_type == 0){
-                specStr = phongSpecStr(v, s.dir, n, sh);
-            }else{
-                specStr = blinnPhongSpecStr(v, s.dir, n, sh);
-            }
-            vec3 spec =mat.specular.rgb * s.radiance.rgb * specStr /*/ distSq*/;
-            float hasSpecMap = float(px.matId != 1 && mat.tex.z != -1);
-            vec3 specMap = mix(vec3(1.0), texture(specularTexArr, vec3(px.uv, max(mat.tex.z, 0.0))).rgb, hasSpecMap);
-            spec *= specMap;
+            float hasSpecMap = float(matId != 1u && mat.tex.z != -1);
+            vec3  specMap= mix(vec3(1.0),texture(specularTexArr,vec3(px.uv, max(mat.tex.z, 0))).rgb,hasSpecMap);
+            vec3  spec = mat.specular.rgb * s.radiance.rgb * specStr * specMap;
             col += (diff + spec) * r.W;
         }
     }
+
     col += mat.emission.rgb * mat.emission.w;
+
     float reflStr = mat.specular.w;
     vec3 reflCol = vec3(0.0);
-
     if (reflStr > 0.01) {
         if (framec == 0) {
             vec3 reflDir = normalize(reflect(-v, n));
-            vec3 reflO= pos + n * 0.001;
+            vec3 reflO = pos + n * 0.001;
 
-            RayHit reflHit = trace(reflO, reflDir);
-            reflCol = reflHit.isValid? brdfShading(reflO, reflDir, reflHit): sky;
+            if (trace_reflect(reflO, reflDir)) {
+                vec3 rPos = refl_payload.hitPos;
+                uint rMatId = refl_payload.matId;
+                Mat rMat = mats[rMatId - 1];
+
+                vec3 rN = refl_payload.n;
+                mat3 rTBN = (refl_payload.type == 1u)? getTBNSphere(rN): mat3(refl_payload.tangent,refl_payload.bitangent, rN);
+                vec3 rV = normalize(reflO - rPos);
+                if (dot(rN, rV) < 0.0) { rN = -rN; rTBN = -rTBN; }
+
+                vec2  rTexUV = refl_payload.uv * rMat.uv.xy + rMat.uv.zw;
+                vec3  rBase  = rMat.diffuse.rgb;
+                if (rMat.tex.x != -1)
+                    rBase = texture(baseTexArr, vec3(rTexUV, rMat.tex.x)).rgb;
+                if (rMatId != 1u && rMat.tex.y != -1) {
+                    vec3 normMap = texture(normalTexArr,vec3(rTexUV, rMat.tex.y)).rgb;
+                    rN = normalMapping(normMap, rTBN);
+                }
+
+                vec3  rCol = rMat.ambient.rgb * (0.5 + 0.5 * rN.y);
+                float rSh = max(1.0, rMat.ambient.w);
+
+                for (uint li = 0u; li < lightc; ++li) {
+                    LightSample rs = sampleLight(light_v[li], rPos);
+                    if (trace_shadow(rPos + rN * 0.001, rs.dir, rs.dist)) continue;
+
+                    float rNdotL = max(0.0, dot(rN, rs.dir));
+                    vec3  rDiff = rBase * rs.radiance * rNdotL;
+                    float rSpecStr = (brdf_type == 0)? phongSpecStr(rV, rs.dir, rN, rSh): blinnPhongSpecStr(rV, rs.dir, rN, rSh);
+                    float hasRSpec = float(rMatId != 1u && rMat.tex.z != -1);
+                    vec3  rSpecMap = mix(vec3(1.0),texture(specularTexArr,vec3(rTexUV, max(rMat.tex.z, 0))).rgb,hasRSpec);
+                    vec3 rSpec = rMat.specular.rgb * rs.radiance * rSpecStr * rSpecMap;
+                    rCol += rDiff + rSpec;
+                }
+                reflCol = rCol;
+            } else {
+                reflCol = sky;
+            }
             imageStore(reflAccumImage, ivec2(gid), vec4(reflCol, 1.0));
         } else {
             reflCol = imageLoad(reflAccumImage, ivec2(gid)).rgb;
         }
+
         col = mix(col, reflCol, reflStr);
     }
+
     vec4 accum;
     if (framec == 0) {
         accum = vec4(col, 1.0);
@@ -124,6 +171,7 @@ void main() {
         float w = 1.0 / float(framec + 1);
         accum = mix(prev, vec4(col, 1.0), w);
     }
+
     imageStore(accumImage, ivec2(gid), accum);
-    // imageStore(outImage, ivec2(gid), accum);
+    imageStore(outImage, ivec2(gid), accum);
 }

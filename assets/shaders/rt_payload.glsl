@@ -9,3 +9,4 @@ struct RayPayload {
     uint type;
     int valid;
 };
+const uint RT_FLAGS = gl_RayFlagsOpaqueEXT;
