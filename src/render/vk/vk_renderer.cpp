@@ -635,8 +635,7 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
         const uint32_t layer_h = static_cast<uint32_t>(img_v[0].h);
         const uint32_t layers = static_cast<uint32_t>(img_v.size());
         constexpr uint32_t CHANNELS = 4;
-        const VkDeviceSize layer_bytes = static_cast<VkDeviceSize>(layer_w)
-                                       * layer_h * CHANNELS;
+        const VkDeviceSize layer_bytes = static_cast<VkDeviceSize>(layer_w)* layer_h * CHANNELS;
         const VkDeviceSize total_bytes = layer_bytes * layers;
         const VkExtent3D ext{ layer_w, layer_h, 1 };
  

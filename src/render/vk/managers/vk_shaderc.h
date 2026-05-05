@@ -2,9 +2,17 @@
 #define VK_SHADERC_H
 
 #include <string>
+#include <cstring>
 #include <vector>
 #include <filesystem>
 #include <stdexcept>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <unordered_map>
+#include <unordered_set>
+#include <stdexcept>
+#include <filesystem>
 
 class VKShaderCompiler {
 private:
@@ -27,6 +35,7 @@ public:
  
     static bool is_glsl_extension(const std::string& ext);
     static int infer_stage(const std::string& path);
+    static std::string VKShaderCompiler::process_imports(const std::string& source,const std::filesystem::path& base_path,std::unordered_set<std::filesystem::path>& included_files);
 };
 
 
