@@ -42,7 +42,7 @@ public:
     VKPipelineBuilder(std::shared_ptr<VKDevice> dev) : device(dev) {}
     virtual ~VKPipelineBuilder() = default;
 
-    VKPipelineBuilder& add_descriptor_set_layout(VkDescriptorSetLayout layout);
-    VKPipelineBuilder& add_push_constant(VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size);
+    virtual VKPipelineBuilder& add_descriptor_set_layout(VkDescriptorSetLayout layout);
+    virtual VKPipelineBuilder& add_push_constant(VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size);
 };
 #endif // VK_PIPELINE_H

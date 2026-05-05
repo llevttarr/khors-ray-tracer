@@ -51,6 +51,8 @@ public:
      * ends and submits via Synchronization2
      */
     void end_frame_and_submit(VkCommandBuffer cmd, uint32_t image_index);
+
+    uint32_t get_current_frame(){return current_frame;}
 };
 
 #endif // VK_CMANAGER_H

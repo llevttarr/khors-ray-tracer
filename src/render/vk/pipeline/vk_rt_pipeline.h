@@ -46,6 +46,15 @@ public:
     VKRTPipelineBuilder& add_closest_hit_shader(const std::string& spv_path);
     VKRTPipelineBuilder& set_max_recursion_depth(uint32_t depth);
 
+    VKRTPipelineBuilder& add_descriptor_set_layout(VkDescriptorSetLayout layout) override {
+        VKPipelineBuilder::add_descriptor_set_layout(layout);
+        return *this;
+    };
+    VKRTPipelineBuilder& add_push_constant(VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size) override {
+        VKPipelineBuilder::add_push_constant(stage_flags,offset,size);
+        return *this;
+    };
+
     std::unique_ptr<VKRTPipeline> build();
 };
 

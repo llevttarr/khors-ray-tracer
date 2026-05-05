@@ -26,7 +26,7 @@ private:
     uint32_t present_family;
 
     VkQueue graphicsq;
-    // VkQueue computeq;
+    VkQueue computeq;
     VkQueue presentq;
 
     VmaAllocator allocator;

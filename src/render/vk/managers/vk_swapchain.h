@@ -34,6 +34,9 @@ public:
     VkResult get_next_img(uint32_t* img_i, VkSemaphore pc_semaphore);
 
     VkImage get_image(uint32_t i) const {return img_v[i]; }
+    VkImageView get_image_view(uint32_t i) const {return imgview_v[i]; }
+    VkFormat get_format() const {return img_format; }
+    VkExtent2D get_extent() const {return extent; }
 };
 
 #endif // VK_SWAPCHAIN_H

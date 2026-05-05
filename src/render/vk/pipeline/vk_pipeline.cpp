@@ -17,7 +17,7 @@ void VKPipeline::bind(VkCommandBuffer cmd) const {
     vkCmdBindPipeline(cmd, bind_point, pipeline);
 }
 VkShaderModule VKPipeline::load_shader(VkDevice device, const std::string& path) {
-    auto code = read_filec(path);
+    auto code = glsl_util::read_filec(path);
 
     VkShaderModuleCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

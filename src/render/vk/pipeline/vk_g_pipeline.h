@@ -40,6 +40,15 @@ public:
     
     VKGraphicsPipelineBuilder& set_render_formats(VkFormat color, VkFormat depth);
 
+    VKGraphicsPipelineBuilder& add_descriptor_set_layout(VkDescriptorSetLayout layout) override {
+        VKPipelineBuilder::add_descriptor_set_layout(layout);
+        return *this;
+    };
+    VKGraphicsPipelineBuilder& add_push_constant(VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size) override {
+        VKPipelineBuilder::add_push_constant(stage_flags,offset,size);
+        return *this;
+    };
+
     std::unique_ptr<VKGraphicsPipeline> build();
 };
 #endif // VK_G_PIPELINE_H
