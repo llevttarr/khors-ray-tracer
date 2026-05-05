@@ -6,7 +6,7 @@ VKRenderer::VKRenderer(std::shared_ptr<VKDevice> dev,std::shared_ptr<VKSwapchain
 cmanager(std::move(cmgr)),camera(cam),current_width (static_cast<uint32_t>(cam.get_w())),current_height(static_cast<uint32_t>(cam.get_h())), tri_buf  (device), sphr_buf(device), bvh_buf(device),
 mat_buf  (device), prim_buf(device), light_buf(device), reservoir_b(device),
     cbuff_tex(device), accum_tex(device), refl_accum_tex(device),
-    base_tex_arr(device), normal_tex_arr(device), specular_tex_arr(device)
+    base_tex_arr(device), normal_tex_arr(device), specular_tex_arr(device))
 {
     for (int i = 0; i < 2; ++i) {
         reservoir_ab[i] = VKBuffer(device);
@@ -17,6 +17,8 @@ mat_buf  (device), prim_buf(device), light_buf(device), reservoir_b(device),
     }
 
     descriptor_allocator = std::make_unique<VKDescriptorAllocator>(device);
+
+    accel_builder = std::make_unique<VKAccelBuilder>(device,[this](const std::function<void(VkCommandBuffer)>& fn){ one_time_submit(fn); });
 
     init_descriptor_layouts();
     init_camera_ubos();
@@ -125,7 +127,7 @@ void VKRenderer::init_descriptor_layouts() {
         binding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, COMPUTE_RT), // base
         binding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, COMPUTE_RT), // normal
         binding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, COMPUTE_RT), // spec
-        // binding(9, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, COMPUTE_RT), // tlas
+        binding(9, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, COMPUTE_RT), // tlas
     }, scene_dsl);
     // gbuff
     create_layout({
@@ -255,7 +257,22 @@ void VKRenderer::update_scene_descriptor() {
         w.pImageInfo = info;
         return w;
     };
-    std::array<VkWriteDescriptorSet, 9> writes = {
+
+    VkWriteDescriptorSetAccelerationStructureKHR as_write{};
+    as_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+    as_write.accelerationStructureCount = 1;
+    VkAccelerationStructureKHR tlas_handle = tlas->get();
+    as_write.pAccelerationStructures = &tlas_handle;
+
+    VkWriteDescriptorSet w_as{};
+    w_as.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    w_as.pNext = &as_write;
+    w_as.dstSet = scene_set;
+    w_as.dstBinding = 9;
+    w_as.descriptorCount = 1;
+    w_as.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+
+    std::array<VkWriteDescriptorSet, 10> writes = {
         sbuf(scene_set, 0, &bi_tri),
         sbuf(scene_set, 1, &bi_sphr),
         sbuf(scene_set, 2, &bi_bvh),
@@ -265,6 +282,7 @@ void VKRenderer::update_scene_descriptor() {
         simg(scene_set, 6, &ii_base),
         simg(scene_set, 7, &ii_norm),
         simg(scene_set, 8, &ii_spec),
+        w_as,
     };
     vkUpdateDescriptorSets(vkdev,
         static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
@@ -403,6 +421,10 @@ void VKRenderer::update_scene(RenderScene& scene) {
     lightc = static_cast<uint32_t>(scene.light_v.size());
  
     upload_scene_buffers(scene);
+
+    blas = accel_builder->build_blas(scene.tri_v);
+    tlas = accel_builder->build_tlas(*blas);
+
     create_texture_arrays(scene);
     update_scene_descriptor();
 }

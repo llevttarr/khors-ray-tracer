@@ -180,6 +180,7 @@ public:
     void update_scene(RenderScene& scene) override;
 
     void on_window_resize(uint32_t w, uint32_t h);
+    std::function<void(VkCommandBuffer)> ui_draw_fn;
 
     /**
      * block CPU for resizing/destruction
