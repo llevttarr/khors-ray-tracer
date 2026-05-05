@@ -14,21 +14,6 @@
 #include "benchmark.h"
 #include "vec3.h"
 
-struct Reservoir{
-    int y;
-    float w_sum;
-    int m;
-    float w;
-};
-struct GBufferPixel{
-    Vec4<float> pos;
-    Vec4<float> norm;
-    Vec4<float> diff;
-    Vec2<float> uv;
-    uint32_t matid;
-    int valid;
-};
-
 class Renderer {
 public:
     explicit Renderer(int width, int height,EulerCamera& camera);

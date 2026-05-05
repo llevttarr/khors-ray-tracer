@@ -85,3 +85,505 @@ void VKRenderer::init_pipelines() {
         .set_render_formats(swapchain->get_format(), VK_FORMAT_UNDEFINED)
         .build();
 }
+
+void VKRenderer::init_descriptor_layouts() {
+    VkDevice vkdev = device->get_logic_device();
+    auto binding = [](uint32_t b, VkDescriptorType type,VkShaderStageFlags stages,uint32_t count = 1) -> VkDescriptorSetLayoutBinding{
+        VkDescriptorSetLayoutBinding r{};
+        r.binding = b;
+        r.descriptorType = type;
+        r.descriptorCount = count;
+        r.stageFlags = stages;
+        return r;
+    };
+ 
+    auto create_layout = [&](const std::vector<VkDescriptorSetLayoutBinding>& bindings,VkDescriptorSetLayout& out){
+        VkDescriptorSetLayoutCreateInfo ci{};
+        ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        ci.bindingCount = static_cast<uint32_t>(bindings.size());
+        ci.pBindings = bindings.data();
+        if (vkCreateDescriptorSetLayout(vkdev, &ci, nullptr, &out) != VK_SUCCESS)
+            throw std::runtime_error("vkCreateDescriptorSetLayout failed");
+    };
+ 
+    constexpr VkShaderStageFlags COMPUTE_RT =VK_SHADER_STAGE_COMPUTE_BIT |VK_SHADER_STAGE_RAYGEN_BIT_KHR |VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |VK_SHADER_STAGE_MISS_BIT_KHR;
+ 
+    // camera
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, COMPUTE_RT),
+    }, camera_dsl);
+ 
+    // geometry
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // tri
+        binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), //sphr
+        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), //bvh
+        binding(3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // mats
+        binding(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // prims
+        binding(5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // lights
+        binding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, COMPUTE_RT), // base
+        binding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, COMPUTE_RT), // normal
+        binding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, COMPUTE_RT), // spec
+        // binding(9, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, COMPUTE_RT), // tlas
+    }, scene_dsl);
+    // gbuff
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // reservoir_current
+        binding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // reservoir_b
+        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // reservoir_history
+        binding(3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // gbuffer_current
+        binding(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, COMPUTE_RT), // gbuffer_history
+    }, pingpong_dsl);
+
+    // output
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // cbuff 
+        binding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // accum 
+        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // refl_accum 
+    }, output_dsl);
+ 
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT),
+    }, present_dsl);
+}
+ 
+void VKRenderer::init_camera_ubos() {
+    VkDevice vkdev = device->get_logic_device();
+ 
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+        camera_ubos[i].create(
+            sizeof(CameraUBO),
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VMA_MEMORY_USAGE_CPU_TO_GPU,
+            VMA_ALLOCATION_CREATE_MAPPED_BIT
+        );
+        descriptor_allocator->allocate(&camera_sets[i], camera_dsl);
+ 
+        VkDescriptorBufferInfo buf_info{};
+        buf_info.buffer = camera_ubos[i].get();
+        buf_info.offset = 0;
+        buf_info.range = sizeof(CameraUBO);
+ 
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet = camera_sets[i];
+        w.dstBinding = 0;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        w.pBufferInfo = &buf_info;
+        vkUpdateDescriptorSets(vkdev, 1, &w, 0, nullptr);
+    }
+}
+void VKRenderer::update_camera_ubo(uint32_t frame_idx) {
+    const float aspect = static_cast<float>(current_width) /static_cast<float>(current_height);
+ 
+    CameraUBO ubo{};
+    ubo.pos = Vec4<float>(camera.get_pos().x,camera.get_pos().y,camera.get_pos().z,camera.get_fov());
+    ubo.forward = Vec4<float>(camera.get_forward().x,camera.get_forward().y,camera.get_forward().z,aspect);
+    ubo.right = Vec4<float>(camera.get_right().x,camera.get_right().y,camera.get_right().z,0.0f);
+    ubo.up =Vec4<float>(camera.get_up().x,camera.get_up().y,camera.get_up().z,0.0f);
+ 
+    if (prev_camera_valid) {
+        ubo.prev_pos = Vec4<float>(prev_camera.pos.x,prev_camera.pos.y,prev_camera.pos.z,prev_camera.fov);
+        ubo.prev_forward = Vec4<float>(prev_camera.forward.x,prev_camera.forward.y,prev_camera.forward.z,prev_camera.aspect);
+        ubo.prev_right = Vec4<float>(prev_camera.right.x,prev_camera.right.y,prev_camera.right.z,0.0f);
+        ubo.prev_up = Vec4<float>(prev_camera.up.x,prev_camera.up.y,prev_camera.up.z,0.0f);
+    } else {
+        ubo.prev_pos = ubo.pos;
+        ubo.prev_forward = ubo.forward;
+        ubo.prev_right = ubo.right;
+        ubo.prev_up= ubo.up;
+    }
+    camera_ubos[frame_idx].write(&ubo, sizeof(CameraUBO));
+}
+
+
+void VKRenderer::update_scene_descriptor() {
+    VkDevice vkdev = device->get_logic_device();
+    descriptor_allocator->allocate(&scene_set, scene_dsl);
+ 
+    auto buf_write = [&](uint32_t binding, VkBuffer buf, VkDeviceSize size)-> VkWriteDescriptorSet {
+        static VkDescriptorBufferInfo infos[6];
+        infos[binding].buffer = buf;
+        infos[binding].offset = 0;
+        infos[binding].range  = size;
+ 
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet = scene_set;
+        w.dstBinding = binding;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        w.pBufferInfo = &infos[binding];
+        return w;
+    };
+    VkDescriptorBufferInfo bi_tri{ tri_buf.get(), 0, tri_buf.get_size()};
+    VkDescriptorBufferInfo bi_sphr{ sphr_buf.get(), 0, sphr_buf.get_size()};
+    VkDescriptorBufferInfo bi_bvh{ bvh_buf.get(), 0, bvh_buf.get_size()};
+    VkDescriptorBufferInfo bi_mat{ mat_buf.get(), 0, mat_buf.get_size()};
+    VkDescriptorBufferInfo bi_prim{ prim_buf.get(),0, prim_buf.get_size()};
+    VkDescriptorBufferInfo bi_lght{ light_buf.get(), 0, light_buf.get_size()};
+ 
+    VkDescriptorImageInfo ii_base {
+        base_tex_arr.get_sampler(), base_tex_arr.get_view(),
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+    VkDescriptorImageInfo ii_norm {
+        normal_tex_arr.get_sampler(), normal_tex_arr.get_view(),
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+    VkDescriptorImageInfo ii_spec {
+        specular_tex_arr.get_sampler(), specular_tex_arr.get_view(),
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+ 
+    auto sbuf = [](VkDescriptorSet set, uint32_t b, VkDescriptorBufferInfo* info)-> VkWriteDescriptorSet{
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet = set;
+        w.dstBinding = b;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        w.pBufferInfo = info;
+        return w;
+    };
+    auto simg = [](VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info)-> VkWriteDescriptorSet{
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet = set;
+        w.dstBinding = b;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        w.pImageInfo = info;
+        return w;
+    };
+    std::array<VkWriteDescriptorSet, 9> writes = {
+        sbuf(scene_set, 0, &bi_tri),
+        sbuf(scene_set, 1, &bi_sphr),
+        sbuf(scene_set, 2, &bi_bvh),
+        sbuf(scene_set, 3, &bi_mat),
+        sbuf(scene_set, 4, &bi_prim),
+        sbuf(scene_set, 5, &bi_lght),
+        simg(scene_set, 6, &ii_base),
+        simg(scene_set, 7, &ii_norm),
+        simg(scene_set, 8, &ii_spec),
+    };
+    vkUpdateDescriptorSets(vkdev,
+        static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+ 
+void VKRenderer::update_pingpong_descriptors() {
+    VkDevice vkdev = device->get_logic_device();
+ 
+    for (uint32_t i = 0; i < 2; ++i) {
+        const uint32_t cur = i;
+        const uint32_t his = 1 - i;
+ 
+        descriptor_allocator->allocate(&pingpong_sets[i], pingpong_dsl);
+ 
+        VkDescriptorBufferInfo bi_res_cur { reservoir_ab[cur].get(), 0,reservoir_ab[cur].get_size() };
+        VkDescriptorBufferInfo bi_res_b{ reservoir_b.get(),0,reservoir_b.get_size()};
+        VkDescriptorBufferInfo bi_res_his { reservoir_ab[his].get(), 0,reservoir_ab[his].get_size() };
+        VkDescriptorBufferInfo bi_gbuf_cur{ gbuffer_ab[cur].get(), 0,gbuffer_ab[cur].get_size()   };
+        VkDescriptorBufferInfo bi_gbuf_his{ gbuffer_ab[his].get(),0,gbuffer_ab[his].get_size()   };
+ 
+        auto w = [&](uint32_t b, VkDescriptorBufferInfo* info) -> VkWriteDescriptorSet {
+            VkWriteDescriptorSet wd{};
+            wd.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            wd.dstSet= pingpong_sets[i];
+            wd.dstBinding = b;
+            wd.descriptorCount = 1;
+            wd.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            wd.pBufferInfo = info;
+            return wd;
+        };
+ 
+        std::array<VkWriteDescriptorSet, 5> writes = {
+            w(0, &bi_res_cur),
+            w(1, &bi_res_b),
+            w(2, &bi_res_his),
+            w(3, &bi_gbuf_cur),
+            w(4, &bi_gbuf_his),
+        };
+        vkUpdateDescriptorSets(vkdev,
+            static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    }
+}
+ 
+void VKRenderer::update_output_descriptor() {
+    VkDevice vkdev = device->get_logic_device();
+    descriptor_allocator->allocate(&output_set, output_dsl);
+ 
+    VkDescriptorImageInfo ii_cbuff{ VK_NULL_HANDLE, cbuff_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    VkDescriptorImageInfo ii_accum { VK_NULL_HANDLE, accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    VkDescriptorImageInfo ii_refl_accum{ VK_NULL_HANDLE, refl_accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+ 
+    auto simg = [&](uint32_t b, VkDescriptorImageInfo* info) -> VkWriteDescriptorSet {
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet = output_set;
+        w.dstBinding = b;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        w.pImageInfo = info;
+        return w;
+    };
+ 
+    std::array<VkWriteDescriptorSet, 3> writes = {
+        simg(0, &ii_cbuff),
+        simg(1, &ii_accum),
+        simg(2, &ii_refl_accum),
+    };
+    vkUpdateDescriptorSets(vkdev,
+        static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+ 
+void VKRenderer::update_present_descriptor() {
+    VkDevice vkdev = device->get_logic_device();
+    descriptor_allocator->allocate(&present_set, present_dsl);
+    VkDescriptorImageInfo ii{
+        cbuff_tex.get_sampler(),
+        cbuff_tex.get_view(),
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    };
+ 
+    VkWriteDescriptorSet w{};
+    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    w.dstSet = present_set;
+    w.dstBinding = 0;
+    w.descriptorCount = 1;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    w.pImageInfo = &ii;
+    vkUpdateDescriptorSets(vkdev, 1, &w, 0, nullptr);
+}
+
+
+void VKRenderer::create_restir_buffers() {
+    const VkDeviceSize res_size = static_cast<VkDeviceSize>(current_width)* current_height * sizeof(Reservoir);
+    const VkDeviceSize gbuf_size = static_cast<VkDeviceSize>(current_width)* current_height * sizeof(GBufferPixel);
+ 
+    constexpr VkBufferUsageFlags BUF_FLAGS =VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_SRC_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+ 
+    for (int i = 0; i < 2; ++i) {
+        reservoir_ab[i].destroy();
+        reservoir_ab[i].create(res_size,BUF_FLAGS, VMA_MEMORY_USAGE_GPU_ONLY);
+        gbuffer_ab[i].destroy();
+        gbuffer_ab[i].create(gbuf_size, BUF_FLAGS, VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+    reservoir_b.destroy();
+    reservoir_b.create(res_size, BUF_FLAGS, VMA_MEMORY_USAGE_GPU_ONLY);
+}
+ 
+void VKRenderer::create_storage_images() {
+    const VkExtent3D ext{ current_width, current_height, 1 };
+    constexpr VkFormat FMT = VK_FORMAT_R32G32B32A32_SFLOAT;
+    cbuff_tex.destroy();
+    cbuff_tex.create_image(ext, FMT,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+    cbuff_tex.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
+    cbuff_tex.create_sampler(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+    accum_tex.destroy();
+    accum_tex.create_image(ext, FMT, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    accum_tex.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
+ 
+    refl_accum_tex.destroy();
+    refl_accum_tex.create_image(ext, FMT, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    refl_accum_tex.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
+ 
+    one_time_submit([&](VkCommandBuffer cmd) {
+        for (VkImage img : { cbuff_tex.get_image(),accum_tex.get_image(),refl_accum_tex.get_image() }) {
+            img_barrier(cmd, img,VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        }
+    });
+}
+
+void VKRenderer::update_scene(RenderScene& scene) {
+    wait_idle();
+    tric = static_cast<uint32_t>(scene.tri_v.size());
+    spherec = static_cast<uint32_t>(scene.sphr_v.size());
+    bvhc = static_cast<uint32_t>(scene.bvh_v.size());
+    matc = static_cast<uint32_t>(scene.mat_v.size());
+    lightc = static_cast<uint32_t>(scene.light_v.size());
+ 
+    upload_scene_buffers(scene);
+    create_texture_arrays(scene);
+    update_scene_descriptor();
+}
+ 
+void VKRenderer::upload_scene_buffers(RenderScene& scene) {
+    auto upload = [&](VKBuffer& dst, const void* data, VkDeviceSize size) {
+        dst.destroy();
+        dst.create(size,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+        VKBuffer staging(device);
+        staging.create(size,VK_BUFFER_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_CPU_ONLY,VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        staging.write(data, size);
+        one_time_submit([&](VkCommandBuffer cmd) {
+            VkBufferCopy region{ 0, 0, size };
+            vkCmdCopyBuffer(cmd, staging.get(), dst.get(), 1, &region);
+        });
+    };
+ 
+    upload(tri_buf,scene.tri_v.data(),scene.tri_v.size() * sizeof(RenderTri));
+    upload(sphr_buf,scene.sphr_v.data(), scene.sphr_v.size() * sizeof(Sphr));
+    upload(bvh_buf,scene.bvh_v.data(), scene.bvh_v.size() * sizeof(BVH));
+    upload(mat_buf,scene.mat_v.data(),scene.mat_v.size()* sizeof(Mat));
+    upload(prim_buf,scene.prim_v.data(), scene.prim_v.size() * sizeof(uint32_t));
+    upload(light_buf,scene.light_v.data(),scene.light_v.size()* sizeof(Light));
+}
+
+void VKRenderer::dispatch_res_sampling(VkCommandBuffer cmd,uint32_t dx, uint32_t dy) {
+    pipeline_res_sampling->bind(cmd);
+ 
+    const VkPipelineLayout layout = pipeline_res_sampling->get_layout();
+    const std::array<VkDescriptorSet, 3> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+ 
+    const auto pc = make_push_constants();
+    vkCmdPushConstants(cmd, layout,VK_SHADER_STAGE_RAYGEN_BIT_KHR |VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR|VK_SHADER_STAGE_MISS_BIT_KHR,0, sizeof(pc), &pc);
+ 
+    const auto& sbt = pipeline_res_sampling->get_sbt();
+    vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.miss, &sbt.hit, &sbt.callable,current_width, current_height, 1);
+}
+ 
+void VKRenderer::dispatch_temp_reuse(VkCommandBuffer cmd,uint32_t dx, uint32_t dy) {
+    pipeline_temp_reuse->bind(cmd);
+    const VkPipelineLayout layout = pipeline_temp_reuse->get_layout();
+    const std::array<VkDescriptorSet, 3> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+    const auto pc = make_push_constants();
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT,
+        0, sizeof(pc), &pc);
+    vkCmdDispatch(cmd, dx, dy, 1);
+}
+ 
+void VKRenderer::dispatch_spat_reuse(VkCommandBuffer cmd,uint32_t dx, uint32_t dy) {
+    pipeline_spat_reuse->bind(cmd);
+    // TODO
+}
+ 
+void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,
+                                    uint32_t dx, uint32_t dy) {
+    pipeline_res_shade->bind(cmd);
+    // TODO
+}
+ 
+void VKRenderer::record_present_pass(VkCommandBuffer cmd) {
+    pipeline_present->bind(cmd);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipeline_present->get_layout(), 0, 1, &present_set, 0, nullptr);
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+}
+
+void VKRenderer::run_rs() {
+    if (framebuffer_resized ||static_cast<uint32_t>(camera.get_w()) != current_width ||static_cast<uint32_t>(camera.get_h()) != current_height) {
+        on_window_resize(camera.get_w(), camera.get_h());
+    }
+    if (camera_moved()) {
+        framec = 0;
+    }
+ 
+    uint32_t image_index = 0;
+    VkCommandBuffer cmd  = cmanager->begin_frame(image_index);
+    if (cmd == VK_NULL_HANDLE) return;
+ 
+    const uint32_t frame_idx = cmanager->get_current_frame();
+ 
+    update_camera_ubo(frame_idx);
+ 
+    const uint32_t dx = (current_width  + LOCAL_SIZE_X - 1) / LOCAL_SIZE_X;
+    const uint32_t dy = (current_height + LOCAL_SIZE_Y - 1) / LOCAL_SIZE_Y;
+ 
+    dispatch_res_sampling(cmd, dx, dy);
+ 
+    buf_barrier(cmd, reservoir_ab[pingpong_index].get(), VK_WHOLE_SIZE,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,          VK_ACCESS_2_SHADER_READ_BIT);
+    buf_barrier(cmd, gbuffer_ab[pingpong_index].get(), VK_WHOLE_SIZE,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+        VK_ACCESS_2_SHADER_READ_BIT            | VK_ACCESS_2_TRANSFER_READ_BIT);
+ 
+    if (framec == 0) {
+        VkBufferCopy region{};
+        region.size = static_cast<VkDeviceSize>(current_width)
+                    * current_height * sizeof(GBufferPixel);
+        vkCmdCopyBuffer(cmd,
+            gbuffer_ab[pingpong_index].get(),
+            gbuffer_ab[1 - pingpong_index].get(),
+            1, &region);
+ 
+        buf_barrier(cmd, gbuffer_ab[1 - pingpong_index].get(), VK_WHOLE_SIZE,
+            VK_PIPELINE_STAGE_2_TRANSFER_BIT,    VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+    }
+ 
+    dispatch_temp_reuse(cmd, dx, dy);
+ 
+    buf_barrier(cmd, reservoir_b.get(), VK_WHOLE_SIZE,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,          VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,  VK_ACCESS_2_SHADER_READ_BIT);
+ 
+    dispatch_spat_reuse(cmd, dx, dy);
+    buf_barrier(cmd, reservoir_ab[pingpong_index].get(), VK_WHOLE_SIZE,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,          VK_ACCESS_2_SHADER_READ_BIT);
+
+    dispatch_res_shade(cmd, dx, dy);
+    img_barrier(cmd, cbuff_tex.get_image(),
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,    VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,   VK_ACCESS_2_SHADER_READ_BIT,
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    const VkExtent2D ext = swapchain->get_extent();
+    cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
+    record_present_pass(cmd);
+    cmanager->end_rendering(cmd, image_index);
+    img_barrier(cmd, cbuff_tex.get_image(),
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,   VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,    VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+ 
+    cmanager->end_frame_and_submit(cmd, image_index);
+ 
+    framec++;
+    prev_camera = {
+        camera.get_pos(),
+        camera.get_forward(),
+        camera.get_right(),
+        camera.get_up(),
+        camera.get_fov(),
+        static_cast<float>(current_width) / static_cast<float>(current_height)
+    };
+    prev_camera_valid = true;
+    pingpong_index ^= 1;
+}
+
+void VKRenderer::create_texture_arrays(RenderScene& scene){
+    // TODO
+}
+bool VKRenderer::camera_moved() const {
+    // TODP
+}
+void VKRenderer::one_time_submit(const std::function<void(VkCommandBuffer)>& fn){
+    // TODO
+}
+PushConstants VKRenderer::make_push_constants() const{
+    // TODO
+}
+void VKRenderer::buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage,VkAccessFlags2 dst_access){
+    // TODO
+}
+void VKRenderer::img_barrier(VkCommandBuffer cmd,VkImage img,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access,VkImageLayout old_layout,VkImageLayout new_layout){
+    // TODO
+}
+void VKRenderer::on_window_resize(uint32_t w, uint32_t h){
+    // TODO
+}
+void VKRenderer::wait_idle(){
+    // TODO
+}

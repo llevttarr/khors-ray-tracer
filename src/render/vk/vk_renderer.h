@@ -183,7 +183,6 @@ public:
     VKRenderer(VKRenderer&&) = delete;
     VKRenderer& operator=(VKRenderer&&) = delete;
 
-
     void run_rs();
     void update_scene(RenderScene& scene) override;
 
