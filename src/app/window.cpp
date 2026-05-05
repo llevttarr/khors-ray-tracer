@@ -85,7 +85,7 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using
         throw std::runtime_error("glfwInit fail");
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     glfw_window = glfwCreateWindow(w, h,title.c_str(), NULL, NULL);
@@ -120,7 +120,7 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using
 
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
-    ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui_ImplOpenGL3_Init("#version 460");
 }
 void Window::err_callback(int code,const char* desc){
     std::cout<<"glfw error: "<<code<<": "<<desc<<std::endl;
