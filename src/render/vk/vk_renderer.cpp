@@ -464,13 +464,37 @@ void VKRenderer::dispatch_temp_reuse(VkCommandBuffer cmd,uint32_t dx, uint32_t d
  
 void VKRenderer::dispatch_spat_reuse(VkCommandBuffer cmd,uint32_t dx, uint32_t dy) {
     pipeline_spat_reuse->bind(cmd);
-    // TODO
+    const VkPipelineLayout layout = pipeline_spat_reuse->get_layout();
+    const std::array<VkDescriptorSet, 3> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+    const auto pc = make_push_constants();
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT,
+        0, sizeof(pc), &pc);
+    vkCmdDispatch(cmd, dx, dy, 1);
 }
  
-void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,
-                                    uint32_t dx, uint32_t dy) {
+void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy) {
     pipeline_res_shade->bind(cmd);
-    // TODO
+    const VkPipelineLayout layout = pipeline_res_shade->get_layout();
+    const std::array<VkDescriptorSet, 4> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+        output_set,   // cbuf; accum;refl_accum
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+    const auto pc = make_push_constants();
+    vkCmdPushConstants(cmd, layout,VK_SHADER_STAGE_RAYGEN_BIT_KHR |VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR|VK_SHADER_STAGE_MISS_BIT_KHR,0, sizeof(pc), &pc);
+ 
+    const auto& sbt = pipeline_res_sampling->get_sbt();
+    vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.miss, &sbt.hit, &sbt.callable,current_width, current_height, 1);
+
 }
  
 void VKRenderer::record_present_pass(VkCommandBuffer cmd) {
@@ -618,7 +642,37 @@ void VKRenderer::img_barrier(VkCommandBuffer cmd,VkImage img,VkPipelineStageFlag
     // TODO
 }
 void VKRenderer::on_window_resize(uint32_t w, uint32_t h){
-    // TODO
+    wait_idle();
+ 
+    current_width = w;
+    current_height = h;
+    framebuffer_resized = false;
+    framec = 0;
+ 
+    create_restir_buffers();
+    create_storage_images();
+ 
+    descriptor_allocator->reset_pools();
+ 
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+        descriptor_allocator->allocate(&camera_sets[i], camera_dsl);
+ 
+        VkDescriptorBufferInfo bi{ camera_ubos[i].get(), 0, sizeof(CameraUBO) };
+        VkWriteDescriptorSet w{};
+        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet= camera_sets[i];
+        w.dstBinding = 0;
+        w.descriptorCount = 1;
+        w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        w.pBufferInfo= &bi;
+        vkUpdateDescriptorSets(device->get_logic_device(), 1, &w, 0, nullptr);
+    }
+
+    update_scene_descriptor();
+    update_pingpong_descriptors();
+    update_output_descriptor();
+    update_present_descriptor();
+
 }
 void VKRenderer::wait_idle(){
     vkDeviceWaitIdle(device->get_logic_device());
