@@ -503,11 +503,11 @@ void VKRenderer::run_rs() {
  
     buf_barrier(cmd, reservoir_ab[pingpong_index].get(), VK_WHOLE_SIZE,
         VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,          VK_ACCESS_2_SHADER_READ_BIT);
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
     buf_barrier(cmd, gbuffer_ab[pingpong_index].get(), VK_WHOLE_SIZE,
         VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-        VK_ACCESS_2_SHADER_READ_BIT            | VK_ACCESS_2_TRANSFER_READ_BIT);
+        VK_ACCESS_2_SHADER_READ_BIT| VK_ACCESS_2_TRANSFER_READ_BIT);
  
     if (framec == 0) {
         VkBufferCopy region{};
@@ -517,37 +517,35 @@ void VKRenderer::run_rs() {
             gbuffer_ab[pingpong_index].get(),
             gbuffer_ab[1 - pingpong_index].get(),
             1, &region);
- 
         buf_barrier(cmd, gbuffer_ab[1 - pingpong_index].get(), VK_WHOLE_SIZE,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,    VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,
             VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
     }
  
     dispatch_temp_reuse(cmd, dx, dy);
  
     buf_barrier(cmd, reservoir_b.get(), VK_WHOLE_SIZE,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,          VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,  VK_ACCESS_2_SHADER_READ_BIT);
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT);
  
     dispatch_spat_reuse(cmd, dx, dy);
     buf_barrier(cmd, reservoir_ab[pingpong_index].get(), VK_WHOLE_SIZE,
         VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,          VK_ACCESS_2_SHADER_READ_BIT);
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT);
 
     dispatch_res_shade(cmd, dx, dy);
     img_barrier(cmd, cbuff_tex.get_image(),
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,    VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,   VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     const VkExtent2D ext = swapchain->get_extent();
     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
     record_present_pass(cmd);
     cmanager->end_rendering(cmd, image_index);
     img_barrier(cmd, cbuff_tex.get_image(),
-        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,   VK_ACCESS_2_SHADER_READ_BIT,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,    VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
- 
     cmanager->end_frame_and_submit(cmd, image_index);
  
     framec++;
@@ -567,14 +565,52 @@ void VKRenderer::create_texture_arrays(RenderScene& scene){
     // TODO
 }
 bool VKRenderer::camera_moved() const {
-    // TODP
+    if (!prev_camera_valid){
+        return false;
+    }
+    return camera.get_pos()!= prev_camera.pos||
+           camera.get_forward() != prev_camera.forward ||
+           camera.get_fov() != prev_camera.fov;
+
 }
 void VKRenderer::one_time_submit(const std::function<void(VkCommandBuffer)>& fn){
-    // TODO
+    VkCommandPoolCreateInfo pool_ci{};
+    pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_ci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    pool_ci.queueFamilyIndex = device->get_graphics_family();
+ 
+    VkCommandPool tmp_pool = VK_NULL_HANDLE;
+    vkCreateCommandPool(device->get_logic_device(), &pool_ci, nullptr, &tmp_pool);
+ 
+    VkCommandBufferAllocateInfo alloc_ci{};
+    alloc_ci.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_ci.commandPool = tmp_pool;
+    alloc_ci.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_ci.commandBufferCount = 1;
+ 
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    vkAllocateCommandBuffers(device->get_logic_device(), &alloc_ci, &cmd);
+ 
+    VkCommandBufferBeginInfo begin_ci{};
+    begin_ci.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_ci.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &begin_ci);
+ 
+    fn(cmd);
+
+    vkEndCommandBuffer(cmd); 
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    vkQueueSubmit(device->get_graphicsq(), 1, &submit, VK_NULL_HANDLE);
+    vkQueueWaitIdle(device->get_graphicsq());
+    vkDestroyCommandPool(device->get_logic_device(), tmp_pool, nullptr);
 }
-PushConstants VKRenderer::make_push_constants() const{
-    // TODO
+PushConstants VKRenderer::make_push_constants() const {
+    return PushConstants{ current_width,current_height,tric,spherec,bvhc,matc,lightc,framec,init_candidates_restir, };
 }
+
 void VKRenderer::buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage,VkAccessFlags2 dst_access){
     // TODO
 }
@@ -585,5 +621,5 @@ void VKRenderer::on_window_resize(uint32_t w, uint32_t h){
     // TODO
 }
 void VKRenderer::wait_idle(){
-    // TODO
+    vkDeviceWaitIdle(device->get_logic_device());
 }
