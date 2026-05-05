@@ -9,6 +9,7 @@
 
 #include <volk.h>
 #include "vk_mem_alloc.h"
+#include "vk_debugger.h"
 
 #include "window.h"
 
@@ -21,6 +22,8 @@ private:
     VkDebugUtilsMessengerEXT debugger_msg;
     VkPhysicalDevice physical_device;
     VkDevice device;
+
+    std::unique_ptr<VKDebugger> debugger;
     
     uint32_t graphics_family;
     uint32_t present_family;

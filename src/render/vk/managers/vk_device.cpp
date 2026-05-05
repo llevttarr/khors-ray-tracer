@@ -35,7 +35,10 @@ VKDevice::VKDevice(Window& w){
 
     /* 2: debugger */
 
-    // TODO
+    #ifndef NDEBUG
+        debugger = std::make_unique<VKDebugger>();
+        debugger->init(instance);
+    #endif
 
     /* 3: window surface */
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
