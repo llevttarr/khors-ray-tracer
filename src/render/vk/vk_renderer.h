@@ -28,18 +28,6 @@
 static constexpr uint32_t LOCAL_SIZE_X = 8;
 static constexpr uint32_t LOCAL_SIZE_Y = 8;
 
-struct ReSTIRPushConstants {
-    uint32_t width;
-    uint32_t height;
-    uint32_t tric;
-    uint32_t spherec;
-    uint32_t bvhc;
-    uint32_t matc;
-    uint32_t lightc;
-    uint32_t framec;
-    uint32_t init_candidates;
-};
-
 struct alignas(16) CameraUBO {
     Vec4<float> pos;
     Vec4<float> forward;

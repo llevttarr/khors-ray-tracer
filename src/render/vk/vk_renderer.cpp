@@ -46,7 +46,7 @@ void VKRenderer::init_pipelines() {
         .add_descriptor_set_layout(camera_dsl)
         .add_descriptor_set_layout(scene_dsl)
         .add_descriptor_set_layout(pingpong_dsl)
-        .add_push_constant(PC_STAGES_RT, 0, sizeof(ReSTIRPushConstants))
+        .add_push_constant(PC_STAGES_RT, 0, sizeof(PushConstants))
         .add_raygen_shader("assets/shaders/res_sampling.rgen.spv")
         .add_miss_shader("assets/shaders/res_sampling.rmiss.spv")
         .add_closest_hit_shader("assets/shaders/res_sampling.rchit.spv")
@@ -55,14 +55,14 @@ void VKRenderer::init_pipelines() {
         .add_descriptor_set_layout(camera_dsl)
         .add_descriptor_set_layout(scene_dsl)
         .add_descriptor_set_layout(pingpong_dsl)
-        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(ReSTIRPushConstants))
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
         .set_shader("assets/shaders/temp_reuse.comp.spv")
         .build();
     pipeline_spat_reuse = VKComputePipelineBuilder(device)
         .add_descriptor_set_layout(camera_dsl)
         .add_descriptor_set_layout(scene_dsl)
         .add_descriptor_set_layout(pingpong_dsl)
-        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(ReSTIRPushConstants))
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
         .set_shader("assets/shaders/spat_reuse.comp.spv")
         .build();
     pipeline_res_shade = VKRTPipelineBuilder(device)
@@ -70,7 +70,7 @@ void VKRenderer::init_pipelines() {
         .add_descriptor_set_layout(scene_dsl)
         .add_descriptor_set_layout(pingpong_dsl)
         .add_descriptor_set_layout(output_dsl)
-        .add_push_constant(PC_STAGES_RT, 0, sizeof(ReSTIRPushConstants))
+        .add_push_constant(PC_STAGES_RT, 0, sizeof(PushConstants))
         .add_raygen_shader("assets/shaders/res_shade.rgen.spv")
         .add_miss_shader("assets/shaders/res_shade.rmiss.spv")
         .add_closest_hit_shader("assets/shaders/res_shade.rchit.spv")
@@ -585,9 +585,134 @@ void VKRenderer::run_rs() {
     pingpong_index ^= 1;
 }
 
-void VKRenderer::create_texture_arrays(RenderScene& scene){
-    // TODO
+
+void VKRenderer::create_texture_arrays(RenderScene& scene) {
+    auto build = [&](VKTexture& dst, const std::vector<Image>& img_v) {
+        dst.destroy();
+        if (img_v.empty()) {
+            const VkExtent3D ext1{ 1, 1, 1 };
+            dst.create_image(ext1, VK_FORMAT_R8G8B8A8_UNORM,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VMA_MEMORY_USAGE_GPU_ONLY,
+                VK_IMAGE_TILING_OPTIMAL,1,1);
+            VKBuffer staging(device);
+            staging.create(4,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VMA_MEMORY_USAGE_CPU_ONLY,
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+            const uint32_t black = 0x00000000;
+            staging.write(&black, 4);
+ 
+            one_time_submit([&](VkCommandBuffer cmd) {
+                img_barrier(cmd, dst.get_image(),
+                    VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                    VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+ 
+                VkBufferImageCopy region{};
+                region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+                region.imageExtent = { 1, 1, 1 };
+                vkCmdCopyBufferToImage(cmd, staging.get(), dst.get_image(),
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+ 
+                img_barrier(cmd, dst.get_image(),
+                    VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+                    VK_ACCESS_2_SHADER_READ_BIT,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            });
+ 
+            dst.create_view(VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_IMAGE_VIEW_TYPE_2D_ARRAY, 1, 1);
+            dst.create_sampler(VK_FILTER_LINEAR,
+                VK_SAMPLER_ADDRESS_MODE_REPEAT);
+            return;
+        }
+        const uint32_t layer_w = static_cast<uint32_t>(img_v[0].w);
+        const uint32_t layer_h = static_cast<uint32_t>(img_v[0].h);
+        const uint32_t layers = static_cast<uint32_t>(img_v.size());
+        constexpr uint32_t CHANNELS = 4;
+        const VkDeviceSize layer_bytes = static_cast<VkDeviceSize>(layer_w)
+                                       * layer_h * CHANNELS;
+        const VkDeviceSize total_bytes = layer_bytes * layers;
+        const VkExtent3D ext{ layer_w, layer_h, 1 };
+ 
+        dst.create_image(ext, VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+            VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_TILING_OPTIMAL,1,layers);
+        VKBuffer staging(device);
+        staging.create(total_bytes,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY,
+            VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        {
+            void* mapped = staging.map();
+            auto* dst_ptr = static_cast<uint8_t*>(mapped);
+            for (uint32_t i = 0; i < layers; ++i) {
+                const Image& img = img_v[i];
+                if (static_cast<uint32_t>(img.w) != layer_w ||
+                    static_cast<uint32_t>(img.h) != layer_h) {
+                    staging.unmap();
+                    throw std::runtime_error(
+                        "create_texture_arrays: all images must be the same size");
+                }
+                if (img.channels == 4) {
+                    std::memcpy(dst_ptr + i*layer_bytes,
+                                img.data.data(), layer_bytes);
+                } else {
+                    const uint8_t* src = img.data.data();
+                    uint8_t* dst_row = dst_ptr + i * layer_bytes;
+                    for (uint32_t px = 0; px < layer_w * layer_h; ++px) {
+                        dst_row[px * 4 + 0] = (img.channels > 0) ? src[px * img.channels + 0] : 0;
+                        dst_row[px * 4 + 1] = (img.channels > 1) ? src[px * img.channels + 1] : 0;
+                        dst_row[px * 4 + 2] = (img.channels > 2) ? src[px * img.channels + 2] : 0;
+                        dst_row[px * 4 + 3] = 255;
+                    }
+                }
+            }
+            staging.unmap();
+        }
+
+        std::vector<VkBufferImageCopy> regions(layers);
+        for (uint32_t i = 0; i < layers; ++i) {
+            auto& r = regions[i];
+            r.bufferOffset = layer_bytes * i;
+            r.bufferRowLength = 0;
+            r.bufferImageHeight = 0;
+            r.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, i, 1 };
+            r.imageOffset = { 0, 0, 0 };
+            r.imageExtent = ext;
+        }
+ 
+        one_time_submit([&](VkCommandBuffer cmd) {
+            img_barrier(cmd, dst.get_image(),
+                VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            vkCmdCopyBufferToImage(cmd, staging.get(), dst.get_image(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                static_cast<uint32_t>(regions.size()), regions.data());
+            img_barrier(cmd, dst.get_image(),
+                VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,VK_ACCESS_2_SHADER_READ_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        });
+ 
+        dst.create_view(VK_IMAGE_ASPECT_COLOR_BIT,
+            VK_IMAGE_VIEW_TYPE_2D_ARRAY, 1, layers);
+        dst.create_sampler(VK_FILTER_LINEAR,
+            VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    };
+ 
+    build(base_tex_arr, scene.tex_manager.get_base());
+    build(normal_tex_arr, scene.tex_manager.get_normal());
+    build(specular_tex_arr, scene.tex_manager.get_specular());
 }
+ 
+
 bool VKRenderer::camera_moved() const {
     if (!prev_camera_valid){
         return false;
@@ -595,7 +720,6 @@ bool VKRenderer::camera_moved() const {
     return camera.get_pos()!= prev_camera.pos||
            camera.get_forward() != prev_camera.forward ||
            camera.get_fov() != prev_camera.fov;
-
 }
 void VKRenderer::one_time_submit(const std::function<void(VkCommandBuffer)>& fn){
     VkCommandPoolCreateInfo pool_ci{};
@@ -636,10 +760,45 @@ PushConstants VKRenderer::make_push_constants() const {
 }
 
 void VKRenderer::buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage,VkAccessFlags2 dst_access){
-    // TODO
+    VkBufferMemoryBarrier2 b{};
+    b.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
+    b.srcStageMask = src_stage;
+    b.srcAccessMask = src_access;
+    b.dstStageMask = dst_stage;
+    b.dstAccessMask = dst_access;
+    b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.buffer = buf;
+    b.offset= 0;
+    b.size = size;
+ 
+    VkDependencyInfo dep{};
+    dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dep.bufferMemoryBarrierCount = 1;
+    dep.pBufferMemoryBarriers = &b;
+    vkCmdPipelineBarrier2(cmd, &dep);
+
 }
 void VKRenderer::img_barrier(VkCommandBuffer cmd,VkImage img,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access,VkImageLayout old_layout,VkImageLayout new_layout){
-    // TODO
+    VkImageMemoryBarrier2 b{};
+    b.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    b.srcStageMask = src_stage;
+    b.srcAccessMask = src_access;
+    b.dstStageMask = dst_stage;
+    b.dstAccessMask = dst_access;
+    b.oldLayout = old_layout;
+    b.newLayout = new_layout;
+    b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = img;
+    b.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+ 
+    VkDependencyInfo dep{};
+    dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dep.imageMemoryBarrierCount = 1;
+    dep.pImageMemoryBarriers = &b;
+    vkCmdPipelineBarrier2(cmd, &dep);
+
 }
 void VKRenderer::on_window_resize(uint32_t w, uint32_t h){
     wait_idle();
