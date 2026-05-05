@@ -31,6 +31,7 @@ private:
 
 namespace glsl_util{
     std::string read_file(const std::string& filename);
+    std::vector<char> read_filec(const std::string& filename);
     void out_csv(const std::string& firstline,const std::string& filename,const std::vector<std::string>& outp);
     GLuint create_shader(GLenum t,const std::string& s);
     GLuint link_shaders(GLuint vert, GLuint frag);

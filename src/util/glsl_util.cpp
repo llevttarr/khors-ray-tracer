@@ -48,6 +48,21 @@ namespace glsl_util{
         ss << instr.rdbuf();
         return ss.str();
     }
+    static std::vector<char> read_filec(const std::string& filename) {
+        std::ifstream instr(filename, std::ios::ate | std::ios::binary);
+        if(!instr){
+            throw GLSLUtilException("Could not read file");
+        }
+
+        size_t size = (size_t)instr.tellg();
+        std::vector<char> buffer(size);
+
+        instr.seekg(0);
+        instr.read(buffer.data(), size);
+        instr.close();
+
+        return buffer;
+    }
     GLuint create_shader(GLenum t,const std::string& s){
         const char* ch=s.c_str();
         GLuint shader=glCreateShader(t);

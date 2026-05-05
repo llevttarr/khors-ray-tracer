@@ -17,7 +17,6 @@ private:
 };
 class VKGraphicsPipelineBuilder : public VKPipelineBuilder{
 private:
-    std::shared_ptr<VKDevice> device;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
     
     VkFormat color_format = VK_FORMAT_UNDEFINED;
@@ -31,6 +30,7 @@ private:
 public:
     VKGraphicsPipelineBuilder(std::shared_ptr<VKDevice> dev): VKPipelineBuilder(dev) {}
 
+    /** set the VS and FS */
     VKGraphicsPipelineBuilder& set_shaders(const std::string& vs_path, const std::string& fs_path);
     VKGraphicsPipelineBuilder& set_topology(VkPrimitiveTopology topology);
     VKGraphicsPipelineBuilder& set_polygon_mode(VkPolygonMode mode);
