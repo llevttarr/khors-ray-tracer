@@ -1,2 +1,143 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier  : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int32 : enable
+
+//#import "structs.glsl"
+//#import "vk_uniforms.glsl"
+//#import "rt_payload.glsl"
+
+layout(std430,set=1,binding=0) readonly buffer TriBuf {
+    Tri tris[];
+};
+layout(std430,set=1,binding=1) readonly buffer SphrBuf {
+    Sphr spheres[];
+};
+layout(std430,set=1,binding=2) readonly buffer BVHBuf {
+    BVH bvh_v[];
+};
+layout(std430,set=1,binding=3) readonly buffer MatBuf {
+    Mat mats[];
+};
+layout(std430,set=1,binding=4) readonly buffer PrimBuf {
+    uint prims[];
+};
+layout(std430,set=1,binding=5) readonly buffer LightBuf {
+    Light light_v[];
+};
+// layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;
+// layout(set = 1, binding = 7) uniform sampler2DArray normalTexArr;
+// layout(set = 1, binding = 8) uniform sampler2DArray specularTexArr;
+layout(set = 1, binding = 9) uniform accelerationStructureEXT tlas;
+
+layout(std430, set = 2, binding = 0) buffer ReservoirCurrent {
+    Reservoir reservoir_a[];
+};
+
+// layout(std430, set = 2, binding = 1) buffer ReservoirB {
+//     Reservoir reservoir_b[];
+// };
+
+// layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
+//     Reservoir reservoir_history[];
+// };
+
+layout(std430, set = 2, binding = 3) buffer GBuf {
+    GBufferPixel gbuffer[];
+};
+
+// layout(std430, set = 2, binding = 4) buffer GBufferHistory {
+//     GBufferPixel gbuffer_history[];
+// };
+
+//#import "intersection.glsl"
+//#import "light_sample.glsl"
+//#import "wrs.glsl"
+//#import "hash.glsl"
+//#import "shading.glsl"
+const uint KNUTH_MUL=2654435761u;
+
+void main() {
+    uvec2 gid = gl_LaunchIDEXT.xy;
+    uint pidx = gid.y * width + gid.x;
+    float aspect = float(width) / float(height);
+    vec2 uv = vec2((gid.x + 0.5) / float(width),(gid.y + 0.5) / float(height));
+    vec2 ndc = 2.0 * uv - 1.0;
+    ndc.x *= aspect;
+    float fovTan = tan(0.5 * camFov);
+    vec3 rayOrigin = camPos;
+    vec3 rayDir = normalize(camForward+ ndc.x * fovTan * camRight+ ndc.y * fovTan * camUp);
+
+    // !! actual hardware ray tracing
+    traceRayEXT(tlas, // TLAS
+                RT_FLAGS, // skip any-hit
+                0xFF, // cull mask
+                0, 0, 0, // sbtRecordOffset/Stride/missIndex
+                rayOrigin, 0.001, // rayOrigin/tMin
+                rayDir, 1e30, // rayDir/tMax
+                0); // payload location
+
+    if (payload.valid < 0) {
+        GBufferPixel px;
+        px.pos = vec4(0.0);
+        px.norm = vec4(0.0);
+        px.diffuse= vec4(0.0);
+        px.matId = 0u;
+        px.uv = vec2(0.0);
+        px.valid = -1;
+        gbuffer[pidx] = px;
+        Reservoir r;
+        r.sampledLight = -1;
+        r.wSum = 0.0;
+        r.M = 0;
+        r.W = 0.0;
+        reservoir_a[pidx] = r;
+        return;
+    }
+    vec3 pos = payload.hitPos;
+    uint matId = payload.matId;
+    Mat mat = mats[matId-1];
+    vec3 v = normalize(camPos - pos);
+    vec3 n = payload.n;
+    mat3 tbn = (payload.type == 1u)? getTBNSphere(n): mat3(payload.tangent, payload.bitangent, n);
+
+    if (dot(n, v) < 0.0) {
+        n = -n;
+        tbn = -tbn;
+    }
+
+    vec2 texUV = payload.uv * mat.uv.xy + mat.uv.zw;
+    vec3 diffuse = mat.diffuse.rgb;
+
+    if (mat.tex.x != -1)
+        diffuse = texture(baseTexArr, vec3(texUV, mat.tex.x)).rgb;
+
+    if (matId != 1u && mat.tex.y != -1) {
+        vec3 normMap = texture(normalTexArr, vec3(texUV, mat.tex.y)).rgb;
+        n = normalMapping(normMap, tbn);
+    }
+
+    GBufferPixel px;
+    px.pos = vec4(pos, 0.0);
+    px.norm = vec4(n,   0.0);
+    px.diffuse= vec4(diffuse, 0.0);
+    px.matId = matId;
+    px.uv = payload.uv;
+    px.valid = 1;
+    gbuffer[pidx] = px;
+    Reservoir r;
+    r.sampledLight = -1;
+    r.wSum = 0.0;
+    r.M = 0;
+    r.W = 0.0;
+    uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
+    for (uint i = 0u; i < init_candidates_restir; ++i) {
+        uint  lightIdx = uint(float(pcg_next(rng)) * (1.0 / 4294967296.0) * float(lightc));
+        float xi = float(pcg_next(rng)) * (1.0 / 4294967296.0);
+        float p_hat = targetPDF(int(lightIdx), pos, n, diffuse);
+        float w = p_hat * float(lightc);
+        wrs_update(r, int(lightIdx), w, xi);
+    }
+    finalize_reservoir(r, pos, n, diffuse);
+    reservoir_a[pidx] = r;
+}
