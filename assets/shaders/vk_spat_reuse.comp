@@ -1,0 +1,139 @@
+#version 430 core
+layout(local_size_x = 16,local_size_y = 4) in;
+
+//#import "structs.glsl"
+//#import "vk_uniforms.glsl"
+
+layout(std430,set=1,binding=1) readonly buffer TriBuf {
+    Tri tris[];
+};
+layout(std430,set=1,binding=2) readonly buffer SphrBuf {
+    Sphr spheres[];
+};
+layout(std430,set=1,binding=3) readonly buffer BVHBuf {
+    BVH bvh_v[];
+};
+layout(std430,set=1,binding=4) readonly buffer MatBuf {
+    Mat mats[];
+};
+layout(std430,set=1,binding=5) readonly buffer PrimBuf {
+    uint prims[];
+};
+layout(std430,set=1,binding=6) readonly buffer LightBuf {
+    Light light_v[];
+};
+layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;
+layout(set = 1, binding = 7) uniform sampler2DArray normalTexArr;
+layout(set = 1, binding = 8) uniform sampler2DArray specularTexArr;
+
+layout(std430, set = 2, binding = 0) buffer ResBufA {
+    Reservoir reservoir_a[];
+};
+
+layout(std430, set = 2, binding = 1) buffer ResBufB {
+    Reservoir reservoir_b[];
+};
+
+layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
+    Reservoir reservoir_history[];
+};
+
+layout(std430, set = 2, binding = 3) buffer GBuf {
+    GBufferPixel gbuffer[];
+};
+
+layout(std430, set = 2, binding = 4) buffer GBufferHistory {
+    GBufferPixel gbuffer_history[];
+};
+//#import "intersection.glsl"
+//#import "light_sample.glsl"
+//#import "wrs.glsl"
+//#import "hash.glsl"
+//#import "shading.glsl"
+const uint KNUTH_MUL=2654435761u;
+const int NUM_NEIGHBORS = 5;
+const float SEARCH_RADIUS = 30.0;
+const float MAX_DEPTH_DIFF = 0.1;
+const float MIN_NORMAL_DOT = 0.906;
+void main() {
+    uvec2 gid = gl_GlobalInvocationID.xy;
+
+    if (gid.x >= width||gid.y >= height){
+        return;
+    }
+    uint pidx = gid.y * width + gid.x;
+    GBufferPixel px = gbuffer[pidx];
+    Reservoir cur   = reservoir_b[pidx];
+
+    if (px.valid == -1) {
+        reservoir_a[pidx] = cur;
+        return;
+    }
+    vec3 pos= px.pos.xyz;
+    vec3 n= normalize(px.norm.xyz);
+    vec3 diffuse = px.diffuse.rgb;
+
+    uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
+
+    Reservoir combined;
+    combined.wSum = 0.0;
+    combined.M = 0;
+    combined.sampledLight = -1;
+    combined.W = 0.0;
+    float pHatCenter = 0.0;
+    if (cur.sampledLight >= 0) {
+        pHatCenter = targetPDF(cur.sampledLight, pos, n, diffuse);
+    }
+    float wCenter = pHatCenter * cur.W * float(cur.M);
+
+    combined.wSum += wCenter;
+    combined.M += cur.M;
+    if (combined.wSum > 0.0) {
+        combined.sampledLight = cur.sampledLight;
+    }
+    float depthCur = length(pos-camPos);
+    for (int i = 0; i<NUM_NEIGHBORS; ++i) {
+        uint rngVal1 = pcg_next(rng);
+        uint rngVal2 = pcg_next(rng);
+
+        float u1 = float(rngVal1 & 0x00FFFFFFu) / 16777216.0;
+        float u2 = float(rngVal2 & 0x00FFFFFFu) / 16777216.0;
+
+        float radius = SEARCH_RADIUS * sqrt(u1);
+        float theta = 2.0 * 3.14159265 * u2;
+        vec2 offset = vec2(cos(theta), sin(theta)) * radius;
+
+        ivec2 nCoord = ivec2(gid) + ivec2(round(offset));
+        if (nCoord.x < 0 || nCoord.x >= int(width) ||nCoord.y < 0 || nCoord.y >= int(height))
+            continue;
+
+        uint nIdx = uint(nCoord.y) * width + uint(nCoord.x);
+        GBufferPixel npx = gbuffer[nIdx];
+        if (npx.valid == -1) 
+            continue;
+        vec3 nNorm = normalize(npx.norm.xyz);
+        if (dot(n, nNorm) < MIN_NORMAL_DOT)
+            continue;
+
+        float depthNeib = length(npx.pos.xyz - camPos);
+    
+        if (abs(depthCur - depthNeib) / max(depthCur, 1e-4) > MAX_DEPTH_DIFF)
+            continue;
+
+        Reservoir nr = reservoir_b[nIdx];
+        if (nr.sampledLight < 0 || nr.M == 0)
+            continue;
+
+        float pHatN = targetPDF(nr.sampledLight, pos, n, diffuse);
+        float wN = pHatN * nr.W * float(nr.M);
+        uint rngXi = pcg_next(rng);
+        float xi = float(rngXi & 0x00FFFFFFu) / 16777216.0;
+        combined.wSum += wN;
+        combined.M   += nr.M;
+        if (nr.sampledLight >= 0 && combined.wSum > 0.0&&xi * combined.wSum < wN)
+            combined.sampledLight = nr.sampledLight;
+    }
+
+    finalize_reservoir(combined, pos, n, diffuse);
+    reservoir_a[pidx] = combined;
+}
