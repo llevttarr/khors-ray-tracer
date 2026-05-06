@@ -108,7 +108,8 @@ void VKShaderCompiler::add_macro(const std::string& name, const std::string& val
 bool VKShaderCompiler::is_glsl_extension(const std::string& ext) {
     return EXT_MAP.count(ext) > 0;
 }
- 
+VKShaderCompiler::~VKShaderCompiler() = default;
+
 int VKShaderCompiler::infer_stage(const std::string& path) {
     std::filesystem::path p(path);
     if (p.extension() == ".spv")

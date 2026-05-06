@@ -2,14 +2,14 @@
 #define LIGHT_WIDGET_H
 
 #include "widget.h"
-#include "renderer.h"
+#include "gl_renderer.h"
 #include "scene.h"
 #include "light.h"
 // #include "../scene/scene_parser.h"
 
 class LightWidget : public Widget{
 public:
-    LightWidget(Scene& s,Renderer&r,RenderScene&rs) : scene(s),renderer(r),rs(rs){}
+    LightWidget(Scene& s,GLRenderer&r,RenderScene&rs) : scene(s),renderer(r),rs(rs){}
     void draw() override{
 
         ImGui::Begin("Light");
@@ -218,7 +218,7 @@ private:
     
     Scene& scene;
     RenderScene& rs;
-    Renderer& renderer;
+    GLRenderer& renderer;
     int selected_light = -1;
     std::string status_msg;
     bool status = true;

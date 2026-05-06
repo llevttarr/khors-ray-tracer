@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <chrono>
 #include "shader.h"
+#include "renderer.h"
 #include "comp_shader.h"
 #include "gpu_timer.h"
 
@@ -14,10 +15,10 @@
 #include "benchmark.h"
 #include "vec3.h"
 
-class Renderer {
+class GLRenderer : public Renderer{
 public:
-    explicit Renderer(int width, int height,EulerCamera& camera);
-    ~Renderer();
+    explicit GLRenderer(int width, int height,EulerCamera& camera);
+    ~GLRenderer();
     void run();
     /**
      * Runs the direct illumination shaders
@@ -113,4 +114,4 @@ private:
 
     // GLuint vbo = 0;
 };
-#endif //GL_RENDERER_H
+#endif //GL_GLRenderer_H

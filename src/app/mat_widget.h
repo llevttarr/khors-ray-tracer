@@ -1,7 +1,7 @@
 #ifndef MAT_WIDGET_H
 #define MAT_WIDGET_H
 #include "widget.h"
-#include "renderer.h"
+#include "gl_renderer.h"
 #include "scene.h"
 struct TexBuffs {
     char base[256]{};
@@ -10,7 +10,7 @@ struct TexBuffs {
 };
 class MatWidget : public Widget{
 public:
-    MatWidget(Scene& s,Renderer&r,RenderScene&rs):scene(s),renderer(r),rs(rs){}
+    MatWidget(Scene& s,GLRenderer&r,RenderScene&rs):scene(s),renderer(r),rs(rs){}
     void draw() override{
 
         ImGui::Begin("Materials");
@@ -167,7 +167,7 @@ private:
     }
     Scene& scene;
     RenderScene& rs;
-    Renderer& renderer;
+    GLRenderer& renderer;
     char matid_buf[32]{};
     std::string status_msg;
     bool status = true;

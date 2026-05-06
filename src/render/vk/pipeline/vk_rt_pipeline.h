@@ -2,12 +2,14 @@
 #define VK_RT_PIPELINE_H
 
 #include <memory>
+#include <cstring>
 #include <volk.h>
 #include "vk_mem_alloc.h"
 
 #include "app_util.h"
 #include "vk_device.h"
 #include "vk_pipeline.h"
+#include "vk_descriptor.h"
 #include "glsl_util.h"
 
 struct SBTRegionsRT {
@@ -28,6 +30,7 @@ private:
 
     // void trace(VkCommandBuffer cmd, const SBTRegionsRT& regions,uint32_t width, uint32_t height, uint32_t depth = 1) const; - CManager will do that prolly
 public:
+    ~VKRTPipeline() override;
     const SBTRegionsRT& get_sbt() const { return sbt_regions; }
 };
 class VKRTPipelineBuilder: public VKPipelineBuilder{

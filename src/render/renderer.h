@@ -5,6 +5,8 @@
 #include "vec3.h"
 #include "vec2.h"
 
+#include "scene.h"
+
 enum class GraphicsAPI { OpenGL, Vulkan };
 
 struct Reservoir{

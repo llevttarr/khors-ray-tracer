@@ -2,13 +2,13 @@
 #define SCENE_WIDGET_H
 
 #include "widget.h"
-#include "renderer.h"
+#include "gl_renderer.h"
 #include "scene.h"
 #include "scene_parser.h"
 
 class SceneWidget : public Widget{
 public:
-    SceneWidget(Scene& s,Renderer&r,RenderScene&rs,SceneParser& sp) : scene(s),renderer(r),rs(rs),scene_parser(sp){}
+    SceneWidget(Scene& s,GLRenderer&r,RenderScene&rs,SceneParser& sp) : scene(s),renderer(r),rs(rs),scene_parser(sp){}
     void draw() override{
 
         ImGui::Begin("Scene");
@@ -59,7 +59,7 @@ private:
     Scene& scene;
     RenderScene& rs;
     SceneParser& scene_parser;
-    Renderer& renderer;
+    GLRenderer& renderer;
     char filename_buf[256]{};
     std::string status_msg;
     bool status = true;

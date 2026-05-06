@@ -48,7 +48,7 @@ namespace glsl_util{
         ss << instr.rdbuf();
         return ss.str();
     }
-    static std::vector<char> read_filec(const std::string& filename) {
+    std::vector<char> read_filec(const std::string& filename) {
         std::ifstream instr(filename, std::ios::ate | std::ios::binary);
         if(!instr){
             throw GLSLUtilException("Could not read file");

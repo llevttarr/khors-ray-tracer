@@ -20,7 +20,7 @@ private:
     std::unique_ptr<Impl> impl;
 public:
     VKShaderCompiler();
-    ~VKShaderCompiler() = default;
+    ~VKShaderCompiler();
     VKShaderCompiler(const VKShaderCompiler&) = delete;
     VKShaderCompiler& operator=(const VKShaderCompiler&) = delete;
 

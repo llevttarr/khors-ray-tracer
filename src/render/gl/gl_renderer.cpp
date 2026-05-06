@@ -1,11 +1,11 @@
-#include "gl_renderer.h"
+
 #include <glad/gl.h>
 #include <iostream>
 #include <string>
-
+#include "gl_renderer.h"
 constexpr int LOCAL_SIZE_X = 16;
 constexpr int LOCAL_SIZE_Y = 4;
-Renderer::Renderer(int width, int height,EulerCamera& cam)
+GLRenderer::GLRenderer(int width, int height,EulerCamera& cam)
 
   : w(width), h(height),camera(cam),
     shader("assets/shaders/vs.vert", "assets/shaders/fs.frag"),
@@ -57,7 +57,7 @@ Renderer::Renderer(int width, int height,EulerCamera& cam)
     time_prev_sec=std::chrono::steady_clock::now();
 
 }
-Renderer::~Renderer() {
+GLRenderer::~GLRenderer() {
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1,&tri_ssbo);
     glDeleteBuffers(1,&sphr_ssbo);
@@ -74,10 +74,10 @@ Renderer::~Renderer() {
     glDeleteTextures(1,&accum_tex);
     glDeleteTextures(1,&refl_accum_tex);
 }
-bool Renderer::camera_moved() {
+bool GLRenderer::camera_moved() {
     return prev_camera.pos!= camera.get_pos()||prev_camera.forward != camera.get_forward()||prev_camera.fov != camera.get_fov();
 }
-void Renderer::cout_data(){
+void GLRenderer::cout_data(){
     const GLubyte* renderer = glGetString(GL_RENDERER);
     const GLubyte* vendor = glGetString(GL_VENDOR);
     const GLubyte* version = glGetString(GL_VERSION);
@@ -85,7 +85,7 @@ void Renderer::cout_data(){
     std::cout << "GPU Renderer: " << renderer << std::endl;
     std::cout << "OpenGL Version: " << version << std::endl;
 }
-void Renderer::update_scene(RenderScene& render_scene){
+void GLRenderer::update_scene(RenderScene& render_scene){
     glDeleteTextures(1, &base_tex_arr);
     glDeleteTextures(1, &normal_tex_arr);
     glDeleteTextures(1, &specular_tex_arr);
@@ -122,27 +122,27 @@ void Renderer::update_scene(RenderScene& render_scene){
     normal_tex_arr =create_texture_arr(tex_manager.get_normal());
     specular_tex_arr = create_texture_arr(tex_manager.get_specular());
 }
-void Renderer::bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat){
+void GLRenderer::bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buff);
     glBufferData(GL_SHADER_STORAGE_BUFFER,size,dat,glt);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,i, buff);
 }
-void Renderer::update_mats(RenderScene& render_scene){
+void GLRenderer::update_mats(RenderScene& render_scene){
     framec=0;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, mat_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.mat_v.size()*sizeof(Mat),render_scene.mat_v.data(),GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, mat_ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
-void Renderer::update_lights(RenderScene& render_scene){
+void GLRenderer::update_lights(RenderScene& render_scene){
     framec=0;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER,render_scene.light_v.size()*sizeof(Light),render_scene.light_v.data(),GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, light_ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
-GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
+GLuint GLRenderer::create_texture_arr(const std::vector<Image>& img_v){
     GLuint tex=0;
     glGenTextures(1,&tex);
     glBindTexture(GL_TEXTURE_2D_ARRAY,tex);
@@ -169,14 +169,14 @@ GLuint Renderer::create_texture_arr(const std::vector<Image>& img_v){
     glBindTexture(GL_TEXTURE_2D_ARRAY,0);
     return tex;
 }
-void Renderer::run(){
+void GLRenderer::run(){
     if (tracing_type==0){
         run_di();
     }else{
         run_rs();
     }
 }
-void Renderer::run_rs(){
+void GLRenderer::run_rs(){
     if (camera.get_w()!=w || camera.get_h()!=h){
         resize(camera.get_w(),camera.get_h());
     }
@@ -256,7 +256,7 @@ void Renderer::run_rs(){
     glFinish();
     get_timer_results();
 }
-void Renderer::get_timer_results(){
+void GLRenderer::get_timer_results(){
     if (timerc < 60){
         ++timerc;
         return;
@@ -275,7 +275,7 @@ void Renderer::get_timer_results(){
         }
     }
 }
-void Renderer::run_di(){
+void GLRenderer::run_di(){
     if (camera.get_w()!=w || camera.get_h()!=h){
         resize(camera.get_w(),camera.get_h());
     }
@@ -300,21 +300,21 @@ void Renderer::run_di(){
     glBindVertexArray(0);
     get_fps();
 }
-void Renderer::switch_brdf(){
+void GLRenderer::switch_brdf(){
     if (brdf_type==0){
         brdf_type=1;
     }else{
         brdf_type=0;
     }
 }
-void Renderer::switch_tt(){
+void GLRenderer::switch_tt(){
     if (tracing_type==0){
         tracing_type=1;
     }else{
         tracing_type=0;
     }
 }
-void Renderer::get_fps(){
+void GLRenderer::get_fps(){
     auto curr_time=std::chrono::steady_clock::now();
     std::chrono::duration<double> diff=curr_time-time_prev_sec;
     ++frame_last_sec;
@@ -327,7 +327,7 @@ void Renderer::get_fps(){
         time_prev_sec=curr_time;
     }
 }
-void Renderer::resize(int nw, int nh){
+void GLRenderer::resize(int nw, int nh){
     framec=0;
     h=nh;
     w=nw;
@@ -364,7 +364,7 @@ void Renderer::resize(int nw, int nh){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
-void Renderer::bind_unif(ComputeShader& sh){
+void GLRenderer::bind_unif(ComputeShader& sh){
     sh.use();
     sh.set_uint("width",w);
     sh.set_uint("height",h);
