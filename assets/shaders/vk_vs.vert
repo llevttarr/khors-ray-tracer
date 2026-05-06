@@ -1,5 +1,5 @@
-#version 460 core
-out vec2 vUV;
+#version 460
+layout(location = 0) out vec2 vUV;
 
 void main() {
     vec2 pos;

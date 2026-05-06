@@ -2,6 +2,59 @@
 
 #include <shaderc/shaderc.hpp>
 
+class GlslIncluder : public shaderc::CompileOptions::IncluderInterface {
+private:
+    std::vector<std::string> include_dirs;
+public:
+    explicit GlslIncluder(std::vector<std::string> dirs): include_dirs(std::move(dirs)) {}
+ 
+    shaderc_include_result* GetInclude(const char* requested_source,shaderc_include_type,const char* requesting_source,size_t df) override{
+        auto* result = new shaderc_include_result{};
+
+        std::vector<std::filesystem::path> search;
+        search.push_back(std::filesystem::path(requesting_source).parent_path());
+        for (const auto& d : include_dirs){
+            search.emplace_back(d);
+        }
+        for (const auto& base : search) {
+            std::filesystem::path candidate = base / requested_source;
+            if (std::filesystem::exists(candidate)) {
+                std::ifstream f(candidate, std::ios::binary);
+                if (!f){
+                    continue;
+                }
+                std::string* content = new std::string((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
+                std::string* name = new std::string(candidate.string());
+ 
+                result->source_name= name->c_str();
+                result->source_name_length = name->size();
+                result->content= content->c_str();
+                result->content_length = content->size();
+                result->user_data = new std::pair<std::string*, std::string*>(content, name);
+                return result;
+            }
+        }
+        const std::string msg = "include file not found";
+        result->source_name = "";
+        result->source_name_length = 0;
+        result->content= msg.c_str();
+        result->content_length=msg.size();
+        result->user_data = nullptr;
+        return result;
+    }
+ 
+    void ReleaseInclude(shaderc_include_result* data) override {
+        if (data->user_data) {
+            auto* p = static_cast<std::pair<std::string*, std::string*>*>(data->user_data);
+            delete p->first;
+            delete p->second;
+            delete p;
+        }
+        delete data;
+    }
+
+};
+
 struct VKShaderCompiler::Impl {
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -11,10 +64,10 @@ struct VKShaderCompiler::Impl {
         options.SetOptimizationLevel(shaderc_optimization_level_zero);
         options.AddMacroDefinition("VULKAN", "1");
     }
-    // void rebuild_includer() {
-    //     options.SetIncluder(
-    //         std::make_unique<GlslIncluder>(include_dirs));
-    // }
+    void rebuild_includer() {
+        options.SetIncluder(
+            std::make_unique<GlslIncluder>(include_dirs));
+    }
 };
  
 VKShaderCompiler::VKShaderCompiler(): impl(std::make_unique<Impl>()) {}
@@ -43,10 +96,10 @@ void VKShaderCompiler::set_generate_debug_info(bool v) {
     if (v) impl->options.SetGenerateDebugInfo();
 }
  
-// void VKShaderCompiler::add_include_dir(const std::string& dir) {
-//     impl->include_dirs.push_back(dir);
-//     impl->rebuild_includer();
-// }
+void VKShaderCompiler::add_include_dir(const std::string& dir) {
+    impl->include_dirs.push_back(dir);
+    impl->rebuild_includer();
+}
  
 void VKShaderCompiler::add_macro(const std::string& name, const std::string& value) {
     impl->options.AddMacroDefinition(name, value);
@@ -66,43 +119,43 @@ int VKShaderCompiler::infer_stage(const std::string& path) {
     if (it != EXT_MAP.end()) return static_cast<int>(it->second);
     return static_cast<int>(shaderc_glsl_infer_from_source);
 }
-std::string VKShaderCompiler::process_imports(const std::string& source,const std::filesystem::path& base_path,std::unordered_set<std::filesystem::path>& included_files) {
-    std::stringstream input(source);
-    std::stringstream output;
-    std::string line;
+// std::string VKShaderCompiler::process_imports(const std::string& source,const std::filesystem::path& base_path,std::unordered_set<std::filesystem::path>& included_files) {
+//     std::stringstream input(source);
+//     std::stringstream output;
+//     std::string line;
 
-    while (std::getline(input, line)) {
-        if (line.find("//#import") != std::string::npos) {
-            size_t start = line.find("\"");
-            size_t end = line.find("\"", start + 1);
+//     while (std::getline(input, line)) {
+//         if (line.find("//#import") != std::string::npos) {
+//             size_t start = line.find("\"");
+//             size_t end = line.find("\"", start + 1);
 
-            if (start == std::string::npos || end == std::string::npos) {
-                throw std::runtime_error("err at //#import line: " + line);
-            }
+//             if (start == std::string::npos || end == std::string::npos) {
+//                 throw std::runtime_error("err at //#import line: " + line);
+//             }
 
-            std::string file = line.substr(start + 1, end-start- 1);
+//             std::string file = line.substr(start + 1, end-start- 1);
 
-            std::filesystem::path full_path = base_path / file;
-            std::string full_path_str = full_path.string();
-            if (included_files.find(full_path_str) != included_files.end())
-                continue;
-            included_files.insert(full_path_str);
+//             std::filesystem::path full_path = base_path / file;
+//             std::string full_path_str = full_path.string();
+//             if (included_files.find(full_path_str) != included_files.end())
+//                 continue;
+//             included_files.insert(full_path_str);
 
-            std::ifstream f(full_path);
-            if (!f) {
-                throw std::runtime_error("cannot open import: " + full_path_str);
-            }
+//             std::ifstream f(full_path);
+//             if (!f) {
+//                 throw std::runtime_error("cannot open import: " + full_path_str);
+//             }
 
-            std::string imported((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
-            output << process_imports(imported, full_path.parent_path(), included_files) << std::endl;
-        }
-        else {
-            output << line << std::endl;
-        }
-    }
+//             std::string imported((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
+//             output << process_imports(imported, full_path.parent_path(), included_files) << std::endl;
+//         }
+//         else {
+//             output << line << std::endl;
+//         }
+//     }
 
-    return output.str();
-}
+//     return output.str();
+// }
 std::string VKShaderCompiler::compile_file(const std::string& src_path, bool force) {
     const std::string out_path = src_path + ".spv";
     if (!force && std::filesystem::exists(out_path)) {
@@ -117,10 +170,10 @@ std::string VKShaderCompiler::compile_file(const std::string& src_path, bool for
     if (!f){
         throw std::runtime_error("shader compiler: cannot open " + src_path);
     }
-    std::string raw_source((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
+    std::string source((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
 
-    std::unordered_set<std::filesystem::path> included_files;
-    std::string source = process_imports(raw_source,std::filesystem::path(src_path).parent_path(),included_files);
+    // std::unordered_set<std::filesystem::path> included_files;
+    // std::string source = process_imports(raw_source,std::filesystem::path(src_path).parent_path(),included_files);
     const auto stage = static_cast<shaderc_shader_kind>(infer_stage(src_path));
     if (stage == static_cast<shaderc_shader_kind>(shaderc_glsl_infer_from_source)) {
         throw std::runtime_error("shaderC: unknown extension for " + src_path);

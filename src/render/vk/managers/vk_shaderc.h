@@ -26,7 +26,7 @@ public:
 
     void set_optimization(int level);
     void set_generate_debug_info(bool v);
-    // void add_include_dir(const std::string& dir);
+    void add_include_dir(const std::string& dir);
     void add_macro(const std::string& name, const std::string& value = "1");
     std::string compile_file(const std::string& src_path, bool force = false);
  
@@ -35,7 +35,7 @@ public:
  
     static bool is_glsl_extension(const std::string& ext);
     static int infer_stage(const std::string& path);
-    static std::string VKShaderCompiler::process_imports(const std::string& source,const std::filesystem::path& base_path,std::unordered_set<std::filesystem::path>& included_files);
+    // static std::string VKShaderCompiler::process_imports(const std::string& source,const std::filesystem::path& base_path,std::unordered_set<std::filesystem::path>& included_files);
 };
 
 

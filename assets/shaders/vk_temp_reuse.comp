@@ -3,8 +3,8 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int32 : enable
 layout(local_size_x = 16,local_size_y = 4) in;
 
-//#import "include/structs.glsl"
-//#import "include/vk_uniforms.glsl"
+#include "structs.glsl"
+#include "vk_uniforms.glsl"
 
 layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
@@ -48,12 +48,6 @@ layout(std430, set = 2, binding = 4) buffer GBufH {
     GBufferPixel gbuffer_history[];
 };
 
-uniform vec3 prevCamPos;
-uniform vec3 prevCamForward;
-uniform vec3 prevCamRight;
-uniform vec3 prevCamUp;
-uniform float prevCamFov;
-uniform float prevAspect;
 const float MIN_NORMAL_DOT = 0.906;
 vec3 reprojectToPrevFrame(vec3 worldPos) {
     vec3  delta = worldPos - prevCamPos;
@@ -68,11 +62,11 @@ vec3 reprojectToPrevFrame(vec3 worldPos) {
     float ndcY = (upD / (forwardD * fovTan));
     return vec3(ndcX * 0.5 + 0.5, ndcY * 0.5 + 0.5, 1.0);
 }
-//#import "intersection.glsl"
-//#import "light_sample.glsl"
-//#import "wrs.glsl"
-//#import "hash.glsl"
-//#import "shading.glsl"
+#include "intersection.glsl"
+#include "light_sample.glsl"
+#include "wrs.glsl"
+#include "hash.glsl"
+#include "shading.glsl"
 const uint KNUTH_MUL=2654435761u;
 const int NUM_NEIGHBORS = 5;
 const float SEARCH_RADIUS = 30.0;

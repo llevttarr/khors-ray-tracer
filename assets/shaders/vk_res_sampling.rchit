@@ -1,9 +1,9 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : require
-//#import "include/structs.glsl"
-//#import "include/uniforms.glsl"
-//#import "include/rt_payload.glsl"
+#include "structs.glsl"
+#include "uniforms.glsl"
+#include "rt_payload.glsl"
 layout(set = 1, binding = 0, std430) readonly buffer TriBuf { Tri  tris[];};
 layout(set = 1, binding = 3, std430) readonly buffer MatBuf { Mat  mats[];};
 layout(location = 0) rayPayloadInEXT RayPayload payload;

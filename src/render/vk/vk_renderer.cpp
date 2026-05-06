@@ -6,7 +6,7 @@ VKRenderer::VKRenderer(std::shared_ptr<VKDevice> dev,std::shared_ptr<VKSwapchain
 cmanager(std::move(cmgr)),camera(cam),current_width (static_cast<uint32_t>(cam.get_w())),current_height(static_cast<uint32_t>(cam.get_h())), tri_buf  (device), sphr_buf(device), bvh_buf(device),
 mat_buf  (device), prim_buf(device), light_buf(device), reservoir_b(device),
     cbuff_tex(device), accum_tex(device), refl_accum_tex(device),
-    base_tex_arr(device), normal_tex_arr(device), specular_tex_arr(device))
+    base_tex_arr(device), normal_tex_arr(device), specular_tex_arr(device)
 {
     for (int i = 0; i < 2; ++i) {
         reservoir_ab[i] = VKBuffer(device);

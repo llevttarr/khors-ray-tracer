@@ -86,7 +86,7 @@ void compile_shaders_VK() {
     compiler.set_optimization(shaderc_optimization_level_performance);
     compiler.set_generate_debug_info(true);
 
-    // compiler.add_include_dir("assets/shaders/include");
+    compiler.add_include_dir("assets/shaders/include");
 
     compiler.compile_dir("assets/shaders", true, false);
 }

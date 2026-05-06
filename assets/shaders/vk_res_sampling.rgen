@@ -3,9 +3,9 @@
 #extension GL_EXT_nonuniform_qualifier  : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int32 : enable
 
-//#import "include/structs.glsl"
-//#import "include/vk_uniforms.glsl"
-//#import "include/rt_payload.glsl"
+#include "structs.glsl"
+#include "vk_uniforms.glsl"
+#include "rt_payload.glsl"
 
 layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
@@ -50,11 +50,11 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 //     GBufferPixel gbuffer_history[];
 // };
 
-//#import "intersection.glsl"
-//#import "light_sample.glsl"
-//#import "wrs.glsl"
-//#import "hash.glsl"
-//#import "shading.glsl"
+#include "intersection.glsl"
+#include "light_sample.glsl"
+#include "wrs.glsl"
+#include "hash.glsl"
+#include "shading.glsl"
 const uint KNUTH_MUL=2654435761u;
 
 void main() {
