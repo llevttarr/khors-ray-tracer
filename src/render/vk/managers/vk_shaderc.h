@@ -26,7 +26,7 @@ public:
 
     void set_optimization(int level);
     void set_generate_debug_info(bool v);
-    void add_include_dir(const std::string& dir);
+    // void add_include_dir(const std::string& dir);
     void add_macro(const std::string& name, const std::string& value = "1");
     std::string compile_file(const std::string& src_path, bool force = false);
  

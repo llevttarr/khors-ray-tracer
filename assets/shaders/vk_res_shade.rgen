@@ -2,8 +2,8 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : require
 
-//#import "structs.glsl"
-//#import "vk_uniforms.glsl"
+//#import "include/structs.glsl"
+//#import "include/vk_uniforms.glsl"
 
 layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
@@ -49,11 +49,11 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 layout(set = 3, binding = 0, rgba32f) uniform image2D outImage;
 layout(set = 3, binding = 1, rgba32f) uniform image2D accumImage;
 layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
-//#import "intersection.glsl"
-//#import "light_sample.glsl"
-//#import "wrs.glsl"
-//#import "hash.glsl"
-//#import "shading.glsl"
+//#import "include/intersection.glsl"
+//#import "include/light_sample.glsl"
+//#import "include/wrs.glsl"
+//#import "include/hash.glsl"
+//#import "include/shading.glsl"
 
 layout(location = 0) rayPayloadEXT RayPayload refl_payload;
 layout(location = 1) rayPayloadEXT ShadowPayload shadow_payload;

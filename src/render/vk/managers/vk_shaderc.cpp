@@ -2,59 +2,6 @@
 
 #include <shaderc/shaderc.hpp>
 
-class GlslIncluder : public shaderc::CompileOptions::IncluderInterface {
-private:
-    std::vector<std::string> include_dirs;
-public:
-    explicit GlslIncluder(std::vector<std::string> dirs): include_dirs(std::move(dirs)) {}
- 
-    shaderc_include_result* GetInclude(const char* requested_source,shaderc_include_type,const char* requesting_source,size_t df) override{
-        auto* result = new shaderc_include_result{};
-
-        std::vector<std::filesystem::path> search;
-        search.push_back(std::filesystem::path(requesting_source).parent_path());
-        for (const auto& d : include_dirs){
-            search.emplace_back(d);
-        }
-        for (const auto& base : search) {
-            std::filesystem::path candidate = base / requested_source;
-            if (std::filesystem::exists(candidate)) {
-                std::ifstream f(candidate, std::ios::binary);
-                if (!f){
-                    continue;
-                }
-                std::string* content = new std::string((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
-                std::string* name = new std::string(candidate.string());
- 
-                result->source_name= name->c_str();
-                result->source_name_length = name->size();
-                result->content= content->c_str();
-                result->content_length = content->size();
-                result->user_data = new std::pair<std::string*, std::string*>(content, name);
-                return result;
-            }
-        }
-        const std::string msg = "include file not found";
-        result->source_name = "";
-        result->source_name_length = 0;
-        result->content= msg.c_str();
-        result->content_length=msg.size();
-        result->user_data = nullptr;
-        return result;
-    }
- 
-    void ReleaseInclude(shaderc_include_result* data) override {
-        if (data->user_data) {
-            auto* p = static_cast<std::pair<std::string*, std::string*>*>(data->user_data);
-            delete p->first;
-            delete p->second;
-            delete p;
-        }
-        delete data;
-    }
-
-};
-
 struct VKShaderCompiler::Impl {
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -64,10 +11,10 @@ struct VKShaderCompiler::Impl {
         options.SetOptimizationLevel(shaderc_optimization_level_zero);
         options.AddMacroDefinition("VULKAN", "1");
     }
-    void rebuild_includer() {
-        options.SetIncluder(
-            std::make_unique<GlslIncluder>(include_dirs));
-    }
+    // void rebuild_includer() {
+    //     options.SetIncluder(
+    //         std::make_unique<GlslIncluder>(include_dirs));
+    // }
 };
  
 VKShaderCompiler::VKShaderCompiler(): impl(std::make_unique<Impl>()) {}
@@ -96,10 +43,10 @@ void VKShaderCompiler::set_generate_debug_info(bool v) {
     if (v) impl->options.SetGenerateDebugInfo();
 }
  
-void VKShaderCompiler::add_include_dir(const std::string& dir) {
-    impl->include_dirs.push_back(dir);
-    impl->rebuild_includer();
-}
+// void VKShaderCompiler::add_include_dir(const std::string& dir) {
+//     impl->include_dirs.push_back(dir);
+//     impl->rebuild_includer();
+// }
  
 void VKShaderCompiler::add_macro(const std::string& name, const std::string& value) {
     impl->options.AddMacroDefinition(name, value);
