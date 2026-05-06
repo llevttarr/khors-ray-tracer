@@ -439,11 +439,26 @@ void VKRenderer::update_scene(RenderScene& scene) {
  
 void VKRenderer::upload_scene_buffers(RenderScene& scene) {
     auto upload = [&](VKBuffer& dst, const void* data, VkDeviceSize size) {
-        if (size == 0) return;
+        const VkDeviceSize safe_size = (size == 0) ? 16 : size;
+
         dst.destroy();
-        dst.create(size,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |VK_BUFFER_USAGE_TRANSFER_DST_BIT |VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+        dst.create(
+            safe_size,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_MEMORY_USAGE_GPU_ONLY
+        );
+        if (size == 0) {
+            return;
+        }
         VKBuffer staging(device);
-        staging.create(size,VK_BUFFER_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_CPU_ONLY,VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        staging.create(
+            size,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY,
+            VMA_ALLOCATION_CREATE_MAPPED_BIT
+        );
         staging.write(data, size);
         one_time_submit([&](VkCommandBuffer cmd) {
             VkBufferCopy region{ 0, 0, size };
@@ -457,7 +472,7 @@ void VKRenderer::upload_scene_buffers(RenderScene& scene) {
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.buffer = dst.get();
             barrier.offset = 0;
-            barrier.size = size;
+            barrier.size = safe_size;
 
             vkCmdPipelineBarrier(
                 cmd,
@@ -550,6 +565,20 @@ void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy
 }
  
 void VKRenderer::record_present_pass(VkCommandBuffer cmd) {
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(current_width);
+    viewport.height = static_cast<float>(current_height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { current_width, current_height };
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
     pipeline_present->bind(cmd);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
         pipeline_present->get_layout(), 0, 1, &present_set, 0, nullptr);

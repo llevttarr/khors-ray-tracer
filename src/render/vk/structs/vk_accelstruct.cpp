@@ -71,10 +71,21 @@ std::unique_ptr<VKAccelStructure> VKAccelBuilder::alloc_accel_struct(VkAccelerat
     return as;
 }
 std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_empty_tlas() {
+    VKBuffer dummy_inst_buf(device);
+    dummy_inst_buf.create(
+        sizeof(VkAccelerationStructureInstanceKHR),
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+        VMA_MEMORY_USAGE_GPU_ONLY);
+    VkBufferDeviceAddressInfo dummy_dai{};
+    dummy_dai.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    dummy_dai.buffer = dummy_inst_buf.get();
+    VkDeviceAddress dummy_addr =
+        vkGetBufferDeviceAddress(device->get_logic_device(), &dummy_dai);
     VkAccelerationStructureGeometryInstancesDataKHR inst_data{};
     inst_data.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     inst_data.arrayOfPointers = VK_FALSE;
-    inst_data.data.deviceAddress = 0;
+    inst_data.data.deviceAddress = dummy_addr;
     VkAccelerationStructureGeometryKHR geom{};
     geom.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geom.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
