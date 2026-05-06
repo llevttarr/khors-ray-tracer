@@ -107,6 +107,7 @@ void run_VK(ProgramState& ps){
     Scene scene{};
     RenderScene r = scene.to_render_scene();
     SceneParser sp{r};
+
     renderer.update_scene(r);
     while (!window.should_close()){
         window.poll_events();

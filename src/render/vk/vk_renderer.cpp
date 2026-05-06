@@ -416,8 +416,10 @@ void VKRenderer::create_storage_images() {
 void VKRenderer::update_scene(RenderScene& scene) {
     wait_idle();
     tric = static_cast<uint32_t>(scene.tri_v.size());
+    std::cout<<"tric: "<<tric<<std::endl;
     spherec = static_cast<uint32_t>(scene.sphr_v.size());
     bvhc = static_cast<uint32_t>(scene.bvh_v.size());
+    std::cout<<"bvhc: "<<bvhc<<std::endl;
     matc = static_cast<uint32_t>(scene.mat_v.size());
     lightc = static_cast<uint32_t>(scene.light_v.size());
  
@@ -430,11 +432,8 @@ void VKRenderer::update_scene(RenderScene& scene) {
         tlas = accel_builder->build_empty_tlas();
     }
 
-    std::cout<<"a"<<std::endl;
     create_texture_arrays(scene);
-    std::cout<<"b"<<std::endl;
     update_scene_descriptor();
-    std::cout<<"c"<<std::endl;
 }
  
 void VKRenderer::upload_scene_buffers(RenderScene& scene) {

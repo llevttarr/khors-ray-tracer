@@ -125,27 +125,38 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
     props2.pNext = &rt_props;
 
     vkGetPhysicalDeviceProperties2(device->get_phys_device(), &props2);
-    uint32_t group_count = static_cast<uint32_t>(shader_groups.size());
+    
+    const uint32_t handle_size    = rt_props.shaderGroupHandleSize;
+    const uint32_t handle_align   = rt_props.shaderGroupHandleAlignment;
+    const uint32_t base_align     = rt_props.shaderGroupBaseAlignment;
+    const uint32_t group_count    = static_cast<uint32_t>(shader_groups.size());
+    const uint32_t stride =
+        (handle_size + handle_align - 1) & ~(handle_align - 1);
+    auto align_up = [](VkDeviceSize v, VkDeviceSize a) {
+        return (v + a - 1) & ~(a - 1);
+    };
+    const VkDeviceSize raygen_region = align_up(stride * n_raygen, base_align);
+    const VkDeviceSize miss_region   = align_up(stride * n_miss,   base_align);
+    const VkDeviceSize hit_region    = align_up(stride * n_hit,    base_align);
+    const VkDeviceSize total_size    = raygen_region + miss_region + hit_region;
 
-    uint32_t handle_size = rt_props.shaderGroupHandleSize;
-    uint32_t handle_size_aligned =(handle_size + rt_props.shaderGroupHandleAlignment - 1) &~(rt_props.shaderGroupHandleAlignment - 1);
-    uint32_t sbt_size = group_count * handle_size_aligned;
+    std::vector<uint8_t> handles(handle_size * group_count);
 
-    std::vector<uint8_t> handles(sbt_size);
-
-    if (vkGetRayTracingShaderGroupHandlesKHR(d,pipeline,0,group_count,sbt_size,handles.data()) != VK_SUCCESS) {
+    if (vkGetRayTracingShaderGroupHandlesKHR(
+            d, pipeline, 0, group_count,
+            handles.size(), handles.data()) != VK_SUCCESS)
         throw std::runtime_error("failed to get RT shader handles");
-    }
 
     VkBufferCreateInfo buffer_info{};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_info.size = sbt_size;
+    buffer_info.size = total_size;
     buffer_info.usage =VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     alloc_info.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkBuffer sbt_buffer;
     VmaAllocation sbt_alloc;
     VmaAllocationInfo alloc_info_out{};
@@ -159,33 +170,38 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
         &alloc_info_out
     );
     uint8_t* mapped = static_cast<uint8_t*>(alloc_info_out.pMappedData);
+    memset(mapped, 0, total_size);
+    uint32_t src_idx = 0;
 
-    for (uint32_t i = 0; i < group_count; i++) {
-        memcpy(mapped + i * handle_size_aligned,handles.data() + i * handle_size, handle_size);
-    }
+    for (uint32_t i = 0; i < n_raygen; ++i, ++src_idx)
+        memcpy(mapped + i * stride,
+               handles.data() + src_idx * handle_size, handle_size);
+    for (uint32_t i = 0; i < n_miss; ++i, ++src_idx)
+        memcpy(mapped + raygen_region + i * stride,
+               handles.data() + src_idx * handle_size, handle_size);
+    for (uint32_t i = 0; i < n_hit; ++i, ++src_idx)
+        memcpy(mapped + raygen_region + miss_region + i * stride,
+               handles.data() + src_idx * handle_size, handle_size);
+    
     VkBufferDeviceAddressInfo addr_info{};
     addr_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     addr_info.buffer = sbt_buffer;
-
     VkDeviceAddress sbt_address =vkGetBufferDeviceAddress(d, &addr_info);
 
     SBTRegionsRT regions{};
-
-    uint32_t stride = handle_size_aligned;
 
     regions.raygen.deviceAddress = sbt_address;
     regions.raygen.stride = stride;
     regions.raygen.size = stride;
 
-    regions.miss.deviceAddress =sbt_address + stride * n_raygen;
+    regions.miss.deviceAddress =sbt_address + raygen_region;
     regions.miss.stride = stride;
     regions.miss.size = stride *n_miss;
 
-    regions.hit.deviceAddress =regions.miss.deviceAddress + regions.miss.size;
+    regions.hit.deviceAddress = sbt_address + raygen_region + miss_region;
     regions.hit.stride = stride;
     regions.hit.size = stride *n_hit;
 
-    regions.callable = {};
 
     for (auto& stage : shader_stages) {
         vkDestroyShaderModule(d, stage.module, nullptr);

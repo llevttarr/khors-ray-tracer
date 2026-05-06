@@ -19,7 +19,6 @@ void VKBuffer::create(VkDeviceSize bufferSize, VkBufferUsageFlags usage,VmaMemor
     alloc_cinfo.usage = memory_usage;
     alloc_cinfo.flags = flags;
 
-    std::cout<<"creating a buffer..."<<std::endl;
     if (vmaCreateBuffer(get_allocator(),&buffer_info,&alloc_cinfo,&buffer,&allocation,&alloc_info) != VK_SUCCESS) {
         throw std::runtime_error("VMA buffer init FAIL");
     }

@@ -4,33 +4,67 @@
 #include <sstream>
 #include "object.h"
 namespace obj_util{
-    Mesh create_sphere_tri(float radius,uint16_t detail_lvl){
+    Mesh create_sphere_tri(float radius, uint16_t detail_lvl){
         Mesh res{};
-        double pi=std::numbers::pi;
+        double pi = std::numbers::pi;
 
-        uint16_t st=detail_lvl*2;
-        uint16_t sl=detail_lvl*4;
+        uint16_t st = detail_lvl * 2;
+        uint16_t sl = detail_lvl * 4;
 
-        res.pos.reserve((sl+1)*(st+1));
-        for(size_t i=0;i<=st;++i){
-            float phi=pi* (float(i)/float(st));
-            float y=radius*std::cos(phi);
-            float sinp=std::sin(phi);
-            for(size_t j=0;j<=sl;++j){
-                float theta=pi*2.0f*(float(j)/float(sl));
-                float x=radius*std::cos(theta)*sinp;
-                float z=radius*std::sin(theta)*sinp;
-                res.pos.push_back(Vec3<float>(x,y,z));
+        size_t vertex_count = (sl + 1) * (st + 1);
+        res.pos.reserve(vertex_count);
+        res.norm_v.reserve(vertex_count);
+        res.tang_v.reserve(vertex_count);
+        res.bitang_v.reserve(vertex_count);
+        res.uv.reserve(vertex_count);
+        res.ind.reserve(sl * st * 6);
+
+        for (size_t i = 0; i <= st; ++i) {
+            float phi = pi * (float(i) / float(st));
+            float y = radius * std::cos(phi);
+            float sinp = std::sin(phi);
+            
+            float v = float(i) / float(st);
+            
+            for (size_t j = 0; j <= sl; ++j) {
+                float theta = 2.0f * pi * (float(j) / float(sl));
+                float x = radius * std::cos(theta) * sinp;
+                float z = radius * std::sin(theta) * sinp;
+                
+                Vec3<float> pos(x, y, z);
+                res.pos.push_back(pos);
+                
+                Vec3<float> norm = Vec3<float>::normalize(pos);
+                res.norm_v.push_back(norm);
+                
+                float u = float(j) / float(sl);
+                res.uv.push_back(Vec2<float>(u, v));
+                
+                Vec3<float> tangent, bitangent;
+                
+                float next_theta = 2.0f * pi * (float(j + 1) / float(sl));
+                float next_x = radius * std::cos(next_theta) * sinp;
+                float next_z = radius * std::sin(next_theta) * sinp;
+                Vec3<float> next_pos(next_x, y, next_z);
+                tangent = Vec3<float>::normalize((next_pos - pos));
+                
+                if (std::abs(sinp) < 0.0001f) {
+                    tangent = Vec3<float>(1.0f, 0.0f, 0.0f);
+                }
+                
+                bitangent = Vec3<float>::cross(norm, tangent);
+                
+                res.tang_v.push_back(tangent);
+                res.bitang_v.push_back(bitangent);
             }
         }
-        res.ind.reserve(sl*st*6);
 
-        for (size_t i=0;i<st;++i){
-            for(size_t j=0;j<sl;++j){
-                uint32_t i0=i*(sl+1)+j;
-                uint32_t i1=(i+1)*(sl+1)+j;
-                uint32_t i2=(i+1)*(sl+1)+(j+1);
-                uint32_t i3=i*(sl+1)+(j+1);
+        for (size_t i = 0; i < st; ++i) {
+            for (size_t j = 0; j < sl; ++j) {
+                uint32_t i0 = (uint32_t)(i * (sl + 1) + j);
+                uint32_t i1 = (uint32_t)((i + 1) * (sl + 1) + j);
+                uint32_t i2 = (uint32_t)((i + 1) * (sl + 1) + (j + 1));
+                uint32_t i3 = (uint32_t)(i * (sl + 1) + (j + 1));
 
                 res.ind.push_back(i0);
                 res.ind.push_back(i1);

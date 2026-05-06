@@ -113,6 +113,7 @@ RenderScene Scene::to_render_scene() const{
     std::vector<Prim> prims;
     prims.reserve(res.tri_v.size()+sphere_v.size());
     
+    std::cout<<"to rs..."<<std::endl;
     for (const Object& obj : obj_v){
         const Mesh& mesh=mesh_v[obj.mesh_id];
         Mat4<float> t= obj.transform;
@@ -159,7 +160,7 @@ RenderScene Scene::to_render_scene() const{
     }
     res.bvh_v.reserve(999);
     res.prim_v.reserve(999);
-    std::cout<<"building bvh...";
+    std::cout<<"building bvh..."<<std::endl;
     scene_util::build_bvh(prims,0,prims.size(),res.prim_v,res.bvh_v);
     res.mat_v=mat_v;
     res.light_v=light_v;
@@ -237,14 +238,14 @@ void Scene::test_scene_init(){
     float r1;
     float r2;
     uint32_t obj;
-    // for (size_t i=0;i<30;++i){
-    //     r0=dist(engine);
-    //     r1=6.0+dist(engine)/10.0;
-    //     r2=dist(engine);
-    //     temp=identity.translate(r0,r1,r2);
-    //     uint32_t matid=mat_dist(engine);
-    //     obj=add_object(Object{tri_sphere_id,temp,matid});
-    // }
+    for (size_t i=0;i<8;++i){
+        r0=dist(engine);
+        r1=6.0+dist(engine)/10.0;
+        r2=dist(engine);
+        temp=identity.translate(r0,r1,r2);
+        uint32_t matid=1;
+        obj=add_object(Object{tri_sphere_id,temp,matid});
+    }
     Sphr sp=Sphr{};
     sp.cx=100.0;
     sp.cy=100.0;
@@ -258,20 +259,21 @@ void Scene::test_scene_init(){
     float eps=0.001f;
     int spheres_per_side = static_cast<int>(std::ceil(std::sqrt(n_spheres)));
 
-    for(size_t i=0;i<spheres_per_side;++i){
-        for (size_t j=0;j<spheres_per_side;++j){
-            if (i ==spheres_per_side/2&& j==spheres_per_side/2){
-                continue;
-            }
-            sp=Sphr{};
-            sp.cx=4.0*(i-spheres_per_side/2.0);
-            sp.cy=-2.5f;
-            sp.cz=4.0*(j-spheres_per_side/2.0);
-            sp.r=1.25f;
-            sp.matid=mat_dist(engine);
-            add_sphere(sp);
-        }
-    }
+    // for(size_t i=0;i<spheres_per_side;++i){
+    //     for (size_t j=0;j<spheres_per_side;++j){
+    //         if (i ==spheres_per_side/2&& j==spheres_per_side/2){
+    //             continue;
+    //         }
+    //         sp=Sphr{};
+    //         sp.cx=4.0*(i-spheres_per_side/2.0);
+    //         sp.cy=-2.5f;
+    //         sp.cz=4.0*(j-spheres_per_side/2.0);
+    //         sp.r=1.25f;
+    //         sp.matid=mat_dist(engine);
+    //         add_sphere(sp);
+    //     }
+    // }
+    
 
     // for (size_t i=0;i<128;++i){
     //     sp=Sphr{};
