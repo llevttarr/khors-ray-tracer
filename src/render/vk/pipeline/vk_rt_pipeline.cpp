@@ -29,6 +29,7 @@ VKRTPipelineBuilder& VKRTPipelineBuilder::add_raygen_shader(const std::string& s
     group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     shader_groups.push_back(group);
+    n_raygen++;
 
     return *this;
 }

@@ -558,7 +558,7 @@ void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy
     const auto pc = make_push_constants();
     vkCmdPushConstants(cmd, layout,VK_SHADER_STAGE_RAYGEN_BIT_KHR |VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR|VK_SHADER_STAGE_MISS_BIT_KHR,0, sizeof(pc), &pc);
  
-    const auto& sbt = pipeline_res_sampling->get_sbt();
+    const auto& sbt = pipeline_res_shade->get_sbt();
     vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.miss, &sbt.hit, &sbt.callable,current_width, current_height, 1);
 }
  
@@ -637,7 +637,6 @@ void VKRenderer::run_rs() {
     if (camera_moved()) {
         framec = 0;
     }
-    std::cout<<"run_rs"<<std::endl;
  
     uint32_t image_index = 0;
     VkCommandBuffer cmd  = cmanager->begin_frame(image_index);
@@ -690,20 +689,15 @@ void VKRenderer::run_rs() {
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     const VkExtent2D ext = swapchain->get_extent();
-    std::cout<<"begin_rendering"<<std::endl;
     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
-    std::cout<<"record_present_pass"<<std::endl;
     record_present_pass(cmd);
-    std::cout<<"end_rendering"<<std::endl;
     cmanager->end_rendering(cmd, image_index);
     std::cout<<"."<<std::endl;
     img_barrier(cmd, cbuff_tex.get_image(),
         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
-    std::cout<<"barr"<<std::endl;
     cmanager->end_frame_and_submit(cmd, image_index);
-    std::cout<<"end_frame_subm"<<std::endl;
  
     framec++;
     prev_camera = {
