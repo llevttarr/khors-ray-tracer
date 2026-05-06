@@ -115,10 +115,10 @@ Window::Window(const std::string& title,ProgramState& p,bool using_vsync)
         }
     }
     glfwSetWindowUserPointer(glfw_window, &p);
-    glfwSetCursorPosCallback(glfw_window,mouse_callback);
+    // glfwSetCursorPosCallback(glfw_window,mouse_callback);
     glfwSetWindowSizeCallback(glfw_window,size_callback);
     glfwSetKeyCallback(glfw_window,key_callback);
-    glfwSetInputMode(glfw_window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(glfw_window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
     glfwSetErrorCallback(err_callback);
     
     load_icon();

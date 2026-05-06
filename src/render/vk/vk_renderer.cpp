@@ -583,6 +583,53 @@ void VKRenderer::record_present_pass(VkCommandBuffer cmd) {
         pipeline_present->get_layout(), 0, 1, &present_set, 0, nullptr);
     vkCmdDraw(cmd, 3, 1, 0, 0);
 }
+// void VKRenderer::run_rs_test() {
+//     if (framebuffer_resized || static_cast<uint32_t>(camera.get_w()) != current_width || static_cast<uint32_t>(camera.get_h()) != current_height) {
+//         on_window_resize(camera.get_w(), camera.get_h());
+//     }
+//     if (camera_moved()) {
+//         framec = 0;
+//     }
+//     std::cout << "run_rs" << std::endl;
+ 
+//     uint32_t image_index = 0;
+//     VkCommandBuffer cmd  = cmanager->begin_frame(image_index);
+//     if (cmd == VK_NULL_HANDLE) return;
+ 
+//     const uint32_t frame_idx = cmanager->get_current_frame();
+//     update_camera_ubo(frame_idx);
+
+//     img_barrier(cmd, cbuff_tex.get_image(),
+//         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0, 
+//         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+//         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+//     const VkExtent2D ext = swapchain->get_extent();
+    
+//     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
+    
+//     record_present_pass(cmd); 
+    
+//     cmanager->end_rendering(cmd, image_index);
+//     img_barrier(cmd, cbuff_tex.get_image(),
+//         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+//         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+//         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+
+//     cmanager->end_frame_and_submit(cmd, image_index);
+ 
+//     framec++;
+//     prev_camera = {
+//         camera.get_pos(),
+//         camera.get_forward(),
+//         camera.get_right(),
+//         camera.get_up(),
+//         camera.get_fov(),
+//         static_cast<float>(current_width) / static_cast<float>(current_height)
+//     };
+//     prev_camera_valid = true;
+//     pingpong_index ^= 1;
+// }
 
 void VKRenderer::run_rs() {
     if (framebuffer_resized ||static_cast<uint32_t>(camera.get_w()) != current_width ||static_cast<uint32_t>(camera.get_h()) != current_height) {
@@ -671,7 +718,6 @@ void VKRenderer::run_rs() {
     prev_camera_valid = true;
     pingpong_index ^= 1;
 }
-
 
 void VKRenderer::create_texture_arrays(RenderScene& scene) {
     auto build = [&](VKTexture& dst, const std::vector<Image>& img_v) {
