@@ -41,6 +41,7 @@ VKRenderer::~VKRenderer() {
 }
 
 void VKRenderer::init_pipelines() {
+    std::cout<<"init pipeliens"<<std::endl;
     constexpr VkShaderStageFlags PC_STAGES_COMPUTE =VK_SHADER_STAGE_COMPUTE_BIT;
     constexpr VkShaderStageFlags PC_STAGES_RT =VK_SHADER_STAGE_RAYGEN_BIT_KHR|VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR|VK_SHADER_STAGE_MISS_BIT_KHR;
 
@@ -80,7 +81,7 @@ void VKRenderer::init_pipelines() {
         .build();
     pipeline_present = VKGraphicsPipelineBuilder(device)
         .add_descriptor_set_layout(present_dsl)
-        .set_shaders("assets/shaders/vk_vs.spv","assets/shaders/vk_fs.spv")
+        .set_shaders("assets/shaders/vk_vs.vert.spv","assets/shaders/vk_fs.frag.spv")
         .set_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
         .set_polygon_mode(VK_POLYGON_MODE_FILL)
         .set_cull_mode (VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE)
@@ -140,9 +141,9 @@ void VKRenderer::init_descriptor_layouts() {
 
     // output
     create_layout({
-        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // cbuff 
-        binding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // accum 
-        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // refl_accum 
+        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // cbuff 
+        binding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // accum 
+        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // refl_accum 
     }, output_dsl);
  
     create_layout({
@@ -427,18 +428,40 @@ void VKRenderer::update_scene(RenderScene& scene) {
 
     create_texture_arrays(scene);
     update_scene_descriptor();
+    std::cout<<"asdadsddssasf"<<std::endl;
 }
  
 void VKRenderer::upload_scene_buffers(RenderScene& scene) {
     auto upload = [&](VKBuffer& dst, const void* data, VkDeviceSize size) {
+        if (size == 0) return;
         dst.destroy();
-        dst.create(size,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+        dst.create(size,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |VK_BUFFER_USAGE_TRANSFER_DST_BIT |VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
         VKBuffer staging(device);
         staging.create(size,VK_BUFFER_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_CPU_ONLY,VMA_ALLOCATION_CREATE_MAPPED_BIT);
         staging.write(data, size);
         one_time_submit([&](VkCommandBuffer cmd) {
             VkBufferCopy region{ 0, 0, size };
             vkCmdCopyBuffer(cmd, staging.get(), dst.get(), 1, &region);
+
+            VkBufferMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = dst.get();
+            barrier.offset = 0;
+            barrier.size = size;
+
+            vkCmdPipelineBarrier(
+                cmd,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                0,
+                0, nullptr,
+                1, &barrier,
+                0, nullptr
+            );
         });
     };
  

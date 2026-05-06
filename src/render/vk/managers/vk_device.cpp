@@ -38,10 +38,7 @@ VKDevice::VKDevice(Window& w){
     if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create instance!");
     }
-    std::cout<<"b"<<std::endl;
     volkLoadInstance(instance);
-    std::cout<<"d"<<std::endl;
-
     /* 2: debugger */
 
 
@@ -71,7 +68,6 @@ VKDevice::VKDevice(Window& w){
             break;
         }
     }
-    std::cout<<"b"<<std::endl;
 
     /* 5: queue families */
 
@@ -103,7 +99,6 @@ VKDevice::VKDevice(Window& w){
         if (graphics_family != -1 && present_family != -1 /*&& compute_family != -1*/)
             break;
     }
-    std::cout<<"c"<<std::endl;
 
     /* 6: logical device creation */
 
@@ -151,6 +146,7 @@ VKDevice::VKDevice(Window& w){
     VkPhysicalDeviceVulkan13Features features13{};
     features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     features13.dynamicRendering = VK_TRUE;
+    features13.synchronization2 = VK_TRUE;
 
     rt_pipeline.pNext = nullptr;
     accel.pNext = &rt_pipeline;
@@ -168,7 +164,6 @@ VKDevice::VKDevice(Window& w){
 
     vkCreateDevice(physical_device, &device_create_info, nullptr, &device);
     volkLoadDevice(device);
-    std::cout<<"g"<<std::endl;
 
     /* 7: queue handles */
 
@@ -183,7 +178,6 @@ VKDevice::VKDevice(Window& w){
     allocator_info.device = device;
     allocator_info.instance = instance;
     allocator_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT; 
-    std::cout<<"e"<<std::endl;
 
     VmaVulkanFunctions funcs{};
     funcs.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -191,7 +185,6 @@ VKDevice::VKDevice(Window& w){
     allocator_info.pVulkanFunctions = &funcs;
     
     vmaCreateAllocator(&allocator_info, &allocator);
-    std::cout<<"h"<<std::endl;
 
     #ifndef NDEBUG
         debugger = std::make_unique<VKDebugger>();
