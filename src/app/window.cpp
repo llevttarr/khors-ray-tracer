@@ -99,20 +99,20 @@ Window::Window(const std::string& title,ProgramState& p,bool using_vsync)
         glfwTerminate();
         throw std::runtime_error("glfw_window creation fail");
     }
-    glfwMakeContextCurrent(glfw_window);
     if (p.using_VK ){
 
     }else{
+        glfwMakeContextCurrent(glfw_window);
         if (!gladLoaderLoadGL()) {
             glfwDestroyWindow(glfw_window);
             glfwTerminate();
             throw std::runtime_error("glad init fail");
         }
-    }
-    if (using_vsync){
-        glfwSwapInterval(1);
-    }else{
-        glfwSwapInterval(0);    
+        if (using_vsync){
+            glfwSwapInterval(1);
+        }else{
+            glfwSwapInterval(0);    
+        }
     }
     glfwSetWindowUserPointer(glfw_window, &p);
     glfwSetCursorPosCallback(glfw_window,mouse_callback);
