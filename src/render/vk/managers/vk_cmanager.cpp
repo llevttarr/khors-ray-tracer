@@ -153,7 +153,7 @@ void VKCmanager::end_frame_and_submit(VkCommandBuffer cmd,uint32_t image_index){
     VkSemaphoreSubmitInfo signal_info{};
     signal_info.sType= VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     signal_info.semaphore = render_finished_semaphores[current_frame];
-    signal_info.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     signal_info.value = 0;
 
     VkCommandBufferSubmitInfo cmd_info{};

@@ -592,6 +592,7 @@ void VKRenderer::run_rs() {
     if (camera_moved()) {
         framec = 0;
     }
+    std::cout<<"run_rs"<<std::endl;
  
     uint32_t image_index = 0;
     VkCommandBuffer cmd  = cmanager->begin_frame(image_index);
@@ -628,30 +629,36 @@ void VKRenderer::run_rs() {
     }
  
     dispatch_temp_reuse(cmd, dx, dy);
- 
     buf_barrier(cmd, reservoir_b.get(), VK_WHOLE_SIZE,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT);
- 
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+
     dispatch_spat_reuse(cmd, dx, dy);
     buf_barrier(cmd, reservoir_ab[pingpong_index].get(), VK_WHOLE_SIZE,
-        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT);
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT);
 
     dispatch_res_shade(cmd, dx, dy);
     img_barrier(cmd, cbuff_tex.get_image(),
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
     const VkExtent2D ext = swapchain->get_extent();
+    std::cout<<"begin_rendering"<<std::endl;
     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
+    std::cout<<"record_present_pass"<<std::endl;
     record_present_pass(cmd);
+    std::cout<<"end_rendering"<<std::endl;
     cmanager->end_rendering(cmd, image_index);
+    std::cout<<"."<<std::endl;
     img_barrier(cmd, cbuff_tex.get_image(),
         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+    std::cout<<"barr"<<std::endl;
     cmanager->end_frame_and_submit(cmd, image_index);
+    std::cout<<"end_frame_subm"<<std::endl;
  
     framec++;
     prev_camera = {
