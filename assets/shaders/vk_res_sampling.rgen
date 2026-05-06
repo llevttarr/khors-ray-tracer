@@ -34,21 +34,21 @@ layout(std430, set = 2, binding = 0) buffer ReservoirCurrent {
     Reservoir reservoir_a[];
 };
 
-// layout(std430, set = 2, binding = 1) buffer ReservoirB {
-//     Reservoir reservoir_b[];
-// };
+layout(std430, set = 2, binding = 1) buffer ReservoirB {
+    Reservoir reservoir_b[];
+};
 
-// layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
-//     Reservoir reservoir_history[];
-// };
+layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
+    Reservoir reservoir_history[];
+};
 
 layout(std430, set = 2, binding = 3) buffer GBuf {
     GBufferPixel gbuffer[];
 };
 
-// layout(std430, set = 2, binding = 4) buffer GBufferHistory {
-//     GBufferPixel gbuffer_history[];
-// };
+layout(std430, set = 2, binding = 4) buffer GBufferHistory {
+    GBufferPixel gbuffer_history[];
+};
 
 #include "intersection.glsl"
 #include "light_sample.glsl"

@@ -168,14 +168,12 @@ void VKCmanager::end_frame_and_submit(VkCommandBuffer cmd,uint32_t image_index){
     submit_info.pCommandBufferInfos = &cmd_info;
     submit_info.signalSemaphoreInfoCount = 1;
     submit_info.pSignalSemaphoreInfos = &signal_info;
-
     if (vkQueueSubmit2(device->get_graphicsq(), 1, &submit_info, in_flight_fences[current_frame]) != VK_SUCCESS)
         throw std::runtime_error("q submit fail");
-
     VkResult result = swapchain->present(image_index,render_finished_semaphores[current_frame]);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        // TODO
+
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("present failed");
     }

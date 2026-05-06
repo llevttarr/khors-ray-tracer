@@ -41,6 +41,10 @@ VKDevice::VKDevice(Window& w){
     volkLoadInstance(instance);
     /* 2: debugger */
 
+    #ifndef NDEBUG
+        debugger = std::make_unique<VKDebugger>();
+        debugger->init(instance);
+    #endif
 
     /* 3: window surface */
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
@@ -102,12 +106,18 @@ VKDevice::VKDevice(Window& w){
 
     /* 6: logical device creation */
 
+    std::set<uint32_t> unique_queue_families = { graphics_family, present_family };
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+
     float qpriority = 1.0f;
-    VkDeviceQueueCreateInfo q_create_info{};
-    q_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    q_create_info.queueFamilyIndex = graphics_family;
-    q_create_info.queueCount = 1;
-    q_create_info.pQueuePriorities = &qpriority;
+    for (uint32_t queueFamily : unique_queue_families) {
+        VkDeviceQueueCreateInfo q_info{};
+        q_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        q_info.queueFamilyIndex = queueFamily;
+        q_info.queueCount = 1;
+        q_info.pQueuePriorities = &qpriority;
+        queue_create_infos.push_back(q_info);
+    }
 
     const std::vector<const char*> device_extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -152,11 +162,10 @@ VKDevice::VKDevice(Window& w){
     accel.pNext = &rt_pipeline;
     features12.pNext = &accel;
     features13.pNext = &features12;
-
     VkDeviceCreateInfo device_create_info{};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pQueueCreateInfos = &q_create_info;
-    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pQueueCreateInfos = queue_create_infos.data();
+    device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
     device_create_info.pNext = &features13;
     device_create_info.pEnabledFeatures = nullptr;
     device_create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
@@ -186,10 +195,6 @@ VKDevice::VKDevice(Window& w){
     
     vmaCreateAllocator(&allocator_info, &allocator);
 
-    #ifndef NDEBUG
-        debugger = std::make_unique<VKDebugger>();
-        debugger->init(instance);
-    #endif
     has_rt = true; // FIXME
 }
 VKDevice::~VKDevice(){

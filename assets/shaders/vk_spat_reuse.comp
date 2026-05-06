@@ -36,17 +36,17 @@ layout(std430, set = 2, binding = 1) buffer ResBufB {
     Reservoir reservoir_b[];
 };
 
-// layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
-//     Reservoir reservoir_h[];
-// };
+layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
+    Reservoir reservoir_h[];
+};
 
 layout(std430, set = 2, binding = 3) buffer GBuf {
     GBufferPixel gbuffer[];
 };
 
-// layout(std430, set = 2, binding = 4) buffer GBufferHistory {
-//     GBufferPixel gbuff_h[];
-// };
+layout(std430, set = 2, binding = 4) buffer GBufferHistory {
+    GBufferPixel gbuff_h[];
+};
 #include "intersection.glsl"
 #include "light_sample.glsl"
 #include "wrs.glsl"
