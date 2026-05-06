@@ -78,26 +78,35 @@ void Window::mouse_callback(GLFWwindow* w,double x,double y){
     camera->set_pitch(camera->get_pitch()+dy);
     camera->upd_dir();
 }
-Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using_vsync)
-    : width(w), height(h),glfw_window(nullptr)
+Window::Window(const std::string& title,ProgramState& p,bool using_vsync)
+    : width(p.w), height(p.h),glfw_window(nullptr)
 {
     if (!glfwInit()){
         throw std::runtime_error("glfwInit fail");
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if (p.using_VK){
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    }else{
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    }
 
-    glfw_window = glfwCreateWindow(w, h,title.c_str(), NULL, NULL);
+    glfw_window = glfwCreateWindow(p.w, p.h,title.c_str(), NULL, NULL);
     if (!glfw_window) {
         glfwTerminate();
         throw std::runtime_error("glfw_window creation fail");
     }
     glfwMakeContextCurrent(glfw_window);
-    if (!gladLoaderLoadGL()) {
-        glfwDestroyWindow(glfw_window);
-        glfwTerminate();
-        throw std::runtime_error("glad init fail");
+    if (p.using_VK ){
+
+    }else{
+        if (!gladLoaderLoadGL()) {
+            glfwDestroyWindow(glfw_window);
+            glfwTerminate();
+            throw std::runtime_error("glad init fail");
+        }
     }
     if (using_vsync){
         glfwSwapInterval(1);
@@ -119,8 +128,12 @@ Window::Window(int w, int h, const std::string& title,ProgramState& p,bool using
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
-    ImGui_ImplOpenGL3_Init("#version 460");
+    if (p.using_VK){
+        ImGui_ImplGlfw_InitForVulkan(glfw_window, true);
+    }else{
+        ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
+        ImGui_ImplOpenGL3_Init("#version 460");
+    }
 }
 void Window::err_callback(int code,const char* desc){
     std::cout<<"glfw error: "<<code<<": "<<desc<<std::endl;
@@ -135,8 +148,7 @@ void Window::load_icon(){
     glfwSetWindowIcon(glfw_window,1,&img);
 }
 Window::~Window() {
-    glfwDestroyWindow(glfw_window);
-    glfwTerminate();
+    destroy();
 }
 bool Window::should_close() const{
     return glfwWindowShouldClose(glfw_window);
@@ -152,4 +164,8 @@ int Window::get_h(){
 }
 int Window::get_w(){
     return width;
+}
+void Window::destroy(){
+    glfwDestroyWindow(glfw_window);
+    glfwTerminate();
 }

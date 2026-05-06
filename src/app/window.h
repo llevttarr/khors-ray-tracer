@@ -9,8 +9,9 @@
 // TODO: give config to constructor instead 
 class Window {
 public:
-    Window(int w,int h,const std::string& title,ProgramState& s,bool using_vsync);
+    Window(const std::string& title,ProgramState& s,bool using_vsync);
     ~Window();
+    void destroy();
 
     bool should_close() const;
     void poll_events();

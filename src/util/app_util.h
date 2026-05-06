@@ -9,6 +9,7 @@ struct ProgramState{
     EulerCamera* camera=nullptr;
     bool first_mouse=true;
     bool cursor_locked= true;
+    bool using_VK = true;
     double last_x = 0.0;
     double last_y= 0.0;
     std::vector<int> active_input{};
