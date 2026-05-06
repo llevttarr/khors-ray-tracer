@@ -560,7 +560,6 @@ void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy
  
     const auto& sbt = pipeline_res_sampling->get_sbt();
     vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.miss, &sbt.hit, &sbt.callable,current_width, current_height, 1);
-
 }
  
 void VKRenderer::record_present_pass(VkCommandBuffer cmd) {
