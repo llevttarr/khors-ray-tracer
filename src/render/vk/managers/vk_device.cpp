@@ -12,7 +12,7 @@ VKDevice::VKDevice(Window& w){
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pApplicationName = "KHORS";
     app_info.applicationVersion = VK_MAKE_VERSION(1,0,0);
-    app_info.pEngineName = "KHORS Engine";
+    app_info.pEngineName = "KHORS engine";
     app_info.engineVersion = VK_MAKE_VERSION(1,0,0);
     app_info.apiVersion = VK_API_VERSION_1_3;
 
@@ -22,23 +22,28 @@ VKDevice::VKDevice(Window& w){
 
     uint32_t glfw_ex_c = 0;
     const char** glfw_ex = glfwGetRequiredInstanceExtensions(&glfw_ex_c);
-    create_info.enabledExtensionCount = glfw_ex_c;
-    create_info.ppEnabledExtensionNames = glfw_ex;
+    std::vector<const char*> extensions(glfw_ex, glfw_ex + glfw_ex_c);
+
+    #ifndef NDEBUG
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    #endif
+    create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    create_info.ppEnabledExtensionNames = extensions.data();
 
     const char* validation_layers[] = { "VK_LAYER_KHRONOS_validation" };
     create_info.enabledLayerCount = 1;
     create_info.ppEnabledLayerNames = validation_layers;
+    // create_info.enabledLayerCount = 0;
 
-    vkCreateInstance(&create_info, nullptr, &instance);
-
+    if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create instance!");
+    }
+    std::cout<<"b"<<std::endl;
     volkLoadInstance(instance);
+    std::cout<<"d"<<std::endl;
 
     /* 2: debugger */
 
-    #ifndef NDEBUG
-        debugger = std::make_unique<VKDebugger>();
-        debugger->init(instance);
-    #endif
 
     /* 3: window surface */
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
@@ -66,6 +71,7 @@ VKDevice::VKDevice(Window& w){
             break;
         }
     }
+    std::cout<<"b"<<std::endl;
 
     /* 5: queue families */
 
@@ -97,6 +103,7 @@ VKDevice::VKDevice(Window& w){
         if (graphics_family != -1 && present_family != -1 /*&& compute_family != -1*/)
             break;
     }
+    std::cout<<"c"<<std::endl;
 
     /* 6: logical device creation */
 
@@ -119,9 +126,9 @@ VKDevice::VKDevice(Window& w){
         VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME
     };
     
-    VkPhysicalDeviceBufferDeviceAddressFeatures bda{};
-    bda.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-    bda.bufferDeviceAddress = VK_TRUE;
+    // VkPhysicalDeviceBufferDeviceAddressFeatures bda{};
+    // bda.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    // bda.bufferDeviceAddress = VK_TRUE;
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accel{};
     accel.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
@@ -130,6 +137,11 @@ VKDevice::VKDevice(Window& w){
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_pipeline{};
     rt_pipeline.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
     rt_pipeline.rayTracingPipeline = VK_TRUE;
+
+
+    // TODO
+    // VkPhysicalDeviceFeatures2 features2{};
+    // features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 
     VkPhysicalDeviceVulkan12Features features12{};
     features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -142,8 +154,7 @@ VKDevice::VKDevice(Window& w){
 
     rt_pipeline.pNext = nullptr;
     accel.pNext = &rt_pipeline;
-    bda.pNext = &accel;
-    features12.pNext = &bda;
+    features12.pNext = &accel;
     features13.pNext = &features12;
 
     VkDeviceCreateInfo device_create_info{};
@@ -157,6 +168,7 @@ VKDevice::VKDevice(Window& w){
 
     vkCreateDevice(physical_device, &device_create_info, nullptr, &device);
     volkLoadDevice(device);
+    std::cout<<"g"<<std::endl;
 
     /* 7: queue handles */
 
@@ -171,6 +183,7 @@ VKDevice::VKDevice(Window& w){
     allocator_info.device = device;
     allocator_info.instance = instance;
     allocator_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT; 
+    std::cout<<"e"<<std::endl;
 
     VmaVulkanFunctions funcs{};
     funcs.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -178,7 +191,12 @@ VKDevice::VKDevice(Window& w){
     allocator_info.pVulkanFunctions = &funcs;
     
     vmaCreateAllocator(&allocator_info, &allocator);
+    std::cout<<"h"<<std::endl;
 
+    #ifndef NDEBUG
+        debugger = std::make_unique<VKDebugger>();
+        debugger->init(instance);
+    #endif
     has_rt = true; // FIXME
 }
 VKDevice::~VKDevice(){

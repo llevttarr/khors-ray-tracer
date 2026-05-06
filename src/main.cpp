@@ -95,7 +95,7 @@ void run_VK(ProgramState& ps){
     // TODO: ImGui
 
     compile_shaders_VK();
-    
+
     Window window("KHORS",ps,true);
     EulerCamera camera{ps.w,ps.h};
     auto vk_device = std::make_shared<VKDevice>(window);

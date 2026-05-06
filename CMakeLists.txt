@@ -107,19 +107,18 @@ target_include_directories(KHORS_RayTracer PRIVATE
 target_include_directories(glad PUBLIC external/glad/include)
 target_include_directories(stb_image PUBLIC external/stb/include)
 target_include_directories(vma PUBLIC external/vma/include)
-target_link_libraries(vma PUBLIC volk::volk_headers Vulkan::Vulkan)
+target_link_libraries(vma PUBLIC volk::volk)
 target_compile_definitions(KHORS_RayTracer PRIVATE VK_NO_PROTOTYPES)
-target_compile_definitions(vma PUBLIC VMA_DYNAMIC_VULKAN_FUNCTIONS=1)
+target_compile_definitions(vma PUBLIC VMA_DYNAMIC_VULKAN_FUNCTIONS=1 VK_NO_PROTOTYPES IMGUI_IMPL_VULKAN_USE_VOLK)
 # find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(Vulkan REQUIRED)
+# find_package(Vulkan REQUIRED)
 
-target_link_libraries(vma PUBLIC volk::volk)
 target_link_libraries(KHORS_RayTracer
     PRIVATE
         glfw
         OpenGL::GL
-        volk::volk_headers
+        volk::volk
         shaderc
         glad
         stb_image
