@@ -692,7 +692,6 @@ void VKRenderer::run_rs() {
     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
     record_present_pass(cmd);
     cmanager->end_rendering(cmd, image_index);
-    std::cout<<"."<<std::endl;
     img_barrier(cmd, cbuff_tex.get_image(),
         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,

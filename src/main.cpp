@@ -98,6 +98,7 @@ void run_VK(ProgramState& ps){
 
     Window window("KHORS",ps,true);
     EulerCamera camera{ps.w,ps.h};
+    ps.camera=&camera;
     auto vk_device = std::make_shared<VKDevice>(window);
     auto vk_swapchain= std::make_shared<VKSwapchain>(vk_device, ps);
     auto vk_cmanager = std::make_unique<VKCmanager>(vk_device, vk_swapchain);
