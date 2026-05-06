@@ -56,7 +56,7 @@ VKRTPipelineBuilder& VKRTPipelineBuilder::add_miss_shader(const std::string& spv
     group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     shader_groups.push_back(group);
-
+    n_miss++;
     return *this;
 }
 
@@ -83,7 +83,7 @@ VKRTPipelineBuilder& VKRTPipelineBuilder::add_closest_hit_shader(const std::stri
     group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     shader_groups.push_back(group);
-
+    n_hit++;
     return *this;
 }
 
@@ -161,7 +161,7 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
     uint8_t* mapped = static_cast<uint8_t*>(alloc_info_out.pMappedData);
 
     for (uint32_t i = 0; i < group_count; i++) {
-        memcpy(mapped + i * handle_size_aligned,handles.data() + i * handle_size,handle_size);
+        memcpy(mapped + i * handle_size_aligned,handles.data() + i * handle_size, handle_size);
     }
     VkBufferDeviceAddressInfo addr_info{};
     addr_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -177,7 +177,7 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
     regions.raygen.stride = stride;
     regions.raygen.size = stride;
 
-    regions.miss.deviceAddress =sbt_address + stride * 1;
+    regions.miss.deviceAddress =sbt_address + stride * n_raygen;
     regions.miss.stride = stride;
     regions.miss.size = stride *n_miss;
 
@@ -193,7 +193,11 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
     shader_stages.clear();
     shader_groups.clear();
 
-    return std::unique_ptr<VKRTPipeline>(
-        new VKRTPipeline(device, pipeline, layout)
-    );
+    auto rt_pipeline = std::unique_ptr<VKRTPipeline>(
+        new VKRTPipeline(device, pipeline, layout));
+    rt_pipeline->sbt_buffer = sbt_buffer;
+    rt_pipeline->sbt_alloc = sbt_alloc;
+    rt_pipeline->sbt_regions = regions;
+
+    return rt_pipeline;
 }
