@@ -56,7 +56,7 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 #include "hash.glsl"
 #include "shading.glsl"
 const uint KNUTH_MUL=2654435761u;
-
+layout(location = 0) rayPayloadEXT RayPayload payload;
 void main() {
     uvec2 gid = gl_LaunchIDEXT.xy;
     uint pidx = gid.y * width + gid.x;

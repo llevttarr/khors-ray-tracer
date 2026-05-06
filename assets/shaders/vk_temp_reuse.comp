@@ -37,7 +37,7 @@ layout(std430, set = 2, binding = 1) buffer ResBufB {
 };
 
 layout(std430, set = 2, binding = 2) buffer ResBufH {
-    Reservoir reservoir_history[];
+    Reservoir reservoir_h[];
 };
 
 layout(std430, set = 2, binding = 3) buffer GBuf {
@@ -45,7 +45,7 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 };
 
 layout(std430, set = 2, binding = 4) buffer GBufH {
-    GBufferPixel gbuffer_history[];
+    GBufferPixel gbuffer_h[];
 };
 
 const float MIN_NORMAL_DOT = 0.906;

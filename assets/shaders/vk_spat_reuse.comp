@@ -37,7 +37,7 @@ layout(std430, set = 2, binding = 1) buffer ResBufB {
 };
 
 // layout(std430, set = 2, binding = 2) buffer ReservoirHistory {
-//     Reservoir reservoir_history[];
+//     Reservoir reservoir_h[];
 // };
 
 layout(std430, set = 2, binding = 3) buffer GBuf {
@@ -45,7 +45,7 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 };
 
 // layout(std430, set = 2, binding = 4) buffer GBufferHistory {
-//     GBufferPixel gbuffer_history[];
+//     GBufferPixel gbuff_h[];
 // };
 #include "intersection.glsl"
 #include "light_sample.glsl"
