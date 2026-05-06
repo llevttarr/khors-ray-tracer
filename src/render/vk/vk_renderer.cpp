@@ -426,12 +426,15 @@ void VKRenderer::update_scene(RenderScene& scene) {
         blas = accel_builder->build_blas(scene.tri_v);
         tlas = accel_builder->build_tlas(*blas);
     }else{
+        blas.reset();
         tlas = accel_builder->build_empty_tlas();
     }
 
+    std::cout<<"a"<<std::endl;
     create_texture_arrays(scene);
+    std::cout<<"b"<<std::endl;
     update_scene_descriptor();
-    std::cout<<"asdadsddssasf"<<std::endl;
+    std::cout<<"c"<<std::endl;
 }
  
 void VKRenderer::upload_scene_buffers(RenderScene& scene) {

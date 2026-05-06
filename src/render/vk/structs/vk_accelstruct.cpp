@@ -70,50 +70,55 @@ std::unique_ptr<VKAccelStructure> VKAccelBuilder::alloc_accel_struct(VkAccelerat
 
     return as;
 }
-std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_empty_tlas(){
+std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_empty_tlas() {
+    VkAccelerationStructureGeometryInstancesDataKHR inst_data{};
+    inst_data.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+    inst_data.arrayOfPointers = VK_FALSE;
+    inst_data.data.deviceAddress = 0;
+    VkAccelerationStructureGeometryKHR geom{};
+    geom.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    geom.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    geom.geometry.instances = inst_data;
+
     VkAccelerationStructureBuildGeometryInfoKHR build_info{};
     build_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     build_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     build_info.geometryCount = 1;
-    build_info.pGeometries = nullptr;
-
+    build_info.pGeometries = &geom;
     uint32_t instance_count = 0;
 
     VkAccelerationStructureBuildSizesInfoKHR size_info{};
     size_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
     vkGetAccelerationStructureBuildSizesKHR(
         device->get_logic_device(),
         VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
         &build_info,
         &instance_count,
-        &size_info
-    );
+        &size_info);
 
-    auto tlas_as = alloc_accel_struct(
-        VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
-        size_info.accelerationStructureSize
-    );
+    auto tlas_as = alloc_accel_struct(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,size_info.accelerationStructureSize);
 
     const VkDeviceSize scratch_align = scratch_alignment();
-    const VkDeviceSize scratch_size =
-        (size_info.buildScratchSize + scratch_align - 1) & ~(scratch_align - 1);
-
+    const VkDeviceSize scratch_size =(size_info.buildScratchSize + scratch_align - 1) & ~(scratch_align - 1);
     VKBuffer scratch = alloc_scratch(scratch_size);
 
     VkBufferDeviceAddressInfo scratch_dai{};
     scratch_dai.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     scratch_dai.buffer = scratch.get();
-
     VkDeviceAddress scratch_addr =
         vkGetBufferDeviceAddress(device->get_logic_device(), &scratch_dai);
 
     build_info.dstAccelerationStructure = tlas_as->handle;
     build_info.scratchData.deviceAddress = scratch_addr;
 
-    const VkAccelerationStructureBuildRangeInfoKHR* p_range = nullptr;
+    VkAccelerationStructureBuildRangeInfoKHR range{};
+    range.primitiveCount = 0;
+    range.primitiveOffset = 0;
+    range.firstVertex = 0;
+    range.transformOffset = 0;
+    const VkAccelerationStructureBuildRangeInfoKHR* p_range = &range;
 
     submit_fn([&](VkCommandBuffer cmd) {
         vkCmdBuildAccelerationStructuresKHR(cmd, 1, &build_info, &p_range);
@@ -129,11 +134,10 @@ std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_empty_tlas(){
         dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dep.memoryBarrierCount = 1;
         dep.pMemoryBarriers = &barrier;
-
         vkCmdPipelineBarrier2(cmd, &dep);
     });
 
-    return tlas_as;  
+    return tlas_as;
 }
 std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_blas(const std::vector<RenderTri>& tris){
     if (tris.empty())
