@@ -24,9 +24,9 @@ layout(std430,set=1,binding=4) readonly buffer PrimBuf {
 layout(std430,set=1,binding=5) readonly buffer LightBuf {
     Light light_v[];
 };
-// layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;
-// layout(set = 1, binding = 7) uniform sampler2DArray normalTexArr;
-// layout(set = 1, binding = 8) uniform sampler2DArray specularTexArr;
+layout(set = 1, binding = 6) uniform sampler2DArray baseTexArr;
+layout(set = 1, binding = 7) uniform sampler2DArray normalTexArr;
+layout(set = 1, binding = 8) uniform sampler2DArray specularTexArr;
 
 layout(std430, set = 2, binding = 0) buffer ResBufA {
     Reservoir reservoir_a[];

@@ -34,12 +34,10 @@ public:
                 return result;
             }
         }
-        const std::string msg = "include file not found";
-        result->source_name = "";
-        result->source_name_length = 0;
-        result->content= msg.c_str();
-        result->content_length=msg.size();
-        result->user_data = nullptr;
+        auto* msg = new std::string("Include file not found: " + std::string(requested_source));
+        result->content= msg->c_str();
+        result->content_length=msg->size();
+        result->user_data = msg;
         return result;
     }
  
@@ -62,7 +60,7 @@ struct VKShaderCompiler::Impl {
     Impl() {
         options.SetTargetEnvironment(shaderc_target_env_vulkan,shaderc_env_version_vulkan_1_3);
         options.SetOptimizationLevel(shaderc_optimization_level_zero);
-        options.AddMacroDefinition("VULKAN", "1");
+        // options.AddMacroDefinition("VULKAN", "1");
     }
     void rebuild_includer() {
         options.SetIncluder(
