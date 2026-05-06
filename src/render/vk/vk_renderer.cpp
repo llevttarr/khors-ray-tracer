@@ -422,9 +422,12 @@ void VKRenderer::update_scene(RenderScene& scene) {
     lightc = static_cast<uint32_t>(scene.light_v.size());
  
     upload_scene_buffers(scene);
-
-    blas = accel_builder->build_blas(scene.tri_v);
-    tlas = accel_builder->build_tlas(*blas);
+    if (tric!=0){
+        blas = accel_builder->build_blas(scene.tri_v);
+        tlas = accel_builder->build_tlas(*blas);
+    }else{
+        tlas = accel_builder->build_empty_tlas();
+    }
 
     create_texture_arrays(scene);
     update_scene_descriptor();

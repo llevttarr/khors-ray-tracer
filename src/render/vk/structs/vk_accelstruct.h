@@ -39,6 +39,7 @@ public:
 
     std::unique_ptr<VKAccelStructure> build_blas(const std::vector<RenderTri>& tris);
     std::unique_ptr<VKAccelStructure> build_tlas(const VKAccelStructure& blas);
+    std::unique_ptr<VKAccelStructure> build_empty_tlas();
 private:
     std::shared_ptr<VKDevice> device;
     VkDeviceSize scratch_alignment() const;

@@ -70,6 +70,71 @@ std::unique_ptr<VKAccelStructure> VKAccelBuilder::alloc_accel_struct(VkAccelerat
 
     return as;
 }
+std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_empty_tlas(){
+    VkAccelerationStructureBuildGeometryInfoKHR build_info{};
+    build_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    build_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info.geometryCount = 1;
+    build_info.pGeometries = nullptr;
+
+    uint32_t instance_count = 0;
+
+    VkAccelerationStructureBuildSizesInfoKHR size_info{};
+    size_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+    vkGetAccelerationStructureBuildSizesKHR(
+        device->get_logic_device(),
+        VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+        &build_info,
+        &instance_count,
+        &size_info
+    );
+
+    auto tlas_as = alloc_accel_struct(
+        VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
+        size_info.accelerationStructureSize
+    );
+
+    const VkDeviceSize scratch_align = scratch_alignment();
+    const VkDeviceSize scratch_size =
+        (size_info.buildScratchSize + scratch_align - 1) & ~(scratch_align - 1);
+
+    VKBuffer scratch = alloc_scratch(scratch_size);
+
+    VkBufferDeviceAddressInfo scratch_dai{};
+    scratch_dai.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    scratch_dai.buffer = scratch.get();
+
+    VkDeviceAddress scratch_addr =
+        vkGetBufferDeviceAddress(device->get_logic_device(), &scratch_dai);
+
+    build_info.dstAccelerationStructure = tlas_as->handle;
+    build_info.scratchData.deviceAddress = scratch_addr;
+
+    const VkAccelerationStructureBuildRangeInfoKHR* p_range = nullptr;
+
+    submit_fn([&](VkCommandBuffer cmd) {
+        vkCmdBuildAccelerationStructuresKHR(cmd, 1, &build_info, &p_range);
+
+        VkMemoryBarrier2 barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+        barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+        barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+        VkDependencyInfo dep{};
+        dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dep.memoryBarrierCount = 1;
+        dep.pMemoryBarriers = &barrier;
+
+        vkCmdPipelineBarrier2(cmd, &dep);
+    });
+
+    return tlas_as;  
+}
 std::unique_ptr<VKAccelStructure> VKAccelBuilder::build_blas(const std::vector<RenderTri>& tris){
     if (tris.empty())
         throw std::runtime_error("VKAccelBuilder::build_blas: no triangles");
