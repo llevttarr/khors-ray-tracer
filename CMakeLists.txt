@@ -18,7 +18,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.92.6
+    GIT_TAG v1.91.6
 )
 FetchContent_Declare(
     glslang
@@ -60,9 +60,9 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(glfw)
 
-set(IMGUI_BUILD_FREETYPE ON CACHE BOOL "" FORCE)
-set(IMGUI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(IMGUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+# set(IMGUI_BUILD_FREETYPE ON CACHE BOOL "" FORCE)
+# set(IMGUI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+# set(IMGUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(imgui)
 

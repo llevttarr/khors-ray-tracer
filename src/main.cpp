@@ -1,12 +1,13 @@
 #include <iostream>
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-// #include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_vulkan.h"
 #include <glad/gl.h>
 #include <volk.h>
 #include <GLFW/glfw3.h>
 #include <shaderc/shaderc.hpp>
+
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+// #include "backends/imgui_impl_opengl3.h"
+#include "backends/imgui_impl_vulkan.h"
 
 #include "vk_device.h"
 #include "vk_cmanager.h"
@@ -140,19 +141,19 @@ void run_VK(ProgramState& ps){
     imgui_vk.DescriptorPool = imgui_pool;
     imgui_vk.MinImageCount = 2;
     imgui_vk.ImageCount = 2;
-    // imgui_vk.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    imgui_vk.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     imgui_vk.CheckVkResultFn = check_vk;
 
     imgui_vk.UseDynamicRendering = true;
-    // imgui_vk.PipelineRenderingCreateInfo = {};
-    // imgui_vk.PipelineRenderingCreateInfo.sType =VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-    // imgui_vk.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    imgui_vk.PipelineRenderingCreateInfo = {};
+    imgui_vk.PipelineRenderingCreateInfo.sType =VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    imgui_vk.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
 
     VkFormat sc_fmt = vk_swapchain->get_format();
-    // imgui_vk.PipelineRenderingCreateInfo.pColorAttachmentFormats = &sc_fmt;
+    imgui_vk.PipelineRenderingCreateInfo.pColorAttachmentFormats = &sc_fmt;
 
     ImGui_ImplVulkan_Init(&imgui_vk);
-    // ImGui_ImplVulkan_CreateFontsTexture();
+    ImGui_ImplVulkan_CreateFontsTexture();
     UIManager uim;
     // uim.add_widget(std::make_unique<MatWidget>(scene,renderer,r));
     uim.add_widget(std::make_unique<SceneWidget>(scene,renderer,r,sp));
@@ -168,7 +169,6 @@ void run_VK(ProgramState& ps){
         if (fwd!=0||rght!=0||upw!=0){
             camera.move(fwd,rght,upw);
         }
-        renderer.run_rs([](VkCommandBuffer cmd){ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);});
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -176,6 +176,8 @@ void run_VK(ProgramState& ps){
         uim.draw();
 
         ImGui::Render();
+        renderer.run_rs([](VkCommandBuffer cmd){ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);});
+        
     }
     renderer.wait_idle();
     window.destroy();
