@@ -48,6 +48,7 @@ public:
     VKDevice(VKDevice&&) = delete;
     VKDevice& operator=(VKDevice&&) = delete;
 
+    VkInstance get_instance() const { return instance; }
     VkDevice get_logic_device() const { return device; }
     VkPhysicalDevice get_phys_device() const { return physical_device; }
 

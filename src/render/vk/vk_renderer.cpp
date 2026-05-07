@@ -630,7 +630,7 @@ void VKRenderer::record_present_pass(VkCommandBuffer cmd) {
 //     pingpong_index ^= 1;
 // }
 
-void VKRenderer::run_rs() {
+void VKRenderer::run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn) {
     if (framebuffer_resized ||static_cast<uint32_t>(camera.get_w()) != current_width ||static_cast<uint32_t>(camera.get_h()) != current_height) {
         on_window_resize(camera.get_w(), camera.get_h());
     }
@@ -691,6 +691,9 @@ void VKRenderer::run_rs() {
     const VkExtent2D ext = swapchain->get_extent();
     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
     record_present_pass(cmd);
+    if(ui_draw_fn){
+        ui_draw_fn(cmd);
+    }
     cmanager->end_rendering(cmd, image_index);
     img_barrier(cmd, cbuff_tex.get_image(),
         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,

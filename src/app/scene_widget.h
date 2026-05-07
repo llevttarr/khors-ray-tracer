@@ -2,13 +2,14 @@
 #define SCENE_WIDGET_H
 
 #include "widget.h"
-#include "gl_renderer.h"
+// #include "gl_renderer.h"
+#include "vk_renderer.h"
 #include "scene.h"
 #include "scene_parser.h"
 
 class SceneWidget : public Widget{
 public:
-    SceneWidget(Scene& s,GLRenderer&r,RenderScene&rs,SceneParser& sp) : scene(s),renderer(r),rs(rs),scene_parser(sp){}
+    SceneWidget(Scene& s,VKRenderer&r,RenderScene&rs,SceneParser& sp) : scene(s),renderer(r),rs(rs),scene_parser(sp){}
     void draw() override{
 
         ImGui::Begin("Scene");
@@ -42,13 +43,13 @@ public:
             }
         }
         ImGui::SameLine();
-        if (ImGui::Button("Switch tracing type")) {
-            renderer.switch_tt();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Switch brdf type")) {
-            renderer.switch_brdf();
-        }
+        // if (ImGui::Button("Switch tracing type")) {
+        //     renderer.switch_tt();
+        // }
+        // ImGui::SameLine();
+        // if (ImGui::Button("Switch brdf type")) {
+        //     renderer.switch_brdf();
+        // }
         if (!status_msg.empty()) {
             ImGui::Spacing();
             ImGui::TextColored(status ? ImVec4(0,1,0,1) : ImVec4(1,0.3f,0.3f,1),"%s", status_msg.c_str());
@@ -59,7 +60,8 @@ private:
     Scene& scene;
     RenderScene& rs;
     SceneParser& scene_parser;
-    GLRenderer& renderer;
+    // GLRenderer& renderer;
+    VKRenderer& renderer;
     char filename_buf[256]{};
     std::string status_msg;
     bool status = true;

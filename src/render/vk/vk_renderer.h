@@ -176,7 +176,7 @@ public:
     VKRenderer(VKRenderer&&) = delete;
     VKRenderer& operator=(VKRenderer&&) = delete;
 
-    void run_rs();
+    void run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn);
     void update_scene(RenderScene& scene) override;
 
     void on_window_resize(uint32_t w, uint32_t h);
