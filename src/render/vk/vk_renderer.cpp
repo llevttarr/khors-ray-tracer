@@ -715,35 +715,34 @@ void VKRenderer::run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn) {
 }
 
 void VKRenderer::create_texture_arrays(RenderScene& scene) {
+
     auto build = [&](VKTexture& dst, const std::vector<Image>& img_v) {
         dst.destroy();
+
         if (img_v.empty()) {
             const VkExtent3D ext1{ 1, 1, 1 };
             dst.create_image(ext1, VK_FORMAT_R8G8B8A8_UNORM,
                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                VMA_MEMORY_USAGE_GPU_ONLY,
-                VK_IMAGE_TILING_OPTIMAL,1,1);
+                VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_TILING_OPTIMAL, 1, 1);
+
             VKBuffer staging(device);
-            staging.create(4,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VMA_MEMORY_USAGE_CPU_ONLY,
-                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+            staging.create(4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT);
             const uint32_t black = 0x00000000;
             staging.write(&black, 4);
- 
+
             one_time_submit([&](VkCommandBuffer cmd) {
                 img_barrier(cmd, dst.get_image(),
                     VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
                     VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                    VK_IMAGE_LAYOUT_UNDEFINED,
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
- 
-                VkBufferImageCopy region{};
-                region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
-                region.imageExtent = { 1, 1, 1 };
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+                VkBufferImageCopy r{};
+                r.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+                r.imageExtent = { 1, 1, 1 };
                 vkCmdCopyBufferToImage(cmd, staging.get(), dst.get_image(),
-                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
- 
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &r);
+
                 img_barrier(cmd, dst.get_image(),
                     VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                     VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
@@ -752,51 +751,59 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             });
- 
-            dst.create_view(VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_IMAGE_VIEW_TYPE_2D_ARRAY, 1, 1);
-            dst.create_sampler(VK_FILTER_LINEAR,
-                VK_SAMPLER_ADDRESS_MODE_REPEAT);
+
+            dst.create_view(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D_ARRAY, 1, 1);
+            dst.create_sampler(VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT);
             return;
         }
-        const uint32_t layer_w = static_cast<uint32_t>(img_v[0].w);
-        const uint32_t layer_h = static_cast<uint32_t>(img_v[0].h);
+
+        uint32_t max_w = 0, max_h = 0;
+        for (const auto& img : img_v) {
+            max_w = std::max(max_w, static_cast<uint32_t>(img.w));
+            max_h = std::max(max_h, static_cast<uint32_t>(img.h));
+        }
+
         const uint32_t layers = static_cast<uint32_t>(img_v.size());
         constexpr uint32_t CHANNELS = 4;
-        const VkDeviceSize layer_bytes = static_cast<VkDeviceSize>(layer_w)* layer_h * CHANNELS;
+        const VkDeviceSize layer_bytes = static_cast<VkDeviceSize>(max_w) * max_h * CHANNELS;
         const VkDeviceSize total_bytes = layer_bytes * layers;
-        const VkExtent3D ext{ layer_w, layer_h, 1 };
- 
+        const VkExtent3D ext{ max_w, max_h, 1 };
+
         dst.create_image(ext, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-            VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_TILING_OPTIMAL,1,layers);
+            VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_TILING_OPTIMAL, 1, layers);
+
         VKBuffer staging(device);
-        staging.create(total_bytes,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_CPU_ONLY,
-            VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        staging.create(total_bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY, VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
         {
-            void* mapped = staging.map();
-            auto* dst_ptr = static_cast<uint8_t*>(mapped);
+            uint8_t* dst_ptr = static_cast<uint8_t*>(staging.map());
+
+            std::memset(dst_ptr, 0, total_bytes);
+
             for (uint32_t i = 0; i < layers; ++i) {
                 const Image& img = img_v[i];
-                if (static_cast<uint32_t>(img.w) != layer_w ||
-                    static_cast<uint32_t>(img.h) != layer_h) {
-                    staging.unmap();
-                    throw std::runtime_error(
-                        "create_texture_arrays: all images must be the same size");
-                }
-                if (img.channels == 4) {
-                    std::memcpy(dst_ptr + i*layer_bytes,
-                                img.data.data(), layer_bytes);
-                } else {
-                    const uint8_t* src = img.data.data();
-                    uint8_t* dst_row = dst_ptr + i * layer_bytes;
-                    for (uint32_t px = 0; px < layer_w * layer_h; ++px) {
-                        dst_row[px * 4 + 0] = (img.channels > 0) ? src[px * img.channels + 0] : 0;
-                        dst_row[px * 4 + 1] = (img.channels > 1) ? src[px * img.channels + 1] : 0;
-                        dst_row[px * 4 + 2] = (img.channels > 2) ? src[px * img.channels + 2] : 0;
-                        dst_row[px * 4 + 3] = 255;
+                const uint32_t img_w = static_cast<uint32_t>(img.w);
+                const uint32_t img_h = static_cast<uint32_t>(img.h);
+                uint8_t* layer_dst = dst_ptr + i * layer_bytes;
+
+                for (uint32_t row = 0; row < img_h; ++row) {
+                    uint8_t* dst_row = layer_dst + row * max_w * CHANNELS;
+
+                    if (img.channels == 4) {
+                        const uint8_t* src_row =
+                            img.data.data() + row * img_w * CHANNELS;
+                        std::memcpy(dst_row, src_row, img_w * CHANNELS);
+                    } else {
+                        const uint8_t* src_row =
+                            img.data.data() + row * img_w * img.channels;
+                        for (uint32_t px = 0; px < img_w; ++px) {
+                            dst_row[px*4+0] = img.channels > 0 ? src_row[px*img.channels+0] : 0;
+                            dst_row[px*4+1] = img.channels > 1 ? src_row[px*img.channels+1] : 0;
+                            dst_row[px*4+2] = img.channels > 2 ? src_row[px*img.channels+2] : 0;
+                            dst_row[px*4+3] = 255;
+                        }
                     }
                 }
             }
@@ -807,33 +814,37 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
         for (uint32_t i = 0; i < layers; ++i) {
             auto& r = regions[i];
             r.bufferOffset = layer_bytes * i;
-            r.bufferRowLength = 0;
+            r.bufferRowLength = 0; 
             r.bufferImageHeight = 0;
             r.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, i, 1 };
             r.imageOffset = { 0, 0, 0 };
             r.imageExtent = ext;
         }
- 
+
         one_time_submit([&](VkCommandBuffer cmd) {
             img_barrier(cmd, dst.get_image(),
-                VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-                VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+                VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
             vkCmdCopyBufferToImage(cmd, staging.get(), dst.get_image(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 static_cast<uint32_t>(regions.size()), regions.data());
+
             img_barrier(cmd, dst.get_image(),
                 VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,VK_ACCESS_2_SHADER_READ_BIT,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+                VK_ACCESS_2_SHADER_READ_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         });
- 
+
         dst.create_view(VK_IMAGE_ASPECT_COLOR_BIT,
             VK_IMAGE_VIEW_TYPE_2D_ARRAY, 1, layers);
-        dst.create_sampler(VK_FILTER_LINEAR,
-            VK_SAMPLER_ADDRESS_MODE_REPEAT);
+        dst.create_sampler(VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT);
     };
- 
+
     build(base_tex_arr, scene.tex_manager.get_base());
     build(normal_tex_arr, scene.tex_manager.get_normal());
     build(specular_tex_arr, scene.tex_manager.get_specular());
