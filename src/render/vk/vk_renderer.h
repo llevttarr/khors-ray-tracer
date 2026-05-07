@@ -162,7 +162,7 @@ private:
     void buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,
                      VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage,VkAccessFlags2 dst_access);
 
-    void img_barrier(VkCommandBuffer cmd,VkImage img,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access,VkImageLayout old_layout,VkImageLayout new_layout);
+    void img_barrier(VkCommandBuffer cmd,VkImage img,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage, VkAccessFlags2 dst_access,VkImageLayout old_layout,VkImageLayout new_layout,uint32_t base_layer = 0,uint32_t layer_count = VK_REMAINING_ARRAY_LAYERS);
 
     /** ACCEL */
     std::unique_ptr<VKAccelStructure> blas;
