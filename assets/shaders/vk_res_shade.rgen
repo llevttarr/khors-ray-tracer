@@ -65,11 +65,31 @@ const uint SHADOW_FLAGS =gl_RayFlagsTerminateOnFirstHitEXT |gl_RayFlagsSkipClose
 bool trace_shadow(vec3 origin, vec3 dir, float dist) {
     shadow_payload.shadowed = 1;
     traceRayEXT(tlas,SHADOW_FLAGS,0xFF,0, 0,0,origin, 0.001,dir, dist - 0.001,1);
-    return shadow_payload.shadowed == 1;
+    if (shadow_payload.shadowed == 1) return true;
+    float gT;
+    if (intersectsGround(origin, dir, gT)) {
+        return gT < (dist - 0.001);
+    }
+    return false;
 }
 bool trace_reflect(vec3 origin, vec3 dir) {
     refl_payload.valid = -1;
     traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,1,origin, 0.001,dir,1e30,0);
+    float gT;
+    bool hitG = intersectsGround(origin, dir, gT);
+
+    if (hitG && (refl_payload.valid < 0 || gT < refl_payload.t)) {
+        refl_payload.hitPos = origin + dir * gT;
+        refl_payload.n = vec3(0.0, 1.0, 0.0);
+        refl_payload.matId = 1u;
+        refl_payload.tangent = vec3(1, 0, 0);
+        refl_payload.bitangent = vec3(0, 0, 1);
+        refl_payload.uv = refl_payload.hitPos.xz * 0.2;
+        refl_payload.t = gT;
+        refl_payload.valid = 1;
+        refl_payload.type = 0u;
+        return true;
+    }
     return refl_payload.valid >= 0;
 }
 void main() {
@@ -77,7 +97,7 @@ void main() {
     if (gid.x >= width || gid.y >= height) return;
     uint pidx = gid.y * width + gid.x;
     vec2 uv = vec2((gid.x + 0.5) / float(width), (gid.y + 0.5) / float(height));
-    float ndy = 2.0 * uv.y - 1.0;
+    float ndy = -1.0*(2.0 * uv.y - 1.0);
     vec3 sky = getSky(ndy);
 
     GBufferPixel px = gbuffer[pidx];

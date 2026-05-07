@@ -63,11 +63,12 @@ void main() {
     float aspect = float(width) / float(height);
     vec2 uv = vec2((gid.x + 0.5) / float(width),(gid.y + 0.5) / float(height));
     vec2 ndc = 2.0 * uv - 1.0;
+    ndc*=-1.0;
     ndc.x *= aspect;
     float fovTan = tan(0.5 * camFov);
     vec3 rayOrigin = camPos;
     vec3 rayDir = normalize(camForward+ ndc.x * fovTan * camRight+ ndc.y * fovTan * camUp);
-
+    
     // !! actual hardware ray tracing
     traceRayEXT(tlas, // TLAS
                 RT_FLAGS, // skip any-hit
@@ -76,7 +77,19 @@ void main() {
                 rayOrigin, 0.001, // rayOrigin/tMin
                 rayDir, 1e30, // rayDir/tMax
                 0); // payload location
-
+    float groundT;
+    bool hitGround = intersectsGround(rayOrigin, rayDir, groundT);
+    if (hitGround && (payload.valid < 0 || groundT < payload.t)) {
+        payload.t = groundT;
+        payload.hitPos = rayOrigin + groundT * rayDir;
+        payload.n = vec3(0.0, 1.0, 0.0);
+        payload.tangent = vec3(1.0, 0.0, 0.0);
+        payload.bitangent = vec3(0.0, 0.0, 1.0);
+        payload.uv = payload.hitPos.xz * 0.2;
+        payload.matId = 1u;
+        payload.type = 0u;
+        payload.valid = 1;
+    }
     if (payload.valid < 0) {
         GBufferPixel px;
         px.pos = vec4(0.0);
