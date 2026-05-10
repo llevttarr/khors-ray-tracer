@@ -408,7 +408,7 @@ void VKRenderer::create_storage_images() {
  
     one_time_submit([&](VkCommandBuffer cmd) {
         for (VkImage img : { cbuff_tex.get_image(),accum_tex.get_image(),refl_accum_tex.get_image() }) {
-            img_barrier(cmd, img,VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+            img_barrier(cmd, img,VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
         }
     });
 }
@@ -687,6 +687,15 @@ void VKRenderer::run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn) {
         VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    img_barrier(cmd, accum_tex.get_image(),
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
+
+    img_barrier(cmd, refl_accum_tex.get_image(),
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
 
     const VkExtent2D ext = swapchain->get_extent();
     cmanager->begin_rendering(cmd, swapchain->get_image_view(image_index), ext, image_index);
