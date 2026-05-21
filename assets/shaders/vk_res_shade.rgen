@@ -64,7 +64,7 @@ const uint SHADOW_FLAGS =gl_RayFlagsTerminateOnFirstHitEXT |gl_RayFlagsSkipClose
 
 bool trace_shadow(vec3 origin, vec3 dir, float dist) {
     shadow_payload.shadowed = 1;
-    traceRayEXT(tlas,SHADOW_FLAGS,0xFF,0, 0,0,origin, 0.001,dir, dist - 0.001,1);
+    traceRayEXT(tlas,SHADOW_FLAGS,0xFF,0, 0,1,origin, 0.001,dir, dist - 0.001,1);
     if (shadow_payload.shadowed == 1) return true;
     float gT;
     if (intersectsGround(origin, dir, gT)) {
@@ -74,7 +74,7 @@ bool trace_shadow(vec3 origin, vec3 dir, float dist) {
 }
 bool trace_reflect(vec3 origin, vec3 dir) {
     refl_payload.valid = -1;
-    traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,1,origin, 0.001,dir,1e30,0);
+    traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,0,origin, 0.001,dir,1e30,0);
     float gT;
     bool hitG = intersectsGround(origin, dir, gT);
 

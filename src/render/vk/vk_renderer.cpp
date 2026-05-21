@@ -75,9 +75,10 @@ void VKRenderer::init_pipelines() {
         .add_descriptor_set_layout(output_dsl)
         .add_push_constant(PC_STAGES_RT, 0, sizeof(PushConstants))
         .add_raygen_shader("assets/shaders/vk_res_shade.rgen.spv")
-        .add_miss_shader("assets/shaders/vk_res_shade.rmiss.spv")
         .add_miss_shader("assets/shaders/vk_res_shade_refl.rmiss.spv")
+        .add_miss_shader("assets/shaders/vk_res_shade_shadow.rmiss.spv")
         .add_closest_hit_shader("assets/shaders/vk_res_shade.rchit.spv")
+        .set_max_recursion_depth(2)
         .build();
     pipeline_present = VKGraphicsPipelineBuilder(device)
         .add_descriptor_set_layout(present_dsl)
