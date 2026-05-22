@@ -1,3 +1,3 @@
 struct ShadowPayload {
-    int shadowed;
+    vec4 shadowed;
 };
