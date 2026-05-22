@@ -12,25 +12,15 @@ hitAttributeEXT vec2 barycentrics;
 
 void main() {
     uint triIdx = uint(gl_PrimitiveID);
-    Tri tri = tris[triIdx];
     float u = barycentrics.x;
     float v = barycentrics.y;
     float w = 1.0 - u - v;
-    vec3 v0 = tri.v0.xyz;
-    vec3 v1 = tri.v1.xyz;
-    vec3 v2 = tri.v2.xyz;
-    vec3 hitPos = w * v0 + u * v1 + v * v2;
     vec2 uv = w * tri.uv0 + u * tri.uv1 + v * tri.uv2;
 
     // PAYLOAD FILL
-
-    payload.hitPos = hitPos;
-    payload.t = gl_HitTEXT;
-    payload.n = tri.n.xyz;
-    payload.tangent = tri.t.xyz;
-    payload.bitangent = tri.b.xyz;
-    payload.matId = tri.matId;
     payload.uv = uv;
-    payload.type = 0u;
-    payload.valid = 1;
+    payload.t = gl_HitTEXT;
+    PAYLOAD_SET_VALID(payload,1);
+    PAYLOAD_SET_TYPE(payload,0);
+    PAYLOAD_SET_TRIID(payload, triIdx);
 }

@@ -69,3 +69,22 @@ struct GBufferPixel {
     uint matId;
     int valid;
 };
+
+GBufferPixel getEmptyGbuf(){
+    GBufferPixel px;
+    px.pos = vec4(0.0);
+    px.norm = vec4(0.0);
+    px.diffuse= vec4(0.0);
+    px.matId = 0u;
+    px.uv = vec2(0.0);
+    px.valid = -1;
+    return px;
+}
+Reservoir getEmptyReservoir(){
+    Reservoir r;
+    r.sampledLight = -1;
+    r.wSum = 0.0;
+    r.M = 0;
+    r.W = 0.0;
+    return r;
+}

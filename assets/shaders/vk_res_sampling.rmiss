@@ -6,6 +6,6 @@
 layout(location = 0) rayPayloadInEXT RayPayload payload;
 
 void main() {
-    payload.valid = -1;
+    payload.data = 0u;
     payload.t = 1e30;
 }

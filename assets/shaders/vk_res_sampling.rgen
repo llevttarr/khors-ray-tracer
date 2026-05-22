@@ -79,47 +79,44 @@ void main() {
                 0); // payload location
     float groundT;
     bool hitGround = intersectsGround(rayOrigin, rayDir, groundT);
-    if (hitGround && (payload.valid < 0 || groundT < payload.t)) {
-        payload.t = groundT;
-        payload.hitPos = rayOrigin + groundT * rayDir;
-        payload.n = vec3(0.0, 1.0, 0.0);
-        payload.tangent = vec3(1.0, 0.0, 0.0);
-        payload.bitangent = vec3(0.0, 0.0, 1.0);
-        payload.uv = payload.hitPos.xz * 0.2;
-        payload.matId = 1u;
-        payload.type = 0u;
-        payload.valid = 1;
-    }
-    if (payload.valid < 0) {
-        GBufferPixel px;
-        px.pos = vec4(0.0);
-        px.norm = vec4(0.0);
-        px.diffuse= vec4(0.0);
-        px.matId = 0u;
-        px.uv = vec2(0.0);
-        px.valid = -1;
+    if (PAYLOAD_VALID(payload.data) < 0 && !hitGrond) {
+        GBufferPixel px = getEmptyGbuf();
         gbuffer[pidx] = px;
-        Reservoir r;
-        r.sampledLight = -1;
-        r.wSum = 0.0;
-        r.M = 0;
-        r.W = 0.0;
+        Reservoir r = getEmptyReservoir();
         reservoir_a[pidx] = r;
         return;
     }
-    vec3 pos = payload.hitPos;
-    uint matId = payload.matId;
-    Mat mat = mats[matId-1];
+    vec3 pos;
+    vec2 resUV;
+    float resT;
+    mat3 resTBN;
+    uint resMatID;
+
+    if (hitGround && (!PAYLOAD_VALID(payload.data) || groundT < payload.t)) {
+        resT = groundT;
+        pos = rayOrigin+resT*rayDir;
+        resUV = pos * 0.25;
+        resMatID = 1u;
+        resTBN = mat3(1.0);
+    }else{
+        resT = payload.t;
+        pos = rayOrigin+resT*rayDir;
+        resUV = payload.uv;
+
+        Tri tri = tris[PAYLOAD_TRIID(payload.data)];
+        resMatID = tri.matId;
+        resTBN = mat3(tri.t.xyz,tri.b.xyz,tri.n.xyz);
+    }
+    Mat mat = mats[resMatID-1];
     vec3 v = normalize(camPos - pos);
-    vec3 n = payload.n;
-    mat3 tbn = (payload.type == 1u)? getTBNSphere(n): mat3(payload.tangent, payload.bitangent, n);
+    vec3 n = resTBN[2];
 
     if (dot(n, v) < 0.0) {
         n = -n;
         tbn = -tbn;
     }
 
-    vec2 texUV = payload.uv * mat.uv.xy + mat.uv.zw;
+    vec2 texUV = resUV * mat.uv.xy + mat.uv.zw;
     vec3 diffuse = mat.diffuse.rgb;
 
     if (mat.tex.x != -1)
@@ -132,10 +129,10 @@ void main() {
 
     GBufferPixel px;
     px.pos = vec4(pos, 0.0);
-    px.norm = vec4(n,   0.0);
+    px.norm = vec4(n, 0.0);
     px.diffuse= vec4(diffuse, 0.0);
     px.matId = matId;
-    px.uv = payload.uv;
+    px.uv = resUV;
     px.valid = 1;
     gbuffer[pidx] = px;
     Reservoir r;
