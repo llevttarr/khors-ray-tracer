@@ -120,18 +120,17 @@ void main() {
     }
 
     vec2 texUV = resUV * mat.uv.xy + mat.uv.zw;
-    vec3 diffuse = mat.diffuse.rgb ? texture(baseTexArr, vec3(texUV, mat.tex.x)).rgb : mat.diffuse.rgb;
-
+    vec3 diffuse = (mat.tex.x != -1) ? texture(baseTexArr, vec3(texUV, mat.tex.x)).rgb : mat.diffuse.rgb;
     if (resMatID != 1u && mat.tex.y != -1) {
         vec3 normMap = texture(normalTexArr, vec3(texUV, mat.tex.y)).rgb;
-        n = normalMapping(normMap, tbn);
+        n = normalMapping(normMap, resTBN);
     }
 
     GBufferPixel px;
     px.pos = vec4(pos, 0.0);
     px.norm = vec4(n, 0.0);
     px.diffuse= vec4(diffuse, 0.0);
-    px.matId = resMatId;
+    px.matId = resMatID;
     px.uv = resUV;
     px.valid = 1;
     gbuffer[pidx] = px;

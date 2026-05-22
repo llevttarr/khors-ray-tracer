@@ -13,16 +13,9 @@ layout(location = 0) rayPayloadInEXT RayPayload payload;
 hitAttributeEXT vec2 barycentrics;
 
 void main() {
-    uint triIdx = uint(gl_PrimitiveID);
-    float u = barycentrics.x;
-    float v = barycentrics.y;
-    float w = 1.0 - u - v;
-    vec2 uv = w * tri.uv0 + u * tri.uv1 + v * tri.uv2;
-
-    // PAYLOAD FILL
-    payload.uv = uv;
+    payload.uv = barycentrics;
     payload.t = gl_HitTEXT;
-    PAYLOAD_SET_VALID(payload,1);
-    PAYLOAD_SET_TYPE(payload,0);
-    PAYLOAD_SET_TRIID(payload, triIdx);
+    payload.data = 0u;
+    PAYLOAD_SET_VALID(payload.data, 1u);
+    PAYLOAD_SET_TRIID(payload.data, uint(gl_PrimitiveID));
 }

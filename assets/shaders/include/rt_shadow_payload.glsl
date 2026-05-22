@@ -1,3 +1,3 @@
 struct ShadowPayload {
-    uint shadowed;
+    int shadowed;
 };

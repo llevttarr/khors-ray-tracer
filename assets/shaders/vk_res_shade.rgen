@@ -61,145 +61,128 @@ layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
 layout(location = 0) rayPayloadEXT RayPayload refl_payload;
 layout(location = 1) rayPayloadEXT ShadowPayload shadow_payload;
 const uint SHADOW_FLAGS =gl_RayFlagsTerminateOnFirstHitEXT |gl_RayFlagsSkipClosestHitShaderEXT |gl_RayFlagsOpaqueEXT;
+const uint GROUND_ID = 0x3FFFFFFFu;
 
 bool trace_shadow(vec3 origin, vec3 dir, float dist) {
     shadow_payload.shadowed = 1;
     traceRayEXT(tlas,SHADOW_FLAGS,0xFF,0, 0,1,origin, 0.001,dir, dist - 0.001,1);
     if (shadow_payload.shadowed == 1) return true;
     float gT;
-    if (intersectsGround(origin, dir, gT)) {
-        return gT < (dist - 0.001);
-    }
-    return false;
+    return shadow_payload.shadowed == 1 || (intersectsGround(origin, dir, gT) && gT < dist - 0.001);
 }
 bool trace_reflect(vec3 origin, vec3 dir) {
-    refl_payload.valid = -1;
+    refl_payload.data = 0u;
+    refl_payload.t = 1e30;
     traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,0,origin, 0.001,dir,1e30,0);
     float gT;
-    bool hitG = intersectsGround(origin, dir, gT);
-
-    if (hitG && (refl_payload.valid < 0 || gT < refl_payload.t)) {
-        refl_payload.hitPos = origin + dir * gT;
-        refl_payload.n = vec3(0.0, 1.0, 0.0);
-        refl_payload.matId = 1u;
-        refl_payload.tangent = vec3(1, 0, 0);
-        refl_payload.bitangent = vec3(0, 0, 1);
-        refl_payload.uv = refl_payload.hitPos.xz * 0.2;
+    if (intersectsGround(origin, dir, gT) && (!bool(PAYLOAD_VALID(refl_payload.data)) || gT < refl_payload.t)){
         refl_payload.t = gT;
-        refl_payload.valid = 1;
-        refl_payload.type = 0u;
+        refl_payload.data = 0u;
+        PAYLOAD_SET_VALID(refl_payload.data, 1u);
+        PAYLOAD_SET_TRIID(refl_payload.data, GROUND_ID);
+        refl_payload.uv = vec2(0.0);
         return true;
     }
-    return refl_payload.valid >= 0;
+    return bool(PAYLOAD_VALID(refl_payload.data));
 }
+struct HitInfo { vec3 pos, n, tangent, bitangent; vec2 uv; uint matId; };
+
+HitInfo decode_refl(vec3 ro, vec3 rd) {
+    HitInfo h;
+    h.pos = ro + rd * refl_payload.t;
+    if (PAYLOAD_TRIID(refl_payload.data) == GROUND_ID) {
+        h.n = vec3(0,1,0); h.tangent = vec3(1,0,0); h.bitangent = vec3(0,0,1);
+        h.uv = h.pos.xz * 0.2;  h.matId = 1u;
+    } else {
+        Tri tri = tris[PAYLOAD_TRIID(refl_payload.data)];
+        float u = refl_payload.uv.x, v = refl_payload.uv.y, w = 1.0-u-v;
+        h.n = tri.n.xyz;
+        h.tangent = tri.t.xyz;
+        h.bitangent = tri.b.xyz;
+        h.uv = w*tri.uv0 + u*tri.uv1 + v*tri.uv2;
+        h.matId = tri.matId;
+    }
+    return h;
+}
+
+vec3 eval_brdf(vec3 pos, vec3 n, vec3 v, vec3 base, Mat mat, vec2 texUV, uint matId, LightSample ls) {
+    float ndotl = max(0.0, dot(n, ls.dir));
+    float sh = max(1.0, mat.ambient.w);
+    float specStr = (brdf_type == 0) ? phongSpecStr(v, ls.dir, n, sh) : blinnPhongSpecStr(v, ls.dir, n, sh);
+    float hasSpec = float(matId != 1u && mat.tex.z != -1);
+    vec3  specMap = mix(vec3(1.0), texture(specularTexArr, vec3(texUV, max(mat.tex.z,0))).rgb, hasSpec);
+    return base * ls.radiance * ndotl
+        + mat.specular.rgb * ls.radiance * specStr * specMap;
+}
+
+vec3 shade_reflection(vec3 reflO, vec3 reflDir) {
+    HitInfo h = decode_refl(reflO, reflDir);
+    Mat mat = mats[h.matId - 1];
+    vec3 v = normalize(reflO - h.pos);
+    mat3 tbn = mat3(h.tangent, h.bitangent, h.n);
+    vec3 n = h.n;
+    if (dot(n, v) < 0.0) { n = -n; tbn = -tbn; }
+
+    vec2 texUV = h.uv * mat.uv.xy + mat.uv.zw;
+    vec3 base = (mat.tex.x != -1) ? texture(baseTexArr, vec3(texUV, mat.tex.x)).rgb : mat.diffuse.rgb;
+    if (h.matId != 1u && mat.tex.y != -1)
+        n = normalMapping(texture(normalTexArr, vec3(texUV, mat.tex.y)).rgb, tbn);
+
+    vec3 col = mat.ambient.rgb * (0.5 + 0.5 * n.y);
+    for (uint li = 0u; li < lightc; ++li) {
+        LightSample ls = sampleLight(light_v[li], h.pos);
+        if (!trace_shadow(h.pos + n * 0.001, ls.dir, ls.dist))
+            col += eval_brdf(h.pos, n, v, base, mat, texUV, h.matId, ls);
+    }
+    return col + mat.emission.rgb * mat.emission.w;
+}
+
 void main() {
-    uvec2 gid = gl_LaunchIDEXT.xy;
+    uvec2 gid  = gl_LaunchIDEXT.xy;
     if (gid.x >= width || gid.y >= height) return;
     uint pidx = gid.y * width + gid.x;
+
     vec2 uv = vec2((gid.x + 0.5) / float(width), (gid.y + 0.5) / float(height));
-    float ndy = -1.0*(2.0 * uv.y - 1.0);
-    vec3 sky = getSky(ndy);
+    vec3 sky = getSky(-(2.0 * uv.y - 1.0));
 
     GBufferPixel px = gbuffer[pidx];
-    if (px.valid == -1) {
+    if (px.valid == -1 || px.matId == 0u) {
         imageStore(outImage, ivec2(gid), vec4(sky, 1.0));
         return;
     }
 
+    Mat mat = mats[px.matId - 1];
     vec3 pos = px.pos.xyz;
     vec3 n = normalize(px.norm.xyz);
-    vec3 diffuse = px.diffuse.xyz;
-    uint matId = px.matId;
-    if (matId == 0) {
-        imageStore(outImage, ivec2(gid), vec4(sky, 1.0));
-        return;
-    }
-    Mat mat = mats[matId - 1];
-
-    float hemi = 0.5 + 0.5 * n.y;
-    vec3 col = mat.ambient.rgb * hemi;
     vec3 v = normalize(camPos - pos);
+    vec3 diff = px.diffuse.xyz;
+    vec2 texUV = px.uv;
+
+    vec3 col = mat.ambient.rgb * (0.5 + 0.5 * n.y);
     Reservoir r = reservoir_a[pidx];
     if (r.sampledLight >= 0 && r.W > 0.0) {
-        Light l = light_v[r.sampledLight];
-        LightSample s = sampleLight(l, pos);
-        if (!trace_shadow(pos + n * 0.001, s.dir, s.dist)) {
-            float ndotl = max(0.0, dot(n, s.dir));
-            vec3  diff = diffuse * s.radiance.rgb * ndotl;
-            float sh = max(1.0, mat.ambient.w);
-            float specStr = (brdf_type == 0)? phongSpecStr(v, s.dir, n, sh): blinnPhongSpecStr(v, s.dir, n, sh);
-
-            float hasSpecMap = float(matId != 1u && mat.tex.z != -1);
-            vec3  specMap= mix(vec3(1.0),texture(specularTexArr,vec3(px.uv, max(mat.tex.z, 0))).rgb,hasSpecMap);
-            vec3  spec = mat.specular.rgb * s.radiance.rgb * specStr * specMap;
-            col += (diff + spec) * r.W;
-        }
+        LightSample s = sampleLight(light_v[r.sampledLight], pos);
+        if (!trace_shadow(pos + n * 0.001, s.dir, s.dist))
+            col += eval_brdf(pos, n, v, diff, mat, texUV, px.matId, s) * r.W;
     }
 
     col += mat.emission.rgb * mat.emission.w;
 
     float reflStr = mat.specular.w;
-    vec3 reflCol = vec3(0.0);
     if (reflStr > 0.01) {
+        vec3 reflCol;
         if (framec == 0) {
             vec3 reflDir = normalize(reflect(-v, n));
             vec3 reflO = pos + n * 0.001;
-
-            if (trace_reflect(reflO, reflDir)) {
-                vec3 rPos = refl_payload.hitPos;
-                uint rMatId = refl_payload.matId;
-                Mat rMat = mats[rMatId - 1];
-
-                vec3 rN = refl_payload.n;
-                mat3 rTBN = (refl_payload.type == 1u)? getTBNSphere(rN): mat3(refl_payload.tangent,refl_payload.bitangent, rN);
-                vec3 rV = normalize(reflO - rPos);
-                if (dot(rN, rV) < 0.0) { rN = -rN; rTBN = -rTBN; }
-
-                vec2  rTexUV = refl_payload.uv * rMat.uv.xy + rMat.uv.zw;
-                vec3  rBase  = rMat.diffuse.rgb;
-                if (rMat.tex.x != -1)
-                    rBase = texture(baseTexArr, vec3(rTexUV, rMat.tex.x)).rgb;
-                if (rMatId != 1u && rMat.tex.y != -1) {
-                    vec3 normMap = texture(normalTexArr,vec3(rTexUV, rMat.tex.y)).rgb;
-                    rN = normalMapping(normMap, rTBN);
-                }
-
-                vec3  rCol = rMat.ambient.rgb * (0.5 + 0.5 * rN.y);
-                float rSh = max(1.0, rMat.ambient.w);
-
-                for (uint li = 0u; li < lightc; ++li) {
-                    LightSample rs = sampleLight(light_v[li], rPos);
-                    if (trace_shadow(rPos + rN * 0.001, rs.dir, rs.dist)) continue;
-
-                    float rNdotL = max(0.0, dot(rN, rs.dir));
-                    vec3  rDiff = rBase * rs.radiance * rNdotL;
-                    float rSpecStr = (brdf_type == 0)? phongSpecStr(rV, rs.dir, rN, rSh): blinnPhongSpecStr(rV, rs.dir, rN, rSh);
-                    float hasRSpec = float(rMatId != 1u && rMat.tex.z != -1);
-                    vec3  rSpecMap = mix(vec3(1.0),texture(specularTexArr,vec3(rTexUV, max(rMat.tex.z, 0))).rgb,hasRSpec);
-                    vec3 rSpec = rMat.specular.rgb * rs.radiance * rSpecStr * rSpecMap;
-                    rCol += rDiff + rSpec;
-                }
-                reflCol = rCol;
-            } else {
-                reflCol = sky;
-            }
+            reflCol = trace_reflect(reflO, reflDir) ? shade_reflection(reflO, reflDir) : sky;
             imageStore(reflAccumImage, ivec2(gid), vec4(reflCol, 1.0));
         } else {
             reflCol = imageLoad(reflAccumImage, ivec2(gid)).rgb;
         }
-
         col = mix(col, reflCol, reflStr);
     }
-
-    vec4 accum;
-    if (framec == 0) {
-        accum = vec4(col, 1.0);
-    } else {
-        vec4 prev = imageLoad(accumImage, ivec2(gid));
-        float w = 1.0 / float(framec + 1);
-        accum = mix(prev, vec4(col, 1.0), w);
-    }
-
+    vec4 accum = (framec == 0) ? vec4(col, 1.0)
+        : mix(imageLoad(accumImage, ivec2(gid)), vec4(col, 1.0), 1.0 / float(framec + 1));
     imageStore(accumImage, ivec2(gid), accum);
     imageStore(outImage, ivec2(gid), accum);
 }
