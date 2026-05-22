@@ -71,13 +71,7 @@ void main() {
     
     payload.data = 0u;
     payload.t = 1e30;
-    traceRayEXT(tlas, // TLAS
-                RT_FLAGS, // skip any-hit
-                0xFF, // cull mask
-                0, 0, 0, // sbtRecordOffset/Stride/missIndex
-                rayOrigin, 0.001, // rayOrigin/tMin
-                rayDir, 1e30, // rayDir/tMax
-                0); // payload location
+    traceRayEXT(tlas, RT_FLAGS, 0xFF, 0, 0, 0, rayOrigin, 0.001, rayDir, 1e30, 0);
     float groundT;
     bool hitGround = intersectsGround(rayOrigin, rayDir, groundT);
     bool hasHit = bool(PAYLOAD_VALID(payload.data)) || hitGround;
