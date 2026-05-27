@@ -156,7 +156,7 @@ void main() {
     vec3 n = normalize(px.norm.xyz);
     vec3 v = normalize(camPos - pos);
     vec3 diff = px.diffuse.xyz;
-    vec2 texUV = px.uv;
+    vec2 texUV = px.uv * mat.uv.xy + mat.uv.zw;
 
     vec3 col = mat.ambient.rgb * (0.5 + 0.5 * n.y);
     Reservoir r = reservoir_a[pidx];
