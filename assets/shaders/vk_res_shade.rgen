@@ -169,18 +169,18 @@ void main() {
     col += mat.emission.rgb * mat.emission.w;
 
     float reflStr = mat.specular.w;
-    if (reflStr > 0.01) {
-        vec3 reflCol;
-        if (framec == 0) {
-            vec3 reflDir = normalize(reflect(-v, n));
-            vec3 reflO = pos + n * 0.001;
-            reflCol = trace_reflect(reflO, reflDir) ? shade_reflection(reflO, reflDir) : sky;
-            imageStore(reflAccumImage, ivec2(gid), vec4(reflCol, 1.0));
-        } else {
-            reflCol = imageLoad(reflAccumImage, ivec2(gid)).rgb;
-        }
-        col = mix(col, reflCol, reflStr);
-    }
+    // if (reflStr > 0.01) {
+    //     vec3 reflCol;
+    //     if (framec == 0) {
+    //         vec3 reflDir = normalize(reflect(-v, n));
+    //         vec3 reflO = pos + n * 0.001;
+    //         reflCol = trace_reflect(reflO, reflDir) ? shade_reflection(reflO, reflDir) : sky;
+    //         imageStore(reflAccumImage, ivec2(gid), vec4(reflCol, 1.0));
+    //     } else {
+    //         reflCol = imageLoad(reflAccumImage, ivec2(gid)).rgb;
+    //     }
+    //     col = mix(col, reflCol, reflStr);
+    // }
     vec4 accum = (framec == 0) ? vec4(col, 1.0)
         : mix(imageLoad(accumImage, ivec2(gid)), vec4(col, 1.0), 1.0 / float(framec + 1));
     imageStore(accumImage, ivec2(gid), accum);

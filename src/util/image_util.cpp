@@ -17,15 +17,16 @@ Image image_util::load_image(const std::string& filepath, int flipflag){
 Image image_util::load_image_stb(const std::string& filepath, int flipflag){
     int width;
     int height;
-    int chan=4;
+    int src_channels;
+    constexpr int CHAN=4;
     // stbi_set_flip_vertically_on_load(flipflag);
     const char* filename=filepath.c_str();
-    unsigned char* imgdat = stbi_load(filename,&width,&height,&chan,STBI_rgb_alpha);
+    unsigned char* imgdat = stbi_load(filename,&width,&height,&src_channels,STBI_rgb_alpha);
     if (imgdat == nullptr) {
         throw ImageUtilException("Invalid filepath");
     }
-    size_t datsize=width*height*chan;
+    size_t datsize=width*height*CHAN;
     std::vector<unsigned char> res(imgdat,imgdat+datsize);
     stbi_image_free(imgdat);
-    return Image{width,height,res,chan};
+    return Image{width,height,res,CHAN};
 }

@@ -727,12 +727,12 @@ void VKRenderer::run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn) {
 
 void VKRenderer::create_texture_arrays(RenderScene& scene) {
 
-    auto build = [&](VKTexture& dst, const std::vector<Image>& img_v) {
+    auto build = [&](VKTexture& dst, const std::vector<Image>& img_v,VkFormat fmt) {
         dst.destroy();
 
         if (img_v.empty()) {
             const VkExtent3D ext1{ 1, 1, 1 };
-            dst.create_image(ext1, VK_FORMAT_R8G8B8A8_UNORM,
+            dst.create_image(ext1, fmt,
                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_TILING_OPTIMAL, 1, 1);
 
@@ -780,7 +780,7 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
         const VkDeviceSize total_bytes = layer_bytes * layers;
         const VkExtent3D ext{ max_w, max_h, 1 };
 
-        dst.create_image(ext, VK_FORMAT_R8G8B8A8_UNORM,
+        dst.create_image(ext, fmt,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
             VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_TILING_OPTIMAL, 1, layers);
 
@@ -856,9 +856,9 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
         dst.create_sampler(VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT);
     };
 
-    build(base_tex_arr, scene.tex_manager.get_base());
-    build(normal_tex_arr, scene.tex_manager.get_normal());
-    build(specular_tex_arr, scene.tex_manager.get_specular());
+    build(base_tex_arr, scene.tex_manager.get_base(), VK_FORMAT_R8G8B8A8_SRGB);
+    build(normal_tex_arr, scene.tex_manager.get_normal(), VK_FORMAT_R8G8B8A8_UNORM);
+    build(specular_tex_arr, scene.tex_manager.get_specular(), VK_FORMAT_R8G8B8A8_SRGB);
 }
  
 
