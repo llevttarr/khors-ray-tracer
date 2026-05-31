@@ -127,25 +127,23 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
 
     vkGetPhysicalDeviceProperties2(device->get_phys_device(), &props2);
     
-    const uint32_t handle_size    = rt_props.shaderGroupHandleSize;
-    const uint32_t handle_align   = rt_props.shaderGroupHandleAlignment;
-    const uint32_t base_align     = rt_props.shaderGroupBaseAlignment;
-    const uint32_t group_count    = static_cast<uint32_t>(shader_groups.size());
+    const uint32_t handle_size = rt_props.shaderGroupHandleSize;
+    const uint32_t handle_align = rt_props.shaderGroupHandleAlignment;
+    const uint32_t base_align = rt_props.shaderGroupBaseAlignment;
+    const uint32_t group_count = static_cast<uint32_t>(shader_groups.size());
     const uint32_t stride =
         (handle_size + handle_align - 1) & ~(handle_align - 1);
     auto align_up = [](VkDeviceSize v, VkDeviceSize a) {
         return (v + a - 1) & ~(a - 1);
     };
     const VkDeviceSize raygen_region = align_up(stride * n_raygen, base_align);
-    const VkDeviceSize miss_region   = align_up(stride * n_miss,   base_align);
-    const VkDeviceSize hit_region    = align_up(stride * n_hit,    base_align);
-    const VkDeviceSize total_size    = raygen_region + miss_region + hit_region;
+    const VkDeviceSize miss_region = align_up(stride * n_miss, base_align);
+    const VkDeviceSize hit_region = align_up(stride * n_hit, base_align);
+    const VkDeviceSize total_size = raygen_region + miss_region + hit_region;
 
     std::vector<uint8_t> handles(handle_size * group_count);
 
-    if (vkGetRayTracingShaderGroupHandlesKHR(
-            d, pipeline, 0, group_count,
-            handles.size(), handles.data()) != VK_SUCCESS)
+    if (vkGetRayTracingShaderGroupHandlesKHR(d, pipeline, 0, group_count, handles.size(), handles.data()) != VK_SUCCESS)
         throw std::runtime_error("failed to get RT shader handles");
 
     VkBufferCreateInfo buffer_info{};
@@ -156,8 +154,7 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     alloc_info.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkBuffer sbt_buffer;
     VmaAllocation sbt_alloc;
     VmaAllocationInfo alloc_info_out{};
@@ -210,8 +207,7 @@ std::unique_ptr<VKRTPipeline> VKRTPipelineBuilder::build() {
     shader_stages.clear();
     shader_groups.clear();
 
-    auto rt_pipeline = std::unique_ptr<VKRTPipeline>(
-        new VKRTPipeline(device, pipeline, layout));
+    auto rt_pipeline = std::unique_ptr<VKRTPipeline>(new VKRTPipeline(device, pipeline, layout));
     rt_pipeline->sbt_buffer = sbt_buffer;
     rt_pipeline->sbt_alloc = sbt_alloc;
     rt_pipeline->sbt_regions = regions;

@@ -51,7 +51,7 @@ void main() {
     }
     uint pidx = gid.y * width + gid.x;
     GBufferPixel px = gbuffer[pidx];
-    Reservoir cur   = reservoir_b[pidx];
+    Reservoir cur = reservoir_b[pidx];
 
     if (px.valid == -1) {
         reservoir_a[pidx] = cur;
@@ -117,7 +117,7 @@ void main() {
         uint rngXi = pcg_next(rng);
         float xi = float(rngXi & 0x00FFFFFFu) / 16777216.0;
         combined.wSum += wN;
-        combined.M   += nr.M;
+        combined.M += nr.M;
         if (nr.sampledLight >= 0 && combined.wSum > 0.0&&xi * combined.wSum < wN)
             combined.sampledLight = nr.sampledLight;
     }

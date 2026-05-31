@@ -860,15 +860,12 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
     build(normal_tex_arr, scene.tex_manager.get_normal(), VK_FORMAT_R8G8B8A8_UNORM);
     build(specular_tex_arr, scene.tex_manager.get_specular(), VK_FORMAT_R8G8B8A8_SRGB);
 }
- 
 
 bool VKRenderer::camera_moved() const {
     if (!prev_camera_valid){
         return false;
     }
-    return camera.get_pos()!= prev_camera.pos||
-           camera.get_forward() != prev_camera.forward ||
-           camera.get_fov() != prev_camera.fov;
+    return camera.get_pos()!= prev_camera.pos|| camera.get_forward() != prev_camera.forward || camera.get_fov() != prev_camera.fov;
 }
 void VKRenderer::one_time_submit(const std::function<void(VkCommandBuffer)>& fn){
     VkCommandPoolCreateInfo pool_ci{};
