@@ -77,10 +77,16 @@ private:
     std::unique_ptr<VKGraphicsPipeline> pipeline_present;
     
     void init_pipelines();
+    /* restir */
     void dispatch_res_sampling(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
     void dispatch_temp_reuse(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
     void dispatch_spat_reuse(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
     void dispatch_res_shade(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
+    /* other */
+    void dispatch_refl_trace(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
+    void dispatch_accumulation(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
+    void dispatch_fog(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
+    void dispatch_bloom(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
 
     /** DESCRIPTOR */
 

@@ -58,14 +58,12 @@ layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
 #include "hash.glsl"
 #include "shading.glsl"
 
-layout(location = 0) rayPayloadEXT RayPayload refl_payload;
-layout(location = 1) rayPayloadEXT ShadowPayload shadow_payload;
-const uint SHADOW_FLAGS =gl_RayFlagsTerminateOnFirstHitEXT |gl_RayFlagsSkipClosestHitShaderEXT |gl_RayFlagsOpaqueEXT;
+layout(location = 0) rayPayloadEXT ShadowPayload shadow_payload;
 const uint GROUND_ID = 0x3FFFFFFFu;
 
 bool trace_shadow(vec3 origin, vec3 dir, float dist) {
-    shadow_payload.shadowed = 1;
-    traceRayEXT(tlas,SHADOW_FLAGS,0xFF,0, 0,1,origin, 0.001,dir, dist - 0.001,1);
+    shadow_payload.shadowed = 0;
+    traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,0,origin, 0.001,dir, dist,0);
     if (shadow_payload.shadowed == 1) return true;
     float gT;
     return shadow_payload.shadowed == 1 || (intersectsGround(origin, dir, gT) && gT < dist - 0.001);

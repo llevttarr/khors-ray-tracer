@@ -35,10 +35,8 @@ void VKRenderer::init_pipelines() {
         .add_descriptor_set_layout(output_dsl)
         .add_push_constant(PC_STAGES_RT, 0, sizeof(PushConstants))
         .add_raygen_shader("assets/shaders/vk_res_shade.rgen.spv")
-        .add_miss_shader("assets/shaders/vk_res_shade_refl.rmiss.spv")
-        .add_miss_shader("assets/shaders/vk_res_shade_shadow.rmiss.spv")
+        .add_miss_shader("assets/shaders/vk_res_shade.rmiss.spv")
         .add_closest_hit_shader("assets/shaders/vk_res_shade.rchit.spv")
-        .set_max_recursion_depth(2)
         .build();
     pipeline_present = VKGraphicsPipelineBuilder(device)
         .add_descriptor_set_layout(present_dsl)
@@ -137,5 +135,5 @@ void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy
     vkCmdPushConstants(cmd, layout,VK_SHADER_STAGE_RAYGEN_BIT_KHR |VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR|VK_SHADER_STAGE_MISS_BIT_KHR,0, sizeof(pc), &pc);
  
     const auto& sbt = pipeline_res_shade->get_sbt();
-    vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.miss, &sbt.hit, &sbt.callable,current_width, current_height, 1);
+    vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.hit, &sbt.miss, &sbt.callable,current_width, current_height, 1);
 }
