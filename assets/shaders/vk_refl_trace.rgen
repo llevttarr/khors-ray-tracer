@@ -4,7 +4,7 @@
 
 #include "structs.glsl"
 #include "vk_uniforms.glsl"
-#include "rt_payload.glsl"
+#include "refl_payload.glsl"
 
 layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
@@ -34,10 +34,36 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 };
 
 layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
+layout(location = 0) rayPayloadEXT ReflPayload payload;
 
 void main() {
     ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
     if (gid.x >= int(width) || gid.y >= int(height)) return;
     uint pidx = uint(gid.y) * width + uint(gid.x);
-    // TODO
+    GBufferPixel px = gbuffer[pidx];
+    vec4 prev = imageLoad(reflAccumImage,ivec2(gid));
+    if (px.valid == -1 || px.matId == 0u) {
+        imageStore(reflAccumImage, ivec2(gid), vec4(0.0));
+        return;
+    }
+    Mat mat = mats[px.matId-1];
+    float reflStr = mat.specular.w;
+    if (reflStr < 0.05){
+        imageStore(refl_accum, ivec2(gid), vec4(0.0));
+        return;
+    }
+    vec3 pos = px.pos.xyz;
+    vec3 n = normalize(px.norm.xyz);
+    vec3 v = normalize(camPos - pos);
+    vec3 rdir = reflect(-v, n);
+    
+    // rougness - ?
+
+    payload.color = vec3(0.0);
+    payload.t = -1.0;
+    traceRayEXT(tlas, RT_FLAGS, 0xFF, 0, 0, 0, pos+n*0.001, 0.001, rdir, 1e30, 0);
+    
+    float a = (framec == 0) ? 1.0 : max(1.0/float(framec+1),0.05);
+    vec3 accum = mix(prev.rgb,payload.color,a);
+    imageStore(reflAccumImage,ivec2(gid),vec4(accum,1.0));
 }
