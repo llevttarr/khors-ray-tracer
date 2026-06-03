@@ -74,6 +74,12 @@ private:
     std::unique_ptr<VKComputePipeline>pipeline_temp_reuse;
     std::unique_ptr<VKComputePipeline>pipeline_spat_reuse;
     std::unique_ptr<VKRTPipeline> pipeline_res_shade;
+
+    std::unique_ptr<VKRTPipeline> pipeline_refl_trace;
+    std::unique_ptr<VKComputePipeline> pipeline_accumulation;
+    std::unique_ptr<VKComputePipeline> pipeline_fog;
+    std::unique_ptr<VKComputePipeline> pipeline_bloom;
+
     std::unique_ptr<VKGraphicsPipeline> pipeline_present;
     
     void init_pipelines();
@@ -95,12 +101,16 @@ private:
     VkDescriptorSetLayout scene_dsl = VK_NULL_HANDLE;
     VkDescriptorSetLayout pingpong_dsl = VK_NULL_HANDLE;
     VkDescriptorSetLayout output_dsl = VK_NULL_HANDLE;
+    VkDescriptorSetLayout refl_output_dsl = VK_NULL_HANDLE;
+    VkDescriptorSetLayout postp_dsl = VK_NULL_HANDLE;
     VkDescriptorSetLayout present_dsl = VK_NULL_HANDLE;
 
     VkDescriptorSet camera_sets[MAX_FRAMES_IN_FLIGHT] = {};
     VkDescriptorSet scene_set = VK_NULL_HANDLE;
     VkDescriptorSet pingpong_sets[2] = {};
     VkDescriptorSet output_set = VK_NULL_HANDLE;
+    VkDescriptorSet refl_output_set = VK_NULL_HANDLE;
+    VkDescriptorSet postp_set = VK_NULL_HANDLE;
     VkDescriptorSet present_set = VK_NULL_HANDLE;
 
     void init_descriptor_layouts();
@@ -131,6 +141,7 @@ private:
     VKTexture cbuff_tex;
     VKTexture accum_tex;
     VKTexture refl_accum_tex;
+    VKTexture bloom_tex;
 
     /**  TEXTURE ARRAYS */
     VKTexture base_tex_arr;

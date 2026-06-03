@@ -51,7 +51,7 @@ layout(std430, set = 2, binding = 4) buffer GBufferHistory {
 };
 layout(set = 3, binding = 0, rgba32f) uniform image2D outImage;
 layout(set = 3, binding = 1, rgba32f) uniform image2D accumImage;
-layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
+// layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
 #include "intersection.glsl"
 #include "light_sample.glsl"
 #include "wrs.glsl"

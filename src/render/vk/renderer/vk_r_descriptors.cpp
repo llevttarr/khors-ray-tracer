@@ -53,8 +53,21 @@ void VKRenderer::init_descriptor_layouts() {
     create_layout({
         binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // cbuff 
         binding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // accum 
-        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // refl_accum 
+        // binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // refl_accum 
     }, output_dsl);
+
+    // refl output
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, COMPUTE_RT), // refl_accum
+    }, refl_output_dsl);
+
+    // postp
+    create_layout({
+        binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // cbuff
+        binding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // accum
+        binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // refl_accum
+        binding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // bloom_tex
+    }, refl_output_dsl);
  
     create_layout({
         binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT),

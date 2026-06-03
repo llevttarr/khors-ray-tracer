@@ -38,6 +38,39 @@ void VKRenderer::init_pipelines() {
         .add_miss_shader("assets/shaders/vk_res_shade.rmiss.spv")
         .add_closest_hit_shader("assets/shaders/vk_res_shade.rchit.spv")
         .build();
+
+    pipeline_refl_trace = VKRTPipelineBuilder(device)
+        .add_descriptor_set_layout(camera_dsl)
+        .add_descriptor_set_layout(scene_dsl)
+        .add_descriptor_set_layout(pingpong_dsl)
+        .add_descriptor_set_layout(refl_output_dsl)
+        .add_push_constant(PC_STAGES_RT, 0, sizeof(PushConstants))
+        .add_raygen_shader("assets/shaders/vk_refl_trace.rgen.spv")
+        .add_miss_shader("assets/shaders/vk_refl_trace.rmiss.spv")
+        .add_closest_hit_shader("assets/shaders/vk_refl_trace.rchit.spv")
+        .build();
+    pipeline_accumulation = VKComputePipelineBuilder(device)
+        .add_descriptor_set_layout(camera_dsl)
+        .add_descriptor_set_layout(scene_dsl)
+        .add_descriptor_set_layout(pingpong_dsl)
+        .add_descriptor_set_layout(postp_dsl)
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
+        .set_shader("assets/shaders/vk_accumulation.comp.spv")
+        .build();
+    pipeline_fog = VKComputePipelineBuilder(device)
+        .add_descriptor_set_layout(camera_dsl)
+        .add_descriptor_set_layout(scene_dsl)
+        .add_descriptor_set_layout(pingpong_dsl)
+        .add_descriptor_set_layout(postp_dsl)
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
+        .set_shader("assets/shaders/vk_fog.comp.spv")
+        .build();
+    pipeline_bloom = VKComputePipelineBuilder(device)
+        .add_descriptor_set_layout(postp_dsl)
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
+        .set_shader("assets/shaders/vk_bloom.comp.spv")
+        .build();
+
     pipeline_present = VKGraphicsPipelineBuilder(device)
         .add_descriptor_set_layout(present_dsl)
         .set_shaders("assets/shaders/vk_vs.vert.spv","assets/shaders/vk_fs.frag.spv")
@@ -136,4 +169,16 @@ void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy
  
     const auto& sbt = pipeline_res_shade->get_sbt();
     vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.hit, &sbt.miss, &sbt.callable,current_width, current_height, 1);
+}
+void VKRenderer::dispatch_refl_trace(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
+    
+}
+void VKRenderer::dispatch_accumulation(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
+    
+}
+void VKRenderer::dispatch_fog(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
+    
+}
+void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
+    
 }
