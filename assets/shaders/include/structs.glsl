@@ -88,3 +88,6 @@ Reservoir getEmptyReservoir(){
     r.W = 0.0;
     return r;
 }
+float schlick(float cosTheta, float f0) {
+    return f0 + (1.0 - f0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
+}
