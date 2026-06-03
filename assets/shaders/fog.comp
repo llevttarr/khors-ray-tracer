@@ -3,7 +3,31 @@
 layout(local_size_x = 16,local_size_y = 4) in;
 
 #include "structs.glsl"
-#include "vk_uniforms.glsl"
+// #include "vk_uniforms.glsl"
+
+layout(set = 0, binding = 0) uniform CameraData {
+    vec4 pos;
+    vec4 forward;
+    vec4 right;
+    vec4 up;
+    vec4 prev_pos;
+    vec4 prev_forward;
+    vec4 prev_right;
+    vec4 prev_up;
+} cam;
+
+#define camPos cam.pos.xyz
+#define camFov cam.pos.w
+#define camForward cam.forward.xyz
+#define camRight cam.right.xyz
+#define camUp cam.up.xyz
+
+#define prevCamPos cam.prev_pos.xyz
+#define prevCamFov cam.prev_pos.w
+#define prevCamForward cam.prev_forward.xyz
+#define prevCamRight cam.prev_right.xyz
+#define prevCamUp cam.prev_up.xyz
+#define prevAspect cam.prev_forward.w
 
 layout(std430,set=1,binding=5) readonly buffer LightBuf {
     Light light_v[];
@@ -13,9 +37,36 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
 };
 layout(set = 3, binding = 0, rgba32f) uniform image2D outImage;
 
+layout(push_constant) uniform PC {
+    uint width;
+    uint height;
+    uint lightc;
+    uint framec;
+
+    float density;
+    float sigma_a;
+    float sigma_s;
+    float asymmetry;
+    float heightFalloff;
+    float fogBase;
+    float time;
+    int steps;
+} pc;
+#define width pc.width
+#define height pc.height
+#define framec pc.framec
+#define tric pc.tric
+
 void main() {
     ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
     if (gid.x >= int(width) || gid.y >= int(height)) return;
     uint pidx = uint(gid.y) * width + uint(gid.x);
-    // TODO
+    vec2 uv = (vec2(gid)+0.5)/vec2(float(width),float(height));
+    vec2 ndc = uv*2.0 - 1.0;
+    vec4 rview = inv_proj * vec4(ndc,1.0,1.0);
+    rview.w=0.0;
+    vec4 invrview = inv_view * rview;
+    vec3 rdir = normalize(invrview.xyz);
+
+
 }
