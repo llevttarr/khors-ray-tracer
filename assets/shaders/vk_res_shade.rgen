@@ -109,9 +109,9 @@ void main() {
 
     col += mat.emission.rgb * mat.emission.w;
 
-    float reflStr = mat.specular.w;
-    vec4 accum = (framec == 0) ? vec4(col, 1.0)
-        : mix(imageLoad(accumImage, ivec2(gid)), vec4(col, 1.0), 1.0 / float(framec + 1));
-    imageStore(accumImage, ivec2(gid), accum);
-    imageStore(outImage, ivec2(gid), accum);
+    // float reflStr = mat.specular.w;
+    // vec4 accum = (framec == 0) ? vec4(col, 1.0)
+    //     : mix(imageLoad(accumImage, ivec2(gid)), vec4(col, 1.0), 1.0 / float(framec + 1));
+    // imageStore(accumImage, ivec2(gid), accum);
+    // imageStore(outImage, ivec2(gid), accum);
 }

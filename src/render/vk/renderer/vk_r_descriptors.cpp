@@ -66,7 +66,8 @@ void VKRenderer::init_descriptor_layouts() {
         binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // cbuff
         binding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // accum
         binding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // refl_accum
-        binding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // bloom_tex
+        binding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // bloom_tex_a
+        binding(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT), // bloom_tex_b
     }, refl_output_dsl);
  
     create_layout({
@@ -118,16 +119,6 @@ void VKRenderer::update_scene_descriptor() {
         w.descriptorCount = 1;
         w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         w.pBufferInfo = info;
-        return w;
-    };
-    auto simg = [](VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info)-> VkWriteDescriptorSet{
-        VkWriteDescriptorSet w{};
-        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        w.dstSet = set;
-        w.dstBinding = b;
-        w.descriptorCount = 1;
-        w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        w.pImageInfo = info;
         return w;
     };
 
@@ -205,28 +196,59 @@ void VKRenderer::update_output_descriptor() {
  
     VkDescriptorImageInfo ii_cbuff{ VK_NULL_HANDLE, cbuff_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
     VkDescriptorImageInfo ii_accum { VK_NULL_HANDLE, accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
-    VkDescriptorImageInfo ii_refl_accum{ VK_NULL_HANDLE, refl_accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    // VkDescriptorImageInfo ii_refl_accum{ VK_NULL_HANDLE, refl_accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
  
-    auto simg = [&](uint32_t b, VkDescriptorImageInfo* info) -> VkWriteDescriptorSet {
-        VkWriteDescriptorSet w{};
-        w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        w.dstSet = output_set;
-        w.dstBinding = b;
-        w.descriptorCount = 1;
-        w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        w.pImageInfo = info;
-        return w;
-    };
- 
-    std::array<VkWriteDescriptorSet, 3> writes = {
-        simg(0, &ii_cbuff),
-        simg(1, &ii_accum),
-        simg(2, &ii_refl_accum),
+    std::array<VkWriteDescriptorSet, 2> writes = {
+        simg(output_set, 0, &ii_cbuff),
+        simg(output_set, 1, &ii_accum),
+        // simg(2, &ii_refl_accum),
     };
     vkUpdateDescriptorSets(vkdev,
         static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
  
+void VKRenderer::update_postp_descriptor() {
+    VkDevice vkdev = device->get_logic_device();
+    descriptor_allocator->allocate(&postp_set, postp_dsl);
+ 
+    VkDescriptorImageInfo ii_cbuff{ VK_NULL_HANDLE, cbuff_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    VkDescriptorImageInfo ii_accum { VK_NULL_HANDLE, accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    VkDescriptorImageInfo ii_refl_accum{ VK_NULL_HANDLE, refl_accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    VkDescriptorImageInfo ii_bloom_a{ VK_NULL_HANDLE, bloom_tex_a.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+    VkDescriptorImageInfo ii_bloom_b{ VK_NULL_HANDLE, bloom_tex_b.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+ 
+    std::array<VkWriteDescriptorSet, 5> writes = {
+        simg(postp_set, 0, &ii_cbuff),
+        simg(postp_set, 1, &ii_accum),
+        simg(postp_set, 2, &ii_refl_accum),
+        simg(postp_set, 3, &ii_bloom_a),
+        simg(postp_set, 4, &ii_bloom_b),
+    };
+    vkUpdateDescriptorSets(vkdev,
+        static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+void VKRenderer::update_refl_output_descriptor(){
+    VkDevice vkdev = device->get_logic_device();
+    descriptor_allocator->allocate(&refl_output_set, refl_output_dsl);
+ 
+    VkDescriptorImageInfo ii_refl_accum{ VK_NULL_HANDLE, refl_accum_tex.get_view(), VK_IMAGE_LAYOUT_GENERAL };
+ 
+    std::array<VkWriteDescriptorSet, 1> writes = {
+        simg(refl_output_set, 0, &ii_refl_accum),
+    };
+    vkUpdateDescriptorSets(vkdev,
+        static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+}
+VkWriteDescriptorSet VKRenderer::simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info){
+    VkWriteDescriptorSet w{};
+    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    w.dstSet = set;
+    w.dstBinding = b;
+    w.descriptorCount = 1;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    w.pImageInfo = info;
+    return w;
+}
 void VKRenderer::update_present_descriptor() {
     VkDevice vkdev = device->get_logic_device();
     descriptor_allocator->allocate(&present_set, present_dsl);

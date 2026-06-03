@@ -1,0 +1,14 @@
+#version 460
+#extension GL_EXT_nonuniform_qualifier : require
+layout(local_size_x = 16,local_size_y = 4) in;
+
+layout(set = 0, binding = 0, rgba32f) uniform image2D outImage;
+layout(set = 0, binding = 3, rgba32f) uniform image2D bloomA;
+layout(set = 0, binding = 4, rgba32f) uniform image2D bloomB;
+
+void main() {
+    ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
+    if (gid.x >= int(width) || gid.y >= int(height)) return;
+    uint pidx = uint(gid.y) * width + uint(gid.x);
+    // TODO
+}

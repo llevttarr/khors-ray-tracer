@@ -116,6 +116,8 @@ private:
     void init_descriptor_layouts();
     void update_scene_descriptor();
     void update_output_descriptor();
+    void update_refl_output_descriptor();
+    void update_postp_descriptor();
     void update_present_descriptor();
     void update_pingpong_descriptors();
  
@@ -141,7 +143,8 @@ private:
     VKTexture cbuff_tex;
     VKTexture accum_tex;
     VKTexture refl_accum_tex;
-    VKTexture bloom_tex;
+    VKTexture bloom_tex_a;
+    VKTexture bloom_tex_b;
 
     /**  TEXTURE ARRAYS */
     VKTexture base_tex_arr;
@@ -174,6 +177,8 @@ private:
 
     void one_time_submit(const std::function<void(VkCommandBuffer)>& fn);
     PushConstants make_push_constants() const;
+
+    VkWriteDescriptorSet VKRenderer::simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info);
 
     /** BARRIERS */
     void buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,
