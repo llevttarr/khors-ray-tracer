@@ -50,8 +50,7 @@ layout(std430, set = 2, binding = 4) buffer GBufferHistory {
     GBufferPixel gbuffer_history[];
 };
 layout(set = 3, binding = 0, rgba32f) uniform image2D outImage;
-layout(set = 3, binding = 1, rgba32f) uniform image2D accumImage;
-// layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
+
 #include "intersection.glsl"
 #include "light_sample.glsl"
 #include "wrs.glsl"
@@ -108,10 +107,5 @@ void main() {
     }
 
     col += mat.emission.rgb * mat.emission.w;
-
-    // float reflStr = mat.specular.w;
-    // vec4 accum = (framec == 0) ? vec4(col, 1.0)
-    //     : mix(imageLoad(accumImage, ivec2(gid)), vec4(col, 1.0), 1.0 / float(framec + 1));
-    // imageStore(accumImage, ivec2(gid), accum);
-    // imageStore(outImage, ivec2(gid), accum);
+    imageStore(outImage, ivec2(gid), vec4(col,1.0));
 }

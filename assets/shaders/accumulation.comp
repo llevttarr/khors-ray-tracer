@@ -19,5 +19,25 @@ void main() {
     ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
     if (gid.x >= int(width) || gid.y >= int(height)) return;
     uint pidx = uint(gid.y) * width + uint(gid.x);
-    // TODO
+
+    vec3 img = imageLoad(outImage,gid).rgb;
+    vec3 hist = imageLoad(accumImage,gid).rgb;
+    vec3 refl = imageLoad(reflAccumImage,gid).rgb;
+    
+    vec3 col = img;
+    GBufferPixel px = gbuffer[pidx];
+    if (px.valid!=-1&& px.matId!=0u){
+        Mat mat = mats[px.matId-1];
+        vec3 n = normalize(px.norm.xyz);
+        vec3 v = normalize(camPos - px.pos.xyz);
+        float nDotV = max(dot(n,v),0.0);
+        float fresnel = schlick(nDotV,mat.specular.w);
+        col += refl*fresnel;
+    }
+
+    float a = (framec == 0) ? 1.0 : max(1.0/float(framec+1),0.05);
+    vec3 accum = mix(hist,col,a);
+
+    imageStore(accumImage, ivec2(gid), vec4(accum,1.0));
+    imageStore(outImage, ivec2(gid), vec4(accum,1.0));
 }
