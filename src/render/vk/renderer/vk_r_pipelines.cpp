@@ -171,14 +171,96 @@ void VKRenderer::dispatch_res_shade(VkCommandBuffer cmd,uint32_t dx, uint32_t dy
     vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.hit, &sbt.miss, &sbt.callable,current_width, current_height, 1);
 }
 void VKRenderer::dispatch_refl_trace(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
-    
+    pipeline_refl_trace->bind(cmd);
+    const VkPipelineLayout layout = pipeline_refl_trace->get_layout();
+    const std::array<VkDescriptorSet, 4> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+        refl_output_set,
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+    const auto pc = make_push_constants();
+    vkCmdPushConstants(cmd, layout,VK_SHADER_STAGE_RAYGEN_BIT_KHR |VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR|VK_SHADER_STAGE_MISS_BIT_KHR,0, sizeof(pc), &pc);
+ 
+    const auto& sbt = pipeline_refl_trace->get_sbt();
+    vkCmdTraceRaysKHR(cmd,&sbt.raygen, &sbt.hit, &sbt.miss, &sbt.callable,current_width, current_height, 1);    
 }
 void VKRenderer::dispatch_accumulation(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
-    
+    pipeline_accumulation->bind(cmd);
+    const VkPipelineLayout layout = pipeline_accumulation->get_layout();
+    const std::array<VkDescriptorSet, 4> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+        postp_set,
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+    const auto pc = make_push_constants();
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT,
+        0, sizeof(pc), &pc);
+    vkCmdDispatch(cmd, dx, dy, 1);
 }
 void VKRenderer::dispatch_fog(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
-    
+    pipeline_fog->bind(cmd);
+    const VkPipelineLayout layout = pipeline_fog->get_layout();
+    const std::array<VkDescriptorSet, 4> sets = {
+        camera_sets[cmanager->get_current_frame()],
+        scene_set,
+        pingpong_sets[pingpong_index],
+        postp_set,
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+    const auto pc = make_fog_pc();
+
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT,
+        0, sizeof(pc), &pc);
+    vkCmdDispatch(cmd, dx, dy, 1);
 }
 void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
-    
+    pipeline_bloom->bind(cmd);
+    auto pc = make_bloom_pc();
+    auto dispatch_half = [&]{ vkCmdDispatch(cmd, (current_width/2+7)/8, (current_height/2+7)/8, 1); };
+
+    const VkPipelineLayout layout = pipeline_accumulation->get_layout();
+    const std::array<VkDescriptorSet, 1> sets = {
+        postp_set,
+    };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+
+    pc.stage = 0;
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
+    dispatch_half();
+    img_barrier(cmd, bloom_tex_a.get_image(),
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
+    for (int iter = 0; iter < 4; iter++) {
+        pc.iteration = iter;
+
+        pc.stage = 1;
+        vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
+        dispatch_half();
+        // barrier
+        img_barrier(cmd, bloom_tex_b.get_image(),
+            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
+
+        pc.stage = 2;
+        vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
+        dispatch_half();
+        // barrier
+        img_barrier(cmd, bloom_tex_a.get_image(),
+            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
+    }
+    pc.stage = 3;
+    vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
+    vkCmdDispatch(cmd, (current_width+7)/8, (current_height+7)/8, 1);
 }

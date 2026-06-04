@@ -11,9 +11,9 @@ layout(push_constant) uniform PC {
     uint height;
 
     int iteration;
+    int stage;
     float threshold;
     float strength;
-    int stage;
 } pc;
 
 #define width pc.width

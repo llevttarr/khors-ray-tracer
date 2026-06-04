@@ -50,6 +50,31 @@ struct alignas(4) PushConstants {
     uint32_t framec;
     uint32_t init_candidates;
 };
+struct alignas(4) FogPushConstants{
+    uint32_t width;
+    uint32_t height;
+    uint32_t lightc;
+    uint32_t framec;
+    uint32_t main_light;
+    int32_t steps;
+
+    float density;
+    float sigma_a;
+    float sigma_s;
+    float asymmetry;
+    float height_falloff;
+    float fog_base;
+    float time;
+};
+struct alignas(4) BloomPushConstants{
+    uint32_t width;
+    uint32_t height;
+
+    int32_t iteration;
+    int32_t stage;
+    float threshold;
+    float strength;
+};
 struct PrevCameraState {
     Vec3<float> pos{};
     Vec3<float> forward{};
@@ -135,6 +160,25 @@ private:
     uint32_t matc = 0;
     uint32_t lightc = 0;
 
+    /** fog: */
+    uint32_t main_light = 0;
+    int32_t fog_steps = 32;
+
+    float fog_density = 0.03;
+    float sigma_a = 0.01;
+    float sigma_s = 0.04;
+    float fog_asymmetry = 0.3;
+    float height_falloff = 0.4;
+    float fog_base = 0.0;
+    float fog_time = 1.0;
+
+    /** bloom: */
+
+    // int32_t iteration = 0;
+    // int32_t stage = 0;
+    float threshold_bl = 0.9;
+    float strength_bl = 0.7;
+
     /** MAIN BUFFERS */
     std::array<VKBuffer,2> reservoir_ab;
     VKBuffer reservoir_b;
@@ -177,6 +221,8 @@ private:
 
     void one_time_submit(const std::function<void(VkCommandBuffer)>& fn);
     PushConstants make_push_constants() const;
+    FogPushConstants make_fog_pc() const;
+    BloomPushConstants make_bloom_pc();
 
     VkWriteDescriptorSet VKRenderer::simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info);
 

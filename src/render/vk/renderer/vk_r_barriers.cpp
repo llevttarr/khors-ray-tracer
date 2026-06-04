@@ -2,6 +2,12 @@
 PushConstants VKRenderer::make_push_constants() const {
     return PushConstants{ current_width,current_height,tric,spherec,bvhc,matc,lightc,framec,init_candidates_restir, };
 }
+FogPushConstants VKRenderer::make_fog_pc() const{
+    return FogPushConstants{ current_width,current_height,lightc,framec,main_light,fog_steps,fog_density,sigma_a,sigma_s,fog_asymmetry,height_falloff,fog_base,fog_time };
+}
+BloomPushConstants VKRenderer::make_bloom_pc(){
+    return BloomPushConstants{ current_width,current_height,0,0,threshold_bl,strength_bl};
+}
 void VKRenderer::buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,VkPipelineStageFlags2 src_stage,VkAccessFlags2 src_access,VkPipelineStageFlags2 dst_stage,VkAccessFlags2 dst_access){
     VkBufferMemoryBarrier2 b{};
     b.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
