@@ -19,6 +19,7 @@ layout(push_constant) uniform PC {
     uint lightc;
     uint framec;
     uint mainLight;
+    int steps;
 
     float density;
     float sigma_a;
@@ -27,7 +28,6 @@ layout(push_constant) uniform PC {
     float heightFalloff;
     float fogBase;
     float time;
-    int steps;
 } pc;
 #define width pc.width
 #define height pc.height
@@ -38,6 +38,13 @@ layout(push_constant) uniform PC {
 #define steps pc.steps
 
 const float MAX_DIST = 500.0;
+
+vec3 pixelRayDir(ivec2 gid, uint w, uint h) {
+    vec2 uv = (vec2(gid) + 0.5) / vec2(float(w), float(h));
+    vec2 ndc = uv * 2.0 - 1.0;
+    float t = tan(camFov * 0.5);
+    return normalize(camForward + ndc.x * camRight * camFov * t- ndc.y * camUp * t);
+}
 float hg(float cosT, float g) {
     float g2 = g * g;
     return (1.0 - g2) / (4.0 * 3.14159265 * pow(1.0 + g2 - 2.0 * g * cosT, 1.5));
@@ -74,13 +81,10 @@ void main() {
     uint pidx = uint(gid.y) * width + uint(gid.x);
     vec2 uv = (vec2(gid)+0.5)/vec2(float(width),float(height));
     vec2 ndc = uv*2.0 - 1.0;
-    vec4 rview = inv_proj * vec4(ndc,1.0,1.0);
-    rview.w=0.0;
-    vec4 invrview = inv_view * rview;
-    vec3 rdir = normalize(invrview.xyz);
+    vec3 rdir = pixelRayDir(gid, width, height);
 
     GBufferPixel px = gbuffer[pidx];
-    float maxDist = (px.valid == -1 || px.matId==0) ? MAX_DIST : min(length(px.pos.xyz-camPoz),MAX_DIST);
+    float maxDist = (px.valid == -1 || px.matId==0) ? MAX_DIST : min(length(px.pos.xyz-camPos),MAX_DIST);
     float dstep = maxDist/float(steps);
     vec3 inScatter= vec3(0.0);
     float transmit = 1.0;
@@ -93,16 +97,16 @@ void main() {
         }
         float sigma_t = d*(pc.sigma_a + pc.sigma_s);
         float dT = exp(-sigma_t*dstep);
-        transmit *= dT;
 
         vec3 rads = vec3(0.0);
         if (mainLight < lightc){
             vec3 ldir = normalize(light_v[mainLight].pos.xyz - p);
             float cosT = dot(rdir, ldir);
-            rads += light_v[mainLight].color.rgb * light_v[mainLight].color.w * hg(cosT, fog.asymmetry);
+            rads += light_v[mainLight].diffuse.rgb * light_v[mainLight].diffuse.w * hg(cosT, pc.asymmetry);
         }
         rads +=vec3(0.55, 0.7, 1.0) * 0.04 * max(rdir.y * 0.5 + 0.5, 0.0);
         inScatter += rads * dstep * transmit * pc.sigma_s * d;
+        transmit *= dT;
         if (transmit < 0.005){
             break;
         }

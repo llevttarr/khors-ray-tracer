@@ -33,11 +33,11 @@ layout(std430, set = 2, binding = 3) buffer GBuf {
     GBufferPixel gbuffer[];
 };
 
-layout(set = 3, binding = 2, rgba32f) uniform image2D reflAccumImage;
+layout(set = 3, binding = 0, rgba32f) uniform image2D reflAccumImage;
 layout(location = 0) rayPayloadEXT ReflPayload payload;
 
 void main() {
-    ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 gid  = ivec2(gl_LaunchIDEXT.xy);
     if (gid.x >= int(width) || gid.y >= int(height)) return;
     uint pidx = uint(gid.y) * width + uint(gid.x);
     GBufferPixel px = gbuffer[pidx];
@@ -49,7 +49,7 @@ void main() {
     Mat mat = mats[px.matId-1];
     float reflStr = mat.specular.w;
     if (reflStr < 0.05){
-        imageStore(refl_accum, ivec2(gid), vec4(0.0));
+        imageStore(reflAccumImage, ivec2(gid), vec4(0.0));
         return;
     }
     vec3 pos = px.pos.xyz;

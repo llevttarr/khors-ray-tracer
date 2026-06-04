@@ -1,5 +1,5 @@
 struct ReflPayload {
-    vec3 col;
+    vec3 color;
     float t;
 };
 const uint RT_FLAGS = gl_RayFlagsOpaqueEXT;

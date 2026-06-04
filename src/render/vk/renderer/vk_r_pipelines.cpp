@@ -225,7 +225,7 @@ void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
     auto pc = make_bloom_pc();
     auto dispatch_half = [&]{ vkCmdDispatch(cmd, (current_width/2+7)/8, (current_height/2+7)/8, 1); };
 
-    const VkPipelineLayout layout = pipeline_accumulation->get_layout();
+    const VkPipelineLayout layout = pipeline_bloom->get_layout();
     const std::array<VkDescriptorSet, 1> sets = {
         postp_set,
     };
@@ -236,8 +236,8 @@ void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
     vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
     dispatch_half();
     img_barrier(cmd, bloom_tex_a.get_image(),
-        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
     for (int iter = 0; iter < 4; iter++) {
         pc.iteration = iter;
@@ -246,16 +246,16 @@ void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
         vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
         dispatch_half();
         img_barrier(cmd, bloom_tex_b.get_image(),
-            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
 
         pc.stage = 2;
         vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
         dispatch_half();
         img_barrier(cmd, bloom_tex_a.get_image(),
-            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
+            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
     }
     pc.stage = 3;
