@@ -42,6 +42,7 @@ layout(push_constant) uniform PC {
     uint height;
     uint lightc;
     uint framec;
+    uint mainLight;
 
     float density;
     float sigma_a;
@@ -55,8 +56,42 @@ layout(push_constant) uniform PC {
 #define width pc.width
 #define height pc.height
 #define framec pc.framec
+#define lightc pc.lightc
+#define mainLight pc.mainLight
 #define tric pc.tric
+#define steps pc.steps
 
+const float MAX_DIST = 500.0;
+float hg(float cosT, float g) {
+    float g2 = g * g;
+    return (1.0 - g2) / (4.0 * 3.14159265 * pow(1.0 + g2 - 2.0 * g * cosT, 1.5));
+}
+float hash3(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float value3d(vec3 p) {
+    vec3 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(hash3(i), hash3(i+vec3(1,0,0)), f.x), mix(hash3(i+vec3(0,1,0)), hash3(i+vec3(1,1,0)), f.x), f.y),
+        mix(mix(hash3(i+vec3(0,0,1)), hash3(i+vec3(1,0,1)), f.x), mix(hash3(i+vec3(0,1,1)), hash3(i+vec3(1,1,1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p) {
+    float v = 0.0, a = 0.5;
+    vec3 drift = vec3(pc.time * 0.08, 0.0, pc.time * 0.05);
+    for (int i = 0; i < 4; i++) {
+        v += a * value3d(p + drift * float(i + 1));
+        p *= 2.1;
+        a *= 0.5;
+    }
+    return v;
+}
+float densityFunction(vec3 p){
+    float height = exp(-pc.heightFalloff * max(p.y - pc.fogBase, 0.0));
+    float n = max(fbm(p * 0.07) - 0.25, 0.0) / 0.75; // [0.25 ... 1] to [0 .. 1]
+    return pc.density * height * n;
+}
 void main() {
     ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
     if (gid.x >= int(width) || gid.y >= int(height)) return;
@@ -68,5 +103,34 @@ void main() {
     vec4 invrview = inv_view * rview;
     vec3 rdir = normalize(invrview.xyz);
 
+    GBufferPixel px = gbuffer[pidx];
+    float maxDist = (px.valid == -1 || px.matId==0) ? MAX_DIST : min(length(px.pos.xyz-camPoz),MAX_DIST);
+    float dstep = maxDist/float(steps);
+    vec3 inScatter= vec3(0.0);
+    float transmit = 1.0;
+    for (int i = 0; i<steps;++i){
+        float t = (float(i)+0.5)*dstep;
+        vec3 p = camPos + rdir* t;
+        float d = densityFunction(p);
+        if (d < 1e-5){
+            continue;
+        }
+        float sigma_t = d*(pc.sigma_a + pc.sigma_s);
+        float dT = exp(-sigma_t*dstep);
+        transmit *= dT;
 
+        vec3 rads = vec3(0.0);
+        if (mainLight < lightc){
+            vec3 ldir = normalize(light_v[mainLight].pos.xyz - p);
+            float cosT = dot(rdir, ldir);
+            rads += light_v[mainLight].color.rgb * light_v[mainLight].color.w * hg(cosT, fog.asymmetry);
+        }
+        rads +=vec3(0.55, 0.7, 1.0) * 0.04 * max(rdir.y * 0.5 + 0.5, 0.0);
+        inScatter += rads * dstep * transmit * pc.sigma_s * d;
+        if (transmit < 0.005){
+            break;
+        }
+    }
+    vec3 hdr = imageLoad(outImage, gid).rgb;
+    imageStore(outImage, gid, vec4(hdr*transmit+inScatter,1.0));
 }
