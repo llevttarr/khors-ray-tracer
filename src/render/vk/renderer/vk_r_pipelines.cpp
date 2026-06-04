@@ -62,12 +62,12 @@ void VKRenderer::init_pipelines() {
         .add_descriptor_set_layout(scene_dsl)
         .add_descriptor_set_layout(pingpong_dsl)
         .add_descriptor_set_layout(postp_dsl)
-        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(FogPushConstants))
         .set_shader("assets/shaders/vk_fog.comp.spv")
         .build();
     pipeline_bloom = VKComputePipelineBuilder(device)
         .add_descriptor_set_layout(postp_dsl)
-        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(PushConstants))
+        .add_push_constant(PC_STAGES_COMPUTE, 0, sizeof(BloomPushConstants))
         .set_shader("assets/shaders/vk_bloom.comp.spv")
         .build();
 

@@ -119,6 +119,8 @@ private:
     void dispatch_fog(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
     void dispatch_bloom(VkCommandBuffer cmd, uint32_t dx, uint32_t dy);
 
+    void record_present_pass(VkCommandBuffer cmd);
+
     /** DESCRIPTOR */
 
     std::unique_ptr<VKDescriptorAllocator> descriptor_allocator;
@@ -217,14 +219,13 @@ private:
     void create_texture_arrays(RenderScene& scene);
     void create_restir_buffers();
     void create_storage_images();
-    void record_present_pass(VkCommandBuffer cmd);
 
     void one_time_submit(const std::function<void(VkCommandBuffer)>& fn);
     PushConstants make_push_constants() const;
     FogPushConstants make_fog_pc() const;
     BloomPushConstants make_bloom_pc();
 
-    VkWriteDescriptorSet simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info);
+    VkWriteDescriptorSet simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info, VkDescriptorType type);
 
     /** BARRIERS */
     void buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,

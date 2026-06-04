@@ -5,7 +5,7 @@ VKRenderer::VKRenderer(std::shared_ptr<VKDevice> dev,std::shared_ptr<VKSwapchain
     : device(std::move(dev)),swapchain(std::move(swap)),
 cmanager(std::move(cmgr)),camera(cam),current_width (static_cast<uint32_t>(cam.get_w())),current_height(static_cast<uint32_t>(cam.get_h())), tri_buf  (device), sphr_buf(device), bvh_buf(device),
 mat_buf  (device), prim_buf(device), light_buf(device), reservoir_b(device),
-    cbuff_tex(device), accum_tex(device), refl_accum_tex(device),
+    cbuff_tex(device), accum_tex(device), refl_accum_tex(device), bloom_tex_a(device),bloom_tex_b(device),
     base_tex_arr(device), normal_tex_arr(device), specular_tex_arr(device)
 {
     for (int i = 0; i < 2; ++i) {
@@ -29,6 +29,8 @@ mat_buf  (device), prim_buf(device), light_buf(device), reservoir_b(device),
     update_pingpong_descriptors();
     update_output_descriptor();
     update_present_descriptor();
+    update_refl_output_descriptor();
+    update_postp_descriptor();
 }
 
 VKRenderer::~VKRenderer() {
@@ -228,5 +230,6 @@ void VKRenderer::on_window_resize(uint32_t w, uint32_t h){
     update_pingpong_descriptors();
     update_output_descriptor();
     update_present_descriptor();
-
+    update_refl_output_descriptor();
+    update_postp_descriptor();
 }

@@ -14,6 +14,15 @@ void VKRenderer::create_storage_images() {
     refl_accum_tex.destroy();
     refl_accum_tex.create_image(ext, FMT, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     refl_accum_tex.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
+
+    bloom_tex_a.destroy();
+    bloom_tex_a.create_image(ext, FMT,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+    bloom_tex_a.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
+
+    bloom_tex_b.destroy();
+    bloom_tex_b.create_image(ext, FMT,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+    bloom_tex_b.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
+
  
     one_time_submit([&](VkCommandBuffer cmd) {
         for (VkImage img : { cbuff_tex.get_image(),accum_tex.get_image(),refl_accum_tex.get_image() }) {
