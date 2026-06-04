@@ -245,7 +245,6 @@ void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
         pc.stage = 1;
         vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
         dispatch_half();
-        // barrier
         img_barrier(cmd, bloom_tex_b.get_image(),
             VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
             VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
@@ -254,7 +253,6 @@ void VKRenderer::dispatch_bloom(VkCommandBuffer cmd,uint32_t dx, uint32_t dy){
         pc.stage = 2;
         vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
         dispatch_half();
-        // barrier
         img_barrier(cmd, bloom_tex_a.get_image(),
             VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
             VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_READ_BIT,
