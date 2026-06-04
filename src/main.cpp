@@ -155,10 +155,10 @@ void run_VK(ProgramState& ps){
     ImGui_ImplVulkan_Init(&imgui_vk);
     ImGui_ImplVulkan_CreateFontsTexture();
     UIManager uim;
-    // uim.add_widget(std::make_unique<MatWidget>(scene,renderer,r));
+    uim.add_widget(std::make_unique<MatWidget>(scene,renderer,r));
     uim.add_widget(std::make_unique<SceneWidget>(scene,renderer,r,sp));
-    // uim.add_widget(std::make_unique<ObjWidget>(scene,renderer,r));
-    // uim.add_widget(std::make_unique<LightWidget>(scene,renderer,r));
+    uim.add_widget(std::make_unique<ObjWidget>(scene,renderer,r));
+    uim.add_widget(std::make_unique<LightWidget>(scene,renderer,r));
 
     renderer.update_scene(r);
     while (!window.should_close()){

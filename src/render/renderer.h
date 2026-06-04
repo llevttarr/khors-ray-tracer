@@ -37,5 +37,7 @@ public:
     // virtual void beginf() = 0;
     // virtual void endf() = 0;
     virtual void update_scene(RenderScene& scene) = 0;
+    virtual void update_mats(RenderScene& scene) = 0;
+    virtual void update_lights(RenderScene& scene) = 0;
 };
 #endif // RENDERER_H

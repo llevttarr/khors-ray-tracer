@@ -43,9 +43,9 @@ public:
      */
     void bind_stor_buff(int i,size_t size,GLenum glt,GLuint buff, const void * dat);
     void resize(int nw, int nh);
-    void update_scene(RenderScene& render_scene);
-    void update_mats(RenderScene& render_scene);
-    void update_lights(RenderScene& render_scene);
+    void update_scene(RenderScene& render_scene) override;
+    void update_mats(RenderScene& render_scene) override;
+    void update_lights(RenderScene& render_scene) override;
     GLuint create_texture_arr(const std::vector<Image>& img_v);
 
     /**

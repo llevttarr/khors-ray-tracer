@@ -4,13 +4,14 @@
 #include <iostream>
 #include <string>
 #include "widget.h"
-#include "gl_renderer.h"
+// #include "gl_renderer.h"
+#include "renderer.h"
 #include "scene.h"
 #include "rs_obj_parser.h"
 
 class ObjWidget : public Widget{
 public:
-    ObjWidget(Scene& s,GLRenderer&r,RenderScene&rs):scene(s),renderer(r),rs(rs){}
+    ObjWidget(Scene& s,Renderer&r,RenderScene&rs):scene(s),renderer(r),rs(rs){}
     void draw() override{
 
         ImGui::Begin("Objects");
@@ -56,7 +57,7 @@ public:
 private:
     Scene& scene;
     RenderScene& rs;
-    GLRenderer& renderer;
+    Renderer& renderer;
     char filename_buf[256]{};
     std::string status_msg;
     bool status = true;

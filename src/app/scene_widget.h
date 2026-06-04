@@ -3,13 +3,13 @@
 
 #include "widget.h"
 // #include "gl_renderer.h"
-#include "vk_renderer.h"
+#include "renderer.h"
 #include "scene.h"
 #include "scene_parser.h"
 
 class SceneWidget : public Widget{
 public:
-    SceneWidget(Scene& s,VKRenderer&r,RenderScene&rs,SceneParser& sp) : scene(s),renderer(r),rs(rs),scene_parser(sp){}
+    SceneWidget(Scene& s,Renderer&r,RenderScene&rs,SceneParser& sp) : scene(s),renderer(r),rs(rs),scene_parser(sp){}
     void draw() override{
 
         ImGui::Begin("Scene");
@@ -61,7 +61,7 @@ private:
     RenderScene& rs;
     SceneParser& scene_parser;
     // GLRenderer& renderer;
-    VKRenderer& renderer;
+    Renderer& renderer;
     char filename_buf[256]{};
     std::string status_msg;
     bool status = true;

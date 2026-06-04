@@ -37,7 +37,14 @@ void VKRenderer::update_scene(RenderScene& scene) {
     create_texture_arrays(scene);
     update_scene_descriptor();
 }
- 
+void VKRenderer::update_mats(RenderScene& scene){
+    // FIXME
+    update_scene(scene);
+}
+void VKRenderer::update_lights(RenderScene& scene){
+    // FIXME
+    update_scene(scene);
+}
 void VKRenderer::upload_scene_buffers(RenderScene& scene) {
     auto upload = [&](VKBuffer& dst, const void* data, VkDeviceSize size) {
         const VkDeviceSize safe_size = (size == 0) ? 16 : size;
