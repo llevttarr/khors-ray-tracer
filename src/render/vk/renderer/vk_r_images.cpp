@@ -25,7 +25,7 @@ void VKRenderer::create_storage_images() {
 
  
     one_time_submit([&](VkCommandBuffer cmd) {
-        for (VkImage img : { cbuff_tex.get_image(),accum_tex.get_image(),refl_accum_tex.get_image() }) {
+        for (VkImage img : { cbuff_tex.get_image(),accum_tex.get_image(),refl_accum_tex.get_image(),bloom_tex_a.get_image(),bloom_tex_b.get_image() }) {
             img_barrier(cmd, img,VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
         }
     });
