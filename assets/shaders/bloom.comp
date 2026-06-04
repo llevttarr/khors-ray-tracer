@@ -1,14 +1,101 @@
 #version 460
-#extension GL_EXT_nonuniform_qualifier : require
 layout(local_size_x = 16,local_size_y = 4) in;
 
 layout(set = 0, binding = 0, rgba32f) uniform image2D outImage;
 layout(set = 0, binding = 3, rgba32f) uniform image2D bloomA;
 layout(set = 0, binding = 4, rgba32f) uniform image2D bloomB;
+#include "wrs.glsl"
 
+layout(push_constant) uniform PC {
+    uint width;
+    uint height;
+
+    int iteration;
+    float threshold;
+    float strength;
+    int stage;
+} pc;
+
+#define width pc.width
+#define height pc.height
+
+float lumdot(vec3 vec){
+    return dot(vec, LUMINANCE);
+}
+vec3 applyThreshold(vec3 c) {
+    float knee = pc.threshold * 0.5;
+    float l = lumdot(c);
+    float w = clamp((l - (pc.threshold - knee)) / (2.0 * knee + 1e-5), 0.0, 1.0);
+    w = w * w * (3.0 - 2.0 * w);
+    return c * w;
+}
+void stage0(ivec2 gid, ivec2 half){
+    // bloomA apply threshold
+    if (gid.x >= half.x || gid.y >= half.y) return;
+    ivec2 s = gid * 2;
+    vec3 c = (imageLoad(outImage, s + ivec2(0,0)).rgb
+        + imageLoad(outImage, s + ivec2(1,0)).rgb
+        + imageLoad(outImage, s + ivec2(0,1)).rgb
+        + imageLoad(outImage, s + ivec2(1,1)).rgb)*0.25;
+    imageStore(bloomA, gid, vec4(applyThreshold(c), 1.0));
+    return;
+}
+void stage1(ivec2 gid, ivec2 half){
+    // bloomB downsample
+    if (gid.x >= half.x || gid.y >= half.y) return;
+    int o  = pc.iteration + 1;
+    ivec2 sz = half - 1;
+    vec3 col = imageLoad(bloomA, clamp(gid + ivec2( o,  o), ivec2(0), sz)).rgb
+        + imageLoad(bloomA, clamp(gid + ivec2(-o,  o), ivec2(0), sz)).rgb
+        + imageLoad(bloomA, clamp(gid + ivec2( o, -o), ivec2(0), sz)).rgb
+        + imageLoad(bloomA, clamp(gid + ivec2(-o, -o), ivec2(0), sz)).rgb
+        + imageLoad(bloomA, gid).rgb;
+    imageStore(bloomB, gid, vec4(col / 5.0, 1.0));
+    return;
+}
+void stage2(ivec2 gid, ivec2 half){
+    // upsample bloomA
+    if (gid.x >= half.x || gid.y >= half.y) return;
+    int o  = pc.iteration + 1;
+    ivec2 sz = half - 1;
+    vec3 col = imageLoad(bloomB, clamp(gid + ivec2( o,  0), ivec2(0), sz)).rgb
+        + imageLoad(bloomB, clamp(gid + ivec2(-o,  0), ivec2(0), sz)).rgb
+        + imageLoad(bloomB, clamp(gid + ivec2( 0,  o), ivec2(0), sz)).rgb
+        + imageLoad(bloomB, clamp(gid + ivec2( 0, -o), ivec2(0), sz)).rgb;
+    imageStore(bloomA, gid, vec4(col * 0.25, 1.0));
+    return;
+    
+}
+void stage3(ivec2 gid, ivec2 half){
+    // upsample 
+    if (gid.x >= int(width) || gid.y >= int(height)) return;    
+    vec2 hc = (vec2(gid) + 0.5) * 0.5 - 0.5;
+    ivec2 hb = ivec2(floor(hc));
+    vec2 hf = fract(hc);
+    ivec2 sz = half - 1;
+
+    vec3 b = imageLoad(bloomA, clamp(hb + ivec2(0,0), ivec2(0), sz)).rgb * (1.0-hf.x)*(1.0-hf.y)
+        + imageLoad(bloomA, clamp(hb + ivec2(1,0), ivec2(0), sz)).rgb * hf.x*(1.0-hf.y)
+        + imageLoad(bloomA, clamp(hb + ivec2(0,1), ivec2(0), sz)).rgb * (1.0-hf.x)*hf.y
+        + imageLoad(bloomA, clamp(hb + ivec2(1,1), ivec2(0), sz)).rgb * hf.x*hf.y;
+    vec3 hdr = imageLoad(outImage, gid).rgb;
+    imageStore(outImage, gid, vec4(hdr + b * pc.strength, 1.0));
+}
 void main() {
-    ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
-    if (gid.x >= int(width) || gid.y >= int(height)) return;
-    uint pidx = uint(gid.y) * width + uint(gid.x);
-    // TODO
+    ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 half = ivec2(int(width) >> 1, int(height) >> 1);
+    if (pc.stage == 0){
+        stage0(gid, half);
+        return;
+    }
+    if (pc.stage == 1){
+        stage1(gid, half);
+        return;
+    }
+    else if (pc.stage == 2){
+        stage2(gid, half);
+        return;
+    }
+    stage3(gid, half);
+    return;
 }
