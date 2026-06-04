@@ -224,7 +224,7 @@ private:
     FogPushConstants make_fog_pc() const;
     BloomPushConstants make_bloom_pc();
 
-    VkWriteDescriptorSet VKRenderer::simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info);
+    VkWriteDescriptorSet simg(VkDescriptorSet set, uint32_t b, VkDescriptorImageInfo* info);
 
     /** BARRIERS */
     void buf_barrier(VkCommandBuffer cmd,VkBuffer buf,VkDeviceSize size,

@@ -71,9 +71,9 @@ float fbm(vec3 p) {
     return v;
 }
 float densityFunction(vec3 p){
-    float height = exp(-pc.heightFalloff * max(p.y - pc.fogBase, 0.0));
+    float hgt = exp(-pc.heightFalloff * max(p.y - pc.fogBase, 0.0));
     float n = max(fbm(p * 0.07) - 0.25, 0.0) / 0.75; // [0.25 ... 1] to [0 .. 1]
-    return pc.density * height * n;
+    return pc.density *hgt * n;
 }
 void main() {
     ivec2 gid  = ivec2(gl_GlobalInvocationID.xy);
