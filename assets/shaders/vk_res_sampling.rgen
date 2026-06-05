@@ -53,9 +53,7 @@ layout(std430, set = 2, binding = 4) buffer GBufferHistory {
 #include "intersection.glsl"
 #include "light_sample.glsl"
 #include "wrs.glsl"
-#include "hash.glsl"
 #include "shading.glsl"
-const uint KNUTH_MUL=2654435761u;
 layout(location = 0) rayPayloadEXT RayPayload payload;
 void main() {
     uvec2 gid = gl_LaunchIDEXT.xy;
@@ -131,7 +129,7 @@ void main() {
     Reservoir r = getEmptyReservoir();
     uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
     for (uint i = 0u; i < init_candidates_restir; ++i) {
-        uint  lightIdx = uint(float(pcg_next(rng)) * (1.0 / 4294967296.0) * float(lightc));
+        uint lightIdx = uint(float(pcg_next(rng)) * (1.0 / 4294967296.0) * float(lightc));
         float xi = float(pcg_next(rng)) * (1.0 / 4294967296.0);
         float p_hat = targetPDF(int(lightIdx), pos, n, diffuse);
         float w = p_hat * float(lightc);

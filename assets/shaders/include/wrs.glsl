@@ -1,3 +1,4 @@
+#include "hash.glsl"
 const vec3 LUMINANCE=vec3(0.2126, 0.7152, 0.0722); 
 
 void wrs_update(inout Reservoir r, int candidate, float w, float xi) {
@@ -8,7 +9,11 @@ void wrs_update(inout Reservoir r, int candidate, float w, float xi) {
 }
 float targetPDF(int lightIdx, vec3 pos, vec3 n, vec3 diffuse) {
     Light l = light_v[lightIdx];
-    LightSample s = sampleLight(l, pos);
+    uint rng = pcg_hash(/*pidx ^*/ (framec * KNUTH_MUL));
+    vec2 xi = vec2(0.0,0.0);
+    xi.x = float(pcg_next(rng)) * (1.0 / 4294967296.0);
+    xi.y = float(pcg_next(rng)) * (1.0 / 4294967296.0);
+    LightSample s = sampleLight(l, pos, xi);
     float ndotl = max(0.0, dot(n, s.dir));
     vec3 contrib = (diffuse + vec3(0.05)) * l.diffuse.rgb * ndotl /*/ distSq*/;
     return dot(contrib,LUMINANCE);

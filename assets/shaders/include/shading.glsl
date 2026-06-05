@@ -67,9 +67,13 @@ vec3 brdfShading(vec3 rayOrigin,vec3 rayVector,RayHit hit){
     float hemi = 0.5+0.5*n.y;
     col*=hemi;
     float sh=max(1.0,mat.ambient.w);
+        // uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
+    vec2 xi = vec2(0.1,0.1); // fixme
+        // xi.x = float(pcg_next(rng)) * (1.0 / 4294967296.0);
+        // xi.y = float(pcg_next(rng)) * (1.0 / 4294967296.0);
     for (uint i=0;i<lightc;++i){
         Light l= light_v[i];
-        LightSample s = sampleLight(l, point);
+        LightSample s = sampleLight(l, point, xi);
         // vec3 diff=base;
         if (traceAny(point,s.dir,s.dist)){
             continue;

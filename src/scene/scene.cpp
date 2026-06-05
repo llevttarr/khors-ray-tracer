@@ -114,7 +114,7 @@ void scene_util::build_emissive(RenderScene& rs){
         const Mat& mat = rs.mat_v[tri.matid];
 
         const float strength = mat.emission.w;
-        if (strength <= 0.0f) continue;
+        if (strength <= 0.1f) continue;
 
         const Vec3<float> e0 = {
             tri.v1.x - tri.v0.x,
@@ -224,6 +224,12 @@ RenderScene Scene::to_render_scene() const{
     scene_util::build_bvh(prims,0,prims.size(),res.prim_v,res.bvh_v);
     res.mat_v=mat_v;
     res.light_v=light_v;
+    std::cout<<"removing emissive..."<<std::endl;
+    std::cout<<"lightc before: "<<res.light_v.size() <<std::endl;
+    scene_util::clear_emissive(res);
+    std::cout<<"lightc after: "<<res.light_v.size() <<std::endl;
+    std::cout<<"building emissive..."<<std::endl;
+    scene_util::build_emissive(res);
     res.tex_manager=tex_manager;
     return res;
 }

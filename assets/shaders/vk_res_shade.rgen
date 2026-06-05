@@ -54,7 +54,6 @@ layout(set = 3, binding = 0, rgba32f) uniform image2D outImage;
 #include "intersection.glsl"
 #include "light_sample.glsl"
 #include "wrs.glsl"
-#include "hash.glsl"
 #include "shading.glsl"
 
 layout(location = 0) rayPayloadEXT ShadowPayload shadow_payload;
@@ -101,7 +100,11 @@ void main() {
     vec3 col = mat.ambient.rgb * (0.5 + 0.5 * n.y);
     Reservoir r = reservoir_a[pidx];
     if (r.sampledLight >= 0 && r.W > 0.0) {
-        LightSample s = sampleLight(light_v[r.sampledLight], pos);
+        uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));
+        vec2 xi = vec2(0.0,0.0);
+        xi.x = float(pcg_next(rng)) * (1.0 / 4294967296.0);
+        xi.y = float(pcg_next(rng)) * (1.0 / 4294967296.0);
+        LightSample s = sampleLight(light_v[r.sampledLight], pos, xi);
         if (!trace_shadow(pos + n * 0.001, s.dir, s.dist))
             col += eval_brdf(pos, n, v, diff, mat, texUV, px.matId, s) * r.W;
     }

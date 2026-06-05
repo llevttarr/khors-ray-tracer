@@ -50,9 +50,7 @@ layout(std430, set = 2, binding = 4) buffer GBufferHistory {
 #include "intersection.glsl"
 #include "light_sample.glsl"
 #include "wrs.glsl"
-#include "hash.glsl"
 #include "shading.glsl"
-const uint KNUTH_MUL=2654435761u;
 const int NUM_NEIGHBORS = 5;
 const float SEARCH_RADIUS = 30.0;
 const float MAX_DEPTH_DIFF = 0.1;
