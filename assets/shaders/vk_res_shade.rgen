@@ -6,7 +6,7 @@
 #include "vk_uniforms.glsl"
 #include "rt_payload.glsl"
 #include "rt_shadow_payload.glsl"
-
+#include "ray_util.glsl"
 layout(std430,set=1,binding=0) readonly buffer TriBuf {
     Tri tris[];
 };
@@ -61,7 +61,7 @@ const uint GROUND_ID = 0x3FFFFFFFu;
 
 bool trace_shadow(vec3 origin, vec3 dir, float dist) {
     shadow_payload.shadowed = 0;
-    traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,0,origin, 0.001,dir, dist,0);
+    traceRayEXT(tlas,RT_FLAGS,0xFF,0, 0,0, offsetRay(origin,dir), 0.001,dir, dist,0);
     if (shadow_payload.shadowed == 1) return true;
     float gT;
     return shadow_payload.shadowed == 1 || (intersectsGround(origin, dir, gT) && gT < dist - 0.001);
