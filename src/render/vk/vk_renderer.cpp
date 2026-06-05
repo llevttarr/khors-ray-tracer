@@ -145,7 +145,7 @@ void VKRenderer::run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn) {
     dispatch_res_shade(cmd, dx, dy);
     img_barrier(cmd, cbuff_tex.get_image(),
         VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
     
     dispatch_refl_trace(cmd,dx,dy);
@@ -156,7 +156,7 @@ void VKRenderer::run_rs(std::function<void(VkCommandBuffer)> ui_draw_fn) {
     dispatch_accumulation(cmd,dx,dy);
     img_barrier(cmd, cbuff_tex.get_image(),
         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
     img_barrier(cmd, accum_tex.get_image(),
         VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,

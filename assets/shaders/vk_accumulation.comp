@@ -37,7 +37,15 @@ void main() {
 
     float a = (framec == 0) ? 1.0 : max(1.0/float(framec+1),0.05);
     vec3 accum = mix(hist,col,a);
-
+    if (accum.x < 0.05){
+        accum.x = 0.05;
+    }
+    if (accum.y < 0.05){
+        accum.y = 0.05;
+    }
+    if (accum.z < 0.05){
+        accum.z = 0.05;
+    }
     imageStore(accumImage, ivec2(gid), vec4(accum,1.0));
     imageStore(outImage, ivec2(gid), vec4(accum,1.0));
 }

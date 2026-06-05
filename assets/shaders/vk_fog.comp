@@ -43,7 +43,8 @@ vec3 pixelRayDir(ivec2 gid, uint w, uint h) {
     vec2 uv = (vec2(gid) + 0.5) / vec2(float(w), float(h));
     vec2 ndc = uv * 2.0 - 1.0;
     float t = tan(camFov * 0.5);
-    return normalize(camForward + ndc.x * camRight * camFov * t- ndc.y * camUp * t);
+    float camAspect = width/height;
+    return normalize(camForward + ndc.x * camRight * camAspect * t- ndc.y * camUp * t);
 }
 float hg(float cosT, float g) {
     float g2 = g * g;

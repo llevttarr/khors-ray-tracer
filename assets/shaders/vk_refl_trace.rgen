@@ -63,7 +63,5 @@ void main() {
     payload.t = -1.0;
     traceRayEXT(tlas, RT_FLAGS, 0xFF, 0, 0, 0, pos+n*0.001, 0.001, rdir, 1e30, 0);
     
-    float a = (framec == 0) ? 1.0 : max(1.0/float(framec+1),0.05);
-    vec3 accum = mix(prev.rgb,payload.color,a);
-    imageStore(reflAccumImage,ivec2(gid),vec4(accum,1.0));
+    imageStore(reflAccumImage,ivec2(gid),vec4(payload.color,1.0));
 }
