@@ -78,6 +78,9 @@ namespace scene_util{
     uint16_t max_axis(const AABB& a);
     Vec3<float> get_c_aabb(const AABB& a);
     uint32_t build_bvh(std::vector<Prim>& prims,size_t l,size_t r, std::vector<uint32_t>& prim_v,std::vector<BVH>& bvh_v);
+
+    void build_emissive(RenderScene& rs);
+    void clear_emissive(RenderScene& rs);
 };
 class Scene{
 public:

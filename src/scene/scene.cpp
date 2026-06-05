@@ -106,6 +106,66 @@ uint32_t scene_util::build_bvh(std::vector<Prim>& prims,size_t l,size_t r,
     bvh_v[curr_i]=bvh;
     return curr_i;
 }
+void scene_util::build_emissive(RenderScene& rs){
+    for (uint32_t i = 0; i < static_cast<uint32_t>(rs.tri_v.size()); ++i) {
+        const RenderTri& tri = rs.tri_v[i];
+
+        if (tri.matid >= static_cast<uint32_t>(rs.mat_v.size())) continue;
+        const Mat& mat = rs.mat_v[tri.matid];
+
+        const float strength = mat.emission.w;
+        if (strength <= 0.0f) continue;
+
+        const Vec3<float> e0 = {
+            tri.v1.x - tri.v0.x,
+            tri.v1.y - tri.v0.y,
+            tri.v1.z - tri.v0.z,
+        };
+        const Vec3<float> e1 = {
+            tri.v2.x - tri.v0.x,
+            tri.v2.y - tri.v0.y,
+            tri.v2.z - tri.v0.z,
+        };
+        const Vec3<float> cross = {
+            e0.y * e1.z - e0.z * e1.y,
+            e0.z * e1.x - e0.x * e1.z,
+            e0.x * e1.y - e0.y * e1.x,
+        };
+        const float area = 0.5f * std::sqrt(
+            cross.x * cross.x + cross.y * cross.y + cross.z * cross.z
+        );
+        const Vec3<float> centroid = {
+            (tri.v0.x + tri.v1.x + tri.v2.x) / 3.0f,
+            (tri.v0.y + tri.v1.y + tri.v2.y) / 3.0f,
+            (tri.v0.z + tri.v1.z + tri.v2.z) / 3.0f,
+        };
+
+        Light l{};
+
+        l.pos = { centroid.x, centroid.y, centroid.z, static_cast<float>(i) };
+
+        l.diffuse = { mat.emission.x, mat.emission.y, mat.emission.z, strength };
+
+        light_util::set_dir(l, { tri.n.x, tri.n.y, tri.n.z });
+        light_util::set_type(l, LIGHT_TRIANGLE);
+        light_util::range(l) = area;
+        light_util::half_w(l) = std::sqrt(e0.x * e0.x + e0.y * e0.y + e0.z * e0.z);
+        light_util::half_h(l) = std::sqrt(e1.x * e1.x + e1.y * e1.y + e1.z * e1.z);
+
+        l.tangent = { e0.x, e0.y, e0.z, 0.0f };
+        l.bitangent = { e1.x, e1.y, e1.z, 0.0f };
+
+        rs.light_v.push_back(l);
+    }
+}void scene_util::clear_emissive(RenderScene& rs){
+    rs.light_v.erase(
+        std::remove_if(rs.light_v.begin(), rs.light_v.end(),
+            [](const Light& l) {
+                return light_util::get_type(l) == LIGHT_TRIANGLE;
+            }),
+        rs.light_v.end()
+    );
+}
 
 RenderScene Scene::to_render_scene() const{
     RenderScene res;
