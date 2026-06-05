@@ -63,8 +63,8 @@ public:
             constexpr auto flags = ImGuiColorEditFlags_AlphaBar| ImGuiColorEditFlags_Float| ImGuiColorEditFlags_AlphaPreview;
             draw_color4("Ambient", m.ambient, flags);
             draw_color4("Diffuse", m.diffuse, flags);
-            draw_color4("Specular", m.specular,flags);
-            draw_color4("Emission", m.emission,flags);
+            draw_color4("Specular", m.specular,flags| ImGuiColorEditFlags_HDR);
+            draw_color4("Emission", m.emission,flags| ImGuiColorEditFlags_HDR);
             ImGui::SeparatorText("UV Mapping");
             float uv_scale[2] = {m.uv.x, m.uv.y};
             float uv_offset[2] = {m.uv.z, m.uv.w};

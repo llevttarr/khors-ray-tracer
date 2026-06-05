@@ -249,6 +249,29 @@ public:
     void update_scene(RenderScene& scene) override;
     void update_mats(RenderScene& scene) override;
     void update_lights(RenderScene& scene) override;
+/*
+
+    float fog_density = 0.03;
+    float sigma_a = 0.01;
+    float sigma_s = 0.04;
+    float fog_asymmetry = 0.3;
+    float height_falloff = 0.4;
+    float fog_base = 0.0;
+    float fog_time = 1.0;
+
+    float threshold_bl = 0.9;
+    float strength_bl = 0.7;
+
+    */
+    float* get_fog_density(){return &fog_density;}
+    float* get_fog_asymmetry(){return &fog_asymmetry;}
+    float* get_fog_base(){return &fog_base;}
+    float* get_fog_sigma_a(){return &sigma_a;}
+    float* get_fog_sigma_s(){return &sigma_s;}
+    float* get_fog_height_falloff(){return &height_falloff;}
+    float* get_fog_time(){return &fog_time;}
+    float* get_strength_bl(){return &strength_bl;}
+    float* get_threshold_bl(){return &threshold_bl;}
 
     void on_window_resize(uint32_t w, uint32_t h);
     std::function<void(VkCommandBuffer)> ui_draw_fn;

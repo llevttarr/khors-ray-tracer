@@ -61,7 +61,7 @@ void main() {
 
     payload.color = vec3(0.0);
     payload.t = -1.0;
-    traceRayEXT(tlas, RT_FLAGS, 0xFF, 0, 0, 0, pos+n*0.001, 0.001, rdir, 1e30, 0);
+    traceRayEXT(tlas, RT_FLAGS, 0xFF, 0, 0, 0, pos+n*0.001, 0.001, rdir, 100.0, 0);
     
     imageStore(reflAccumImage,ivec2(gid),vec4(payload.color,1.0));
 }

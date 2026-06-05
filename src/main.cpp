@@ -22,6 +22,7 @@
 #include "obj_widget.h"
 #include "light_widget.h"
 #include "scene_widget.h"
+#include "bf_widget.h"
 #include "renderer.h"
 #include "camera.h"
 #include "light.h"
@@ -134,7 +135,7 @@ void run_VK(ProgramState& ps){
     VkDescriptorPool imgui_pool = create_imgui_pool(vk_device->get_logic_device());
     ImGui_ImplVulkan_InitInfo imgui_vk{};
     imgui_vk.Instance = vk_device->get_instance();
-    imgui_vk.PhysicalDevice  = vk_device->get_phys_device();
+    imgui_vk.PhysicalDevice = vk_device->get_phys_device();
     imgui_vk.Device = vk_device->get_logic_device();
     imgui_vk.QueueFamily = vk_device->get_graphics_family();
     imgui_vk.Queue = vk_device->get_graphicsq();
@@ -159,6 +160,7 @@ void run_VK(ProgramState& ps){
     uim.add_widget(std::make_unique<SceneWidget>(scene,renderer,r,sp));
     uim.add_widget(std::make_unique<ObjWidget>(scene,renderer,r));
     uim.add_widget(std::make_unique<LightWidget>(scene,renderer,r));
+    uim.add_widget(std::make_unique<BFWidget>(renderer));
 
     renderer.update_scene(r);
     while (!window.should_close()){
