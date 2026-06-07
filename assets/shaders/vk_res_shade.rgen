@@ -97,7 +97,7 @@ void main() {
     vec3 diff = px.diffuse.xyz;
     vec2 texUV = px.uv * mat.uv.xy + mat.uv.zw;
 
-    vec3 col = mat.ambient.rgb * (0.5 + 0.5 * n.y);
+    vec3 col = mat.ambient.rgb * max(0.5 + 0.5 * n.y, 0.1);
     Reservoir r = reservoir_a[pidx];
     if (r.sampledLight >= 0 && r.W > 0.0) {
         uint rng = pcg_hash(pidx ^ (framec * KNUTH_MUL));

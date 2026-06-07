@@ -260,10 +260,11 @@ void rs_obj_parser::load_mtl_into_rs(const std::string& mtlpath,RenderScene& rs)
         }
         else if (tok == "Ke") {
             ss >> curr.emission.x >> curr.emission.y >> curr.emission.z;
-            curr.emission.w = 1.f;
+            curr.emission.w = 0.f;
         }
         else if (tok == "Ns") {
             ss >> curr.specular.w;
+            curr.specular.w = 0.0f;
         }
         else if (tok == "d") {
 

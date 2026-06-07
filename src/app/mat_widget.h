@@ -49,7 +49,7 @@ public:
             }
         }
         if (ImGui::Button("random materials")) {
-            scene.gen_random_mats(5,0,0,0);
+            scene.gen_random_mats(9,0,0,0);
             rs.mat_v = std::move(scene.get_mats());
             renderer.update_mats(rs);
         }
