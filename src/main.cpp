@@ -22,7 +22,9 @@
 #include "obj_widget.h"
 #include "light_widget.h"
 #include "scene_widget.h"
+#include "img_widget.h"
 #include "bf_widget.h"
+
 #include "renderer.h"
 #include "camera.h"
 #include "light.h"
@@ -161,6 +163,7 @@ void run_VK(ProgramState& ps){
     uim.add_widget(std::make_unique<ObjWidget>(scene,renderer,r));
     uim.add_widget(std::make_unique<LightWidget>(scene,renderer,r));
     uim.add_widget(std::make_unique<BFWidget>(renderer));
+    uim.add_widget(std::make_unique<ImgWidget>(renderer));
 
     renderer.update_scene(r);
     while (!window.should_close()){

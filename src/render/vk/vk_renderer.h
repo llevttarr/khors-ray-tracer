@@ -8,6 +8,9 @@
 #include <volk.h>
 #include "vk_mem_alloc.h"
 
+#include <stb_image.h>
+#include <stb_image_write.h>
+
 #include "app_util.h"
 #include "vk_device.h"
 #include "vk_swapchain.h"
@@ -272,6 +275,8 @@ public:
     float* get_fog_time(){return &fog_time;}
     float* get_strength_bl(){return &strength_bl;}
     float* get_threshold_bl(){return &threshold_bl;}
+
+    void save_image(const std::string& path);
 
     void on_window_resize(uint32_t w, uint32_t h);
     std::function<void(VkCommandBuffer)> ui_draw_fn;

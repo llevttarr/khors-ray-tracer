@@ -4,7 +4,7 @@ void VKRenderer::create_storage_images() {
     const VkExtent3D ext{ current_width, current_height, 1 };
     constexpr VkFormat FMT = VK_FORMAT_R32G32B32A32_SFLOAT;
     cbuff_tex.destroy();
-    cbuff_tex.create_image(ext, FMT,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+    cbuff_tex.create_image(ext, FMT,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT| VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
     cbuff_tex.create_view (VK_IMAGE_ASPECT_COLOR_BIT);
     cbuff_tex.create_sampler(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
     accum_tex.destroy();
@@ -169,4 +169,71 @@ void VKRenderer::create_texture_arrays(RenderScene& scene) {
     build(base_tex_arr, scene.tex_manager.get_base(), VK_FORMAT_R8G8B8A8_SRGB);
     build(normal_tex_arr, scene.tex_manager.get_normal(), VK_FORMAT_R8G8B8A8_UNORM);
     build(specular_tex_arr, scene.tex_manager.get_specular(), VK_FORMAT_R8G8B8A8_SRGB);
+}
+void VKRenderer::save_image(const std::string& path) {
+    const VkDeviceSize byte_size = sizeof(float)*4 * current_width * current_height;
+
+    VKBuffer staging(device);
+    staging.create(byte_size,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VMA_MEMORY_USAGE_CPU_ONLY,
+        VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+    one_time_submit([&](VkCommandBuffer cmd) {
+        img_barrier(cmd, cbuff_tex.get_image(),
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+            VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
+            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {current_width, current_height, 1};
+
+        vkCmdCopyImageToBuffer(cmd,
+            cbuff_tex.get_image(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            staging.get(),
+            1, &region);
+
+        img_barrier(cmd, cbuff_tex.get_image(),
+            VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT,
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+    });
+
+    const float* src = static_cast<const float*>(staging.map());
+
+    const uint32_t pixel_count = current_width * current_height;
+    std::vector<uint8_t> pixels(pixel_count * 4);
+
+    for (uint32_t i = 0; i < pixel_count; ++i) {
+        auto to_srgb = [](float lin) -> uint8_t {
+            lin = std::max(0.f, std::min(1.f, lin));
+            float s = (lin <= 0.0031308f)
+                ? lin * 12.92f
+                : 1.055f * std::pow(lin, 1.f / 2.4f) - 0.055f;
+            return static_cast<uint8_t>(std::round(s * 255.f));
+        };
+        pixels[i*4+0] = to_srgb(src[i*4+0]);
+        pixels[i*4+1] = to_srgb(src[i*4+1]);
+        pixels[i*4+2] = to_srgb(src[i*4+2]);
+        pixels[i*4+3] = 255;
+    }
+
+    staging.unmap();
+    const bool is_png = path.size() >= 4 && path.substr(path.size() - 4) == ".png";
+
+    int ok = 0;
+    if (is_png) {
+        ok = stbi_write_png(path.c_str(), current_width, current_height, 4, pixels.data(), current_width*4);
+    } else {
+        ok = stbi_write_jpg(path.c_str(), current_width, current_height, 4, pixels.data(), 95);
+    }
+
+    if (!ok)
+        throw std::runtime_error("stbi_write failed: " + path);
 }
