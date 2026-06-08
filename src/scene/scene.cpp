@@ -304,14 +304,14 @@ void Scene::test_scene_init(){
     float r1;
     float r2;
     uint32_t obj;
-    for (size_t i=0;i<8;++i){
-        r0=dist(engine);
-        r1=6.0+dist(engine)/10.0;
-        r2=dist(engine);
-        temp=identity.translate(r0,r1,r2);
-        uint32_t matid=1;
-        obj=add_object(Object{tri_sphere_id,temp,matid});
-    }
+    // for (size_t i=0;i<8;++i){
+    //     r0=dist(engine);
+    //     r1=6.0+dist(engine)/10.0;
+    //     r2=dist(engine);
+    //     temp=identity.translate(r0,r1,r2);
+    //     uint32_t matid=1;
+    //     obj=add_object(Object{tri_sphere_id,temp,matid});
+    // }
     Sphr sp=Sphr{};
     sp.cx=100.0;
     sp.cy=100.0;
@@ -383,7 +383,7 @@ void Scene::test_scene_init(){
     areal.bitangent = {bitangent.x, bitangent.y, bitangent.z, 0.0f};
     areal.params1 = {30.0f, 0.0f, 1.5f, 1.0f}; 
 
-    light_v.push_back(areal);
+    // light_v.push_back(areal);
     TextureManager texman;
     std::uniform_real_distribution<float> light_diff_small(0.02f,0.15f);
     Vec4<float> gamb=Vec4<float>{0.4f,0.6f,0.6f,0.1f};

@@ -16,15 +16,18 @@ void VKRenderer::create_restir_buffers() {
     reservoir_b.create(res_size, BUF_FLAGS, VMA_MEMORY_USAGE_GPU_ONLY);
 }
 void VKRenderer::update_scene(RenderScene& scene) {
+    scene_util::build_emissive(scene);
     wait_idle();
     tric = static_cast<uint32_t>(scene.tri_v.size());
-    std::cout<<"tric: "<<tric<<std::endl;
+    std::cout<<"Triangle count: "<<tric<<std::endl;
     spherec = static_cast<uint32_t>(scene.sphr_v.size());
     bvhc = static_cast<uint32_t>(scene.bvh_v.size());
-    std::cout<<"bvhc: "<<bvhc<<std::endl;
+    // std::cout<<"bvhc: "<<bvhc<<std::endl;
     matc = static_cast<uint32_t>(scene.mat_v.size());
+    std::cout<<"Material count: "<<matc<<std::endl;
     lightc = static_cast<uint32_t>(scene.light_v.size());
- 
+    std::cout<<"Light count: "<<matc<<std::endl;
+
     upload_scene_buffers(scene);
     if (tric!=0){
         blas = accel_builder->build_blas(scene.tri_v);
